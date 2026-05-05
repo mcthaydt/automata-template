@@ -4,6 +4,7 @@ class_name S_LandingParticlesSystem
 
 const SETTINGS_TYPE := preload("res://scripts/core/resources/ecs/rs_landing_particles_settings.gd")
 const DUST_SPAWNER := preload("res://scripts/core/utils/u_dust_spawner.gd")
+const CLOUD_TEXTURE := preload("res://assets/core/textures/tex_landing_cloud.png")
 
 @export var settings: SETTINGS_TYPE
 
@@ -47,7 +48,7 @@ func process_tick(__delta: float) -> void:
 	requests.clear()
 
 func _create_dust_config() -> DUST_SPAWNER.DustConfig:
-	return DUST_SPAWNER.DustConfig.new(
+	var config := DUST_SPAWNER.DustConfig.new(
 		settings.count,
 		settings.lifetime,
 		settings.scale,
@@ -56,3 +57,7 @@ func _create_dust_config() -> DUST_SPAWNER.DustConfig:
 		settings.spawn_offset,
 		0.05
 	)
+	if settings.use_cloud_animation and settings.cloud_frame_count > 0:
+		config.sprite_sheet_frames = settings.cloud_frame_count
+		config.sprite_sheet_texture = CLOUD_TEXTURE
+	return config
