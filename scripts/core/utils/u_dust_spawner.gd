@@ -82,7 +82,7 @@ func _animate_puff(puff: Sprite3D, config: DustConfig) -> void:
 	tween.tween_property(puff, "scale", scale_vec, phase1_dur)
 	tween.tween_interval(phase2_dur)
 	tween.parallel().tween_property(puff, "modulate:a", 0.0, phase3_dur)
-	tween.parallel().tween_property(puff, "position:y", puff.position.y + config.drift.y * config.lifetime, phase3_dur)
+	tween.parallel().tween_property(puff, "position", puff.position + config.drift * config.lifetime, phase3_dur)
 	tween.tween_callback(puff.queue_free)
 
 static func get_or_create_effects_container(tree: SceneTree) -> Node3D:

@@ -3,7 +3,6 @@ extends Node3D
 
 var _sparkles: Array[Sprite3D] = []
 var _tweens: Array[Tween] = []
-var _started := false
 
 const PULSE_DURATION := 1.2
 const PULSE_SCALE_MIN := 0.04
@@ -12,7 +11,7 @@ const PULSE_SCALE_MAX := 0.12
 func _ready() -> void:
 	_collect_sparkles()
 	_start_pulsing()
-	_started = true
+
 
 func _collect_sparkles() -> void:
 	_sparkles.clear()
