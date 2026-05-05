@@ -2,21 +2,16 @@
 extends BaseECSSystem
 class_name S_SpawnParticlesSystem
 
-## Spawn Particles System (Phase 12.4)
-##
-## Creates particle effects when player spawns at spawn points.
-## Subscribes to Redux ACTION_PLAYER_SPAWNED via action_dispatched signal
-## per channel taxonomy (docs/architecture/adr/0001-channel-taxonomy.md).
-
-const PARTICLE_SPAWNER := preload("res://scripts/core/utils/u_particle_spawner.gd")
+const DUST_SPAWNER := preload("res://scripts/core/utils/u_dust_spawner.gd")
 const U_SPAWN_ACTIONS := preload("res://scripts/core/state/actions/u_spawn_actions.gd")
 
 @export var enabled: bool = true
-@export var emission_count: int = 20
-@export var particle_lifetime: float = 0.8
-@export var particle_scale: float = 0.3
-@export var spread_angle: float = 45.0
-@export var initial_velocity: float = 3.0
+@export var count: int = 20
+@export var lifetime: float = 0.8
+@export var scale: float = 0.3
+@export var spread: float = 0.4
+@export var drift_strength: float = 3.0
+@export var drift_direction: Vector3 = Vector3.UP
 @export var spawn_offset: Vector3 = Vector3(0, 0.5, 0)
 
 var requests: Array = []
@@ -62,47 +57,33 @@ func _on_action_dispatched(action: Dictionary) -> void:
 	requests.append(request.duplicate(true))
 
 func process_tick(__delta: float) -> void:
-	# Early exit if disabled
 	if not enabled:
 		requests.clear()
 		return
 
-	# Nothing to process
 	if requests.size() == 0:
 		return
 
-	# Get or create the effects container
-	var container := PARTICLE_SPAWNER.get_or_create_effects_container(get_tree())
+	var container := DUST_SPAWNER.get_or_create_effects_container(get_tree())
 	if container == null:
 		requests.clear()
 		return
 
-	# Create spawner and config
-	var spawner := PARTICLE_SPAWNER.new()
-	var config := _create_particle_config()
+	var spawner := DUST_SPAWNER.new()
+	var config := _create_dust_config()
 
-	# Spawn particles for each request
 	for request in requests:
 		var position: Vector3 = request.get("position", Vector3.ZERO)
-		spawner.spawn_particles(position, container, config, self)
+		spawner.spawn_dust(position, container, config)
 
-	# Clear processed requests
 	requests.clear()
 
-func _create_particle_config() -> PARTICLE_SPAWNER.ParticleConfig:
-	return PARTICLE_SPAWNER.ParticleConfig.new(
-		emission_count,
-		particle_lifetime,
-		particle_scale,
-		spread_angle,
-		initial_velocity,
-		spawn_offset,
-		null  # Use default material
+func _create_dust_config() -> DUST_SPAWNER.DustConfig:
+	return DUST_SPAWNER.DustConfig.new(
+		count,
+		lifetime,
+		scale,
+		spread,
+		drift_direction * drift_strength,
+		spawn_offset
 	)
-
-# Helper methods required by ParticleSpawner for deferred activation
-func _u_particle_spawner_activate_frame1(particles: GPUParticles3D) -> void:
-	PARTICLE_SPAWNER.activate_particles_frame2(particles, self)
-
-func _u_particle_spawner_activate_frame2(particles: GPUParticles3D) -> void:
-	PARTICLE_SPAWNER.activate_particles_final(particles)

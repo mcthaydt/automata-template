@@ -37,14 +37,11 @@ func _create_system_with_settings(enabled: bool = true) -> Dictionary:
 		"settings": settings,
 	}
 
-# Settings and Initialization Tests
-
 func test_system_subscribes_to_entity_jumped_event_on_ready() -> void:
 	var context := await _create_system_with_settings()
 	autofree_context(context)
 	var system: S_JumpParticlesSystem = context["system"]
 
-	# System should have subscribed - test by publishing event
 	var payload := {"position": Vector3.ZERO}
 	EVENT_BUS.publish(EVENT_NAME, payload)
 
@@ -55,10 +52,8 @@ func test_system_clears_spawn_requests_when_disabled() -> void:
 	autofree_context(context)
 	var system: S_JumpParticlesSystem = context["system"]
 
-	# Manually add a spawn request
 	system.spawn_requests.append({"position": Vector3.ZERO})
 
-	# Process tick should clear requests when disabled
 	system.process_tick(0.016)
 
 	assert_eq(system.spawn_requests.size(), 0, "Disabled system should clear spawn requests")
@@ -73,26 +68,20 @@ func test_system_clears_spawn_requests_when_settings_null() -> void:
 	autofree(system)
 	await _pump()
 
-	# Manually add a spawn request
 	system.spawn_requests.append({"position": Vector3.ZERO})
 
-	# Process tick should clear requests when settings null
 	system.process_tick(0.016)
 
 	assert_eq(system.spawn_requests.size(), 0, "System with null settings should clear spawn requests")
-
-# Event Subscription Tests
 
 func test_system_unsubscribes_on_exit_tree() -> void:
 	var context := await _create_system_with_settings()
 	var system: S_JumpParticlesSystem = context["system"]
 
-	# Remove system from tree
 	system.get_parent().remove_child(system)
 	autofree_context(context)
 	autofree(system)
 
-	# Publish event - should not be captured
 	var payload := {"position": Vector3.ZERO}
 	EVENT_BUS.publish(EVENT_NAME, payload)
 
@@ -117,10 +106,6 @@ func test_spawn_request_contains_correct_data() -> void:
 	assert_eq(request.get("jump_force"), 15.0)
 	assert_true(request.has("timestamp"), "Request should have timestamp")
 
-# Particle Spawning Tests
-# Note: Full particle spawning requires current_scene, tested in integration tests
-# Unit tests focus on request processing logic
-
 func test_process_tick_clears_spawn_requests_after_processing() -> void:
 	var context := await _create_system_with_settings()
 	autofree_context(context)
@@ -131,28 +116,19 @@ func test_process_tick_clears_spawn_requests_after_processing() -> void:
 
 	assert_eq(system.spawn_requests.size(), 1, "Request should be queued")
 
-	# Process tick should clear requests (even if spawning fails in test env)
 	system.process_tick(0.016)
 
 	assert_eq(system.spawn_requests.size(), 0, "Requests should be cleared after processing")
 
-# Spawn Offset Tests
-
 func test_default_spawn_offset_is_down() -> void:
 	var settings = SETTINGS.new()
 	assert_eq(settings.spawn_offset, Vector3(0, -0.5, 0), "Default spawn_offset should be Vector3(0, -0.5, 0)")
-
-# Effects Container Tests
-# Note: Container creation requires current_scene, tested in integration tests
-
-# Multiple Requests Tests
 
 func test_multiple_spawn_requests_all_queued() -> void:
 	var context := await _create_system_with_settings()
 	autofree_context(context)
 	var system: S_JumpParticlesSystem = context["system"]
 
-	# Queue multiple requests
 	EVENT_BUS.publish(EVENT_NAME, {"position": Vector3(0, 0, 0)})
 	EVENT_BUS.publish(EVENT_NAME, {"position": Vector3(5, 0, 0)})
 	EVENT_BUS.publish(EVENT_NAME, {"position": Vector3(10, 0, 0)})
@@ -164,7 +140,6 @@ func test_multiple_spawn_requests_all_cleared_after_processing() -> void:
 	autofree_context(context)
 	var system: S_JumpParticlesSystem = context["system"]
 
-	# Queue multiple requests
 	EVENT_BUS.publish(EVENT_NAME, {"position": Vector3(0, 0, 0)})
 	EVENT_BUS.publish(EVENT_NAME, {"position": Vector3(5, 0, 0)})
 	EVENT_BUS.publish(EVENT_NAME, {"position": Vector3(10, 0, 0)})
@@ -175,29 +150,32 @@ func test_multiple_spawn_requests_all_cleared_after_processing() -> void:
 
 	assert_eq(system.spawn_requests.size(), 0, "All requests should be cleared")
 
-# Settings Validation Tests
-
-func test_settings_emission_count_configurable() -> void:
+func test_settings_count_configurable() -> void:
 	var settings := SETTINGS.new()
-	settings.emission_count = 50
-	assert_eq(settings.emission_count, 50, "Emission count should be configurable")
+	settings.count = 50
+	assert_eq(settings.count, 50, "Count should be configurable")
 
-func test_settings_particle_lifetime_configurable() -> void:
+func test_settings_lifetime_configurable() -> void:
 	var settings := SETTINGS.new()
-	settings.particle_lifetime = 2.0
-	assert_eq(settings.particle_lifetime, 2.0, "Particle lifetime should be configurable")
+	settings.lifetime = 2.0
+	assert_eq(settings.lifetime, 2.0, "Lifetime should be configurable")
 
-func test_settings_particle_scale_configurable() -> void:
+func test_settings_scale_configurable() -> void:
 	var settings := SETTINGS.new()
-	settings.particle_scale = 0.8
-	assert_eq(settings.particle_scale, 0.8, "Particle scale should be configurable")
+	settings.scale = 0.8
+	assert_eq(settings.scale, 0.8, "Scale should be configurable")
 
-func test_settings_spread_angle_configurable() -> void:
+func test_settings_spread_configurable() -> void:
 	var settings := SETTINGS.new()
-	settings.spread_angle = 120.0
-	assert_eq(settings.spread_angle, 120.0, "Spread angle should be configurable")
+	settings.spread = 1.2
+	assert_eq(settings.spread, 1.2, "Spread should be configurable")
 
-func test_settings_initial_velocity_configurable() -> void:
+func test_settings_drift_strength_configurable() -> void:
 	var settings := SETTINGS.new()
-	settings.initial_velocity = 7.5
-	assert_eq(settings.initial_velocity, 7.5, "Initial velocity should be configurable")
+	settings.drift_strength = 7.5
+	assert_eq(settings.drift_strength, 7.5, "Drift strength should be configurable")
+
+func test_settings_drift_direction_configurable() -> void:
+	var settings := SETTINGS.new()
+	settings.drift_direction = Vector3(1, 0, 0)
+	assert_eq(settings.drift_direction, Vector3(1, 0, 0), "Drift direction should be configurable")

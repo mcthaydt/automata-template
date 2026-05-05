@@ -1,7 +1,5 @@
 extends GutTest
 
-## Unit tests for S_SpawnParticlesSystem (Phase 12.4)
-
 const M_ECS_MANAGER := preload("res://scripts/core/managers/m_ecs_manager.gd")
 const S_SPAWN_PARTICLES := preload("res://scripts/core/ecs/systems/s_spawn_particles_system.gd")
 const M_STATE_STORE := preload("res://scripts/core/state/m_state_store.gd")
@@ -19,7 +17,6 @@ var _store: M_StateStore
 func before_each() -> void:
 	U_SERVICE_LOCATOR.clear()
 
-	# Create a current scene so particle effects container can be created
 	var tree := get_tree()
 	_root_scene = Node3D.new()
 	tree.root.add_child(_root_scene)
@@ -61,31 +58,26 @@ func _create_store() -> M_StateStore:
 	store.vfx_initial_state = RS_VFX_INITIAL_STATE.new()
 	return store
 
-func test_creates_particles_on_player_spawn_action() -> void:
-	# Channel taxonomy: dispatch player_spawned via Redux instead of ECS bus
+func test_creates_dust_on_player_spawn_action() -> void:
 	_store.dispatch(U_SPAWN_ACTIONS.player_spawned(Vector3(3, 4, 5), StringName("sp_test")))
 	await wait_physics_frames(1)
 
-	# Effects container should exist under current_scene
 	var container: Node3D = _root_scene.get_node_or_null("EffectsContainer") as Node3D
 	assert_not_null(container, "Effects container should be created")
 
-	# At least one GPUParticles3D should be spawned under container
-	var has_particles := false
+	var has_dust := false
 	for child in container.get_children():
-		if child is GPUParticles3D:
-			has_particles = true
+		if child is Sprite3D and child.name.begins_with("DustPuff_"):
+			has_dust = true
 			break
-	assert_true(has_particles, "Should spawn GPUParticles3D when action dispatched")
+	assert_true(has_dust, "Should spawn dust puffs when action dispatched")
 
 func test_disabled_system_clears_requests_and_spawns_nothing() -> void:
-	# Disable system
 	_system.enabled = false
 
 	_store.dispatch(U_SPAWN_ACTIONS.player_spawned(Vector3.ZERO, StringName("")))
 	await wait_physics_frames(1)
 
-	# Ensure no effects container was created under current test scene
 	var local_container := _root_scene.get_node_or_null("EffectsContainer")
 	assert_null(local_container, "No local effects container should be created when disabled")
 

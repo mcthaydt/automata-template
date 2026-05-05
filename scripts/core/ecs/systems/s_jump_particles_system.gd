@@ -3,11 +3,10 @@ extends BaseEventVFXSystem
 class_name S_JumpParticlesSystem
 
 const SETTINGS_TYPE := preload("res://scripts/core/resources/ecs/rs_jump_particles_settings.gd")
-const PARTICLE_SPAWNER := preload("res://scripts/core/utils/u_particle_spawner.gd")
+const DUST_SPAWNER := preload("res://scripts/core/utils/u_dust_spawner.gd")
 
 @export var settings: SETTINGS_TYPE
 
-## Alias for EventVFXSystem.requests to maintain backward compatibility
 var spawn_requests: Array:
 	get:
 		return requests
@@ -26,47 +25,33 @@ func create_request_from_payload(payload: Dictionary) -> Dictionary:
 	}
 
 func process_tick(__delta: float) -> void:
-	# Early exit if disabled or no settings
 	if settings == null or not settings.enabled:
 		requests.clear()
 		return
 
-	# Nothing to process
 	if requests.size() == 0:
 		return
 
-	# Get or create the effects container
-	var container := PARTICLE_SPAWNER.get_or_create_effects_container(get_tree())
+	var container := DUST_SPAWNER.get_or_create_effects_container(get_tree())
 	if container == null:
 		requests.clear()
 		return
 
-	# Create spawner and config
-	var spawner := PARTICLE_SPAWNER.new()
-	var config := _create_particle_config()
+	var spawner := DUST_SPAWNER.new()
+	var config := _create_dust_config()
 
-	# Spawn particles for each request
 	for request in requests:
 		var position: Vector3 = request.get("position", Vector3.ZERO)
-		spawner.spawn_particles(position, container, config, self)
+		spawner.spawn_dust(position, container, config)
 
-	# Clear processed requests
 	requests.clear()
 
-func _create_particle_config() -> PARTICLE_SPAWNER.ParticleConfig:
-	return PARTICLE_SPAWNER.ParticleConfig.new(
-		settings.emission_count,
-		settings.particle_lifetime,
-		settings.particle_scale,
-		settings.spread_angle,
-		settings.initial_velocity,
-		settings.spawn_offset,
-		settings.particle_material
+func _create_dust_config() -> DUST_SPAWNER.DustConfig:
+	return DUST_SPAWNER.DustConfig.new(
+		settings.count,
+		settings.lifetime,
+		settings.scale,
+		settings.spread,
+		settings.drift_direction * settings.drift_strength,
+		settings.spawn_offset
 	)
-
-# Helper methods required by ParticleSpawner for deferred activation
-func _u_particle_spawner_activate_frame1(particles: GPUParticles3D) -> void:
-	PARTICLE_SPAWNER.activate_particles_frame2(particles, self)
-
-func _u_particle_spawner_activate_frame2(particles: GPUParticles3D) -> void:
-	PARTICLE_SPAWNER.activate_particles_final(particles)
