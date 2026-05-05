@@ -19,6 +19,8 @@ class DustConfig:
 	var drift: Vector3 = Vector3.UP
 	var spawn_offset: Vector3 = Vector3.ZERO
 	var vertical_spread_scale: float = 1.0
+	var sprite_sheet_frames: int = 0
+	var sprite_sheet_texture: Texture2D = null
 
 	func _init(
 		p_count: int = 10,
@@ -27,7 +29,9 @@ class DustConfig:
 		p_spread: float = 0.4,
 		p_drift: Vector3 = Vector3.UP,
 		p_spawn_offset: Vector3 = Vector3.ZERO,
-		p_vertical_spread_scale: float = 1.0
+		p_vertical_spread_scale: float = 1.0,
+		p_sprite_sheet_frames: int = 0,
+		p_sprite_sheet_texture: Texture2D = null
 	) -> void:
 		count = p_count
 		lifetime = p_lifetime
@@ -36,6 +40,8 @@ class DustConfig:
 		drift = p_drift
 		spawn_offset = p_spawn_offset
 		vertical_spread_scale = maxf(p_vertical_spread_scale, 0.0)
+		sprite_sheet_frames = maxi(p_sprite_sheet_frames, 0)
+		sprite_sheet_texture = p_sprite_sheet_texture
 
 static func _get_default_material() -> StandardMaterial3D:
 	if _default_material != null:
@@ -60,20 +66,44 @@ func spawn_dust(position: Vector3, container: Node3D, config: DustConfig) -> voi
 	var material := _get_default_material()
 
 	for i in range(config.count):
-		var puff := Sprite3D.new()
-		puff.name = DUST_PUFF_NAME_PREFIX + str(i)
-		puff.texture = DUST_PUFF_TEXTURE
-		puff.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		puff.material_override = material
-		puff.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
-		puff.scale = Vector3.ZERO
+		var puff: Node3D
+		if config.sprite_sheet_frames > 0 and config.sprite_sheet_texture != null:
+			var anim_sprite := AnimatedSprite3D.new()
+			anim_sprite.name = DUST_PUFF_NAME_PREFIX + str(i)
+			var sprite_frames := SpriteFrames.new()
+			sprite_frames.set_animation_speed("default", config.sprite_sheet_frames / config.lifetime)
+			var frame_count := config.sprite_sheet_frames
+			for f in range(frame_count):
+				var atlas := AtlasTexture.new()
+				atlas.atlas = config.sprite_sheet_texture
+				atlas.region = Rect2(f * 32, 0, 32, 32)
+				sprite_frames.add_frame("default", atlas)
+			anim_sprite.sprite_frames = sprite_frames
+			anim_sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+			anim_sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+			anim_sprite.autoplay = "default"
+			puff = anim_sprite
+		else:
+			var sprite := Sprite3D.new()
+			sprite.name = DUST_PUFF_NAME_PREFIX + str(i)
+			sprite.texture = DUST_PUFF_TEXTURE
+			sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+			sprite.material_override = material
+			sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+			sprite.scale = Vector3.ZERO
+			puff = sprite
+
 		container.add_child(puff)
 		puff.global_position = position + config.spawn_offset + Vector3(
 			(randf() - 0.5) * 2 * config.spread,
 			(randf() - 0.5) * 2 * config.spread * config.vertical_spread_scale,
 			(randf() - 0.5) * 2 * config.spread
 		)
-		_animate_puff(puff, config)
+
+		if config.sprite_sheet_frames > 0 and config.sprite_sheet_texture != null:
+			_animate_cloud(puff as AnimatedSprite3D, config)
+		else:
+			_animate_puff(puff as Sprite3D, config)
 
 func _animate_puff(puff: Sprite3D, config: DustConfig) -> void:
 	var tween := puff.create_tween()
@@ -87,6 +117,20 @@ func _animate_puff(puff: Sprite3D, config: DustConfig) -> void:
 	tween.parallel().tween_property(puff, "modulate:a", 0.0, phase3_dur)
 	tween.parallel().tween_property(puff, "position", puff.position + config.drift * config.lifetime, phase3_dur)
 	tween.tween_callback(puff.queue_free)
+
+func _animate_cloud(cloud: AnimatedSprite3D, config: DustConfig) -> void:
+	var tween := cloud.create_tween()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	var phase1_dur := config.lifetime * 0.3
+	var phase2_dur := config.lifetime * 0.2
+	var phase3_dur := config.lifetime * 0.5
+	var scale_vec := Vector3(config.scale, config.scale, config.scale)
+	cloud.scale = Vector3.ZERO
+	tween.tween_property(cloud, "scale", scale_vec, phase1_dur)
+	tween.tween_interval(phase2_dur)
+	tween.parallel().tween_property(cloud, "modulate:a", 0.0, phase3_dur)
+	tween.parallel().tween_property(cloud, "position", cloud.position + config.drift * config.lifetime, phase3_dur)
+	tween.tween_callback(cloud.queue_free)
 
 static func get_or_create_effects_container(tree: SceneTree) -> Node3D:
 	if tree == null:

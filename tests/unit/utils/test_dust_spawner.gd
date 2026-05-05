@@ -104,3 +104,54 @@ func test_puff_names_have_prefix() -> void:
 	for i in range(3):
 		var child := container.get_child(i)
 		assert_true(child.name.begins_with("DustPuff_"), "Puff name should have DustPuff_ prefix")
+
+func test_dust_config_accept_sprite_sheet_fields() -> void:
+	var texture := GradientTexture2D.new()
+	var config := DUST_SPAWNER.DustConfig.new(
+		5, 0.5, 0.3, 0.4, Vector3.UP, Vector3.ZERO, 1.0, 4, texture
+	)
+	assert_eq(config.sprite_sheet_frames, 4)
+	assert_eq(config.sprite_sheet_texture, texture)
+
+func test_spawn_dust_with_sprite_sheet_creates_animated_sprite3d() -> void:
+	var spawner := DUST_SPAWNER.new()
+	var texture := ImageTexture.create_from_image(Image.create(128, 32, false, Image.FORMAT_RGBA8))
+	var config := DUST_SPAWNER.DustConfig.new(3, 0.6, 0.3, 0.4, Vector3.UP, Vector3.ZERO, 1.0, 4, texture)
+	var container := Node3D.new()
+	add_child(container)
+	autofree(container)
+
+	spawner.spawn_dust(Vector3.ZERO, container, config)
+
+	assert_eq(container.get_child_count(), 3, "Should create 3 cloud nodes")
+	for child in container.get_children():
+		assert_true(child is AnimatedSprite3D, "Each child should be AnimatedSprite3D when sprite_sheet_frames > 0")
+
+func test_spawn_dust_without_sprite_sheet_creates_sprite3d() -> void:
+	var spawner := DUST_SPAWNER.new()
+	var config := DUST_SPAWNER.DustConfig.new(3, 0.6, 0.3, 0.4, Vector3.UP, Vector3.ZERO, 1.0, 0, Texture2D.new())
+	var container := Node3D.new()
+	add_child(container)
+	autofree(container)
+
+	spawner.spawn_dust(Vector3.ZERO, container, config)
+
+	assert_eq(container.get_child_count(), 3, "Should create 3 puff nodes")
+	for child in container.get_children():
+		assert_true(child is Sprite3D, "Each child should be Sprite3D when sprite_sheet_frames == 0")
+
+func test_cloud_animated_sprite_has_sprite_frames() -> void:
+	var spawner := DUST_SPAWNER.new()
+	var texture := ImageTexture.create_from_image(Image.create(128, 32, false, Image.FORMAT_RGBA8))
+	var config := DUST_SPAWNER.DustConfig.new(1, 0.6, 0.3, 0.4, Vector3.UP, Vector3.ZERO, 1.0, 4, texture)
+	var container := Node3D.new()
+	add_child(container)
+	autofree(container)
+
+	spawner.spawn_dust(Vector3.ZERO, container, config)
+
+	var cloud := container.get_child(0) as AnimatedSprite3D
+	assert_not_null(cloud, "Cloud should be AnimatedSprite3D")
+	assert_not_null(cloud.sprite_frames, "Cloud should have SpriteFrames assigned")
+	assert_eq(cloud.sprite_frames.get_frame_count("default"), 4, "SpriteFrames default anim should have 4 frames")
+	assert_true(cloud.autoplay == "default" or cloud.animation == "default", "Cloud should be playing default animation")
