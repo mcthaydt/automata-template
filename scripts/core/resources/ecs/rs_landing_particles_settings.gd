@@ -2,26 +2,14 @@
 extends Resource
 class_name RS_LandingParticlesSettings
 
-## Settings for landing particle effects
-
 @export_group("General")
-## Enable or disable particle spawning
 @export var enabled: bool = true
 
-@export_group("Particle Properties")
-## Particle material (placeholder for now, can be assigned in inspector)
-@export var particle_material: Material = null
-## Number of particles to emit per landing
-@export var emission_count: int = 15
-## How long particles stay alive (seconds)
-@export var particle_lifetime: float = 0.6
-## Scale of individual particles
-@export var particle_scale: float = 0.12
-
-@export_group("Emission")
-## Spread angle for particle emission (degrees)
-@export_range(0.0, 180.0) var spread_angle: float = 60.0
-## Initial velocity of particles
-@export var initial_velocity: float = 2.5
-## Offset from landing position where particles spawn (Vector3.DOWN spawns at feet)
+@export_group("Dust Properties")
+@export var count: int = 15
+@export var lifetime: float = 0.6
+@export var scale: float = 0.12
+@export var spread: float = 0.5
+@export var drift_strength: float = 2.5
 @export var spawn_offset: Vector3 = Vector3(0, -0.5, 0)
+@export var drift_direction: Vector3 = Vector3.UP
