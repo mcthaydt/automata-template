@@ -135,12 +135,7 @@ func _setup_background_image(preset: String) -> bool:
 	var bg_image := TextureRect.new()
 	bg_image.name = "BackgroundImage"
 	bg_image.texture = texture
-	bg_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg_image.stretch_mode = TextureRect.STRETCH_SCALE
-	bg_image.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg_image.z_index = -1
-	bg_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bg_image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_configure_background_image(bg_image)
 	add_child(bg_image)
 	move_child(bg_image, 0)
 	_background_image = bg_image
@@ -149,6 +144,7 @@ func _setup_background_image(preset: String) -> bool:
 func _setup_background_shader() -> void:
 	var existing := get_node_or_null("BackgroundImage") as TextureRect
 	if existing != null:
+		_configure_background_image(existing)
 		_background_image = existing
 		return
 
@@ -199,3 +195,11 @@ func _get_background_shader_mode(preset: String) -> int:
 	if BACKGROUND_SHADER_PRESET_MODE_BY_ID.has(preset):
 		return int(BACKGROUND_SHADER_PRESET_MODE_BY_ID[preset])
 	return -1
+
+func _configure_background_image(bg_image: TextureRect) -> void:
+	bg_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	bg_image.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg_image.z_index = -1
+	bg_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg_image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST

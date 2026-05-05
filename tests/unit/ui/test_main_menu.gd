@@ -53,6 +53,11 @@ func test_applies_theme_tokens_when_active_config_present() -> void:
 			background_image.texture,
 			"BackgroundImage should have a texture assigned"
 		)
+		assert_eq(
+			background_image.stretch_mode,
+			TextureRect.STRETCH_KEEP_ASPECT_COVERED,
+			"BackgroundImage should cover the full screen without letterboxing"
+		)
 
 func test_main_panel_visible_by_default() -> void:
 	var store := await _create_state_store()

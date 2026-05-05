@@ -287,6 +287,11 @@ func test_base_menu_screen_auto_provisions_background_image_instead_of_shader() 
 	if bg_image == null:
 		return
 	assert_ne(bg_image.texture, null, "Auto-provisioned BackgroundImage should have texture loaded")
+	assert_eq(
+		bg_image.stretch_mode,
+		TextureRect.STRETCH_KEEP_ASPECT_COVERED,
+		"Auto-provisioned BackgroundImage should cover the full screen without letterboxing"
+	)
 	assert_null(screen.get("_background_shader_material"), "Should not create shader material when BackgroundImage is auto-provisioned")
 
 func test_base_menu_screen_background_shader_noop_when_preset_none_or_background_missing() -> void:
@@ -321,10 +326,16 @@ func test_background_image_skips_shader_setup() -> void:
 	var screen := BaseMenuScreen.new()
 	var bg_image := TextureRect.new()
 	bg_image.name = "BackgroundImage"
+	bg_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	screen.add_child(bg_image)
 	screen.background_shader_preset = "retro_grid"
 	add_child_autofree(screen)
 	await wait_process_frames(3)
+	assert_eq(
+		bg_image.stretch_mode,
+		TextureRect.STRETCH_KEEP_ASPECT_COVERED,
+		"Existing BackgroundImage should be configured to cover the full screen"
+	)
 	assert_null(screen.get("_background_shader_material"), "Should skip shader when BackgroundImage present")
 	assert_null(screen.get("_background_rect"), "Should not set _background_rect when BackgroundImage present")
 
