@@ -13,3 +13,7 @@ class_name RS_LandingParticlesSettings
 @export var drift_strength: float = 2.5
 @export var spawn_offset: Vector3 = Vector3(0, -0.5, 0)
 @export var drift_direction: Vector3 = Vector3(0, -0.2, 0)
+
+@export_group("Cloud Animation")
+@export var use_cloud_animation: bool = true
+@export var cloud_frame_count: int = 4

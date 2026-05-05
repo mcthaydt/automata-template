@@ -12,3 +12,5 @@ spread = 0.5
 drift_strength = 2.5
 spawn_offset = Vector3(0, -0.5, 0)
 drift_direction = Vector3(0, -0.2, 0)
+use_cloud_animation = true
+cloud_frame_count = 4

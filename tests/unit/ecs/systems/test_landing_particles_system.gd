@@ -192,3 +192,33 @@ func test_landing_dust_config_is_ground_hugging() -> void:
 	var config := system._create_dust_config()
 
 	assert_true(config.vertical_spread_scale <= 0.1, "Landing dust should use mostly horizontal scatter")
+
+func test_settings_use_cloud_animation_default() -> void:
+	var settings := SETTINGS.new()
+	assert_eq(settings.use_cloud_animation, true, "use_cloud_animation should default to true")
+
+func test_settings_cloud_frame_count_default() -> void:
+	var settings := SETTINGS.new()
+	assert_eq(settings.cloud_frame_count, 4, "cloud_frame_count should default to 4")
+
+func test_settings_use_cloud_animation_configurable() -> void:
+	var settings := SETTINGS.new()
+	settings.use_cloud_animation = false
+	assert_eq(settings.use_cloud_animation, false, "use_cloud_animation should be configurable")
+
+func test_settings_cloud_frame_count_configurable() -> void:
+	var settings := SETTINGS.new()
+	settings.cloud_frame_count = 8
+	assert_eq(settings.cloud_frame_count, 8, "cloud_frame_count should be configurable")
+
+func test_landing_dust_config_includes_cloud_settings() -> void:
+	var context := await _create_system_with_settings()
+	autofree_context(context)
+	var system: S_LandingParticlesSystem = context["system"]
+	var settings: RS_LandingParticlesSettings = context["settings"]
+	settings.use_cloud_animation = true
+	settings.cloud_frame_count = 4
+
+	var config := system._create_dust_config()
+	assert_eq(config.sprite_sheet_frames, 4, "Config should include cloud_frame_count")
+	assert_not_null(config.sprite_sheet_texture, "Config should include sprite sheet texture when use_cloud_animation is true")
