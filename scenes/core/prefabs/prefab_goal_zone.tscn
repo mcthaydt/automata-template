@@ -1,30 +1,69 @@
-[gd_scene format=3 uid="uid://behhuoexdtawd"]
+[gd_scene format=3]
 
-[ext_resource type="Script" uid="uid://bsni7mmk1pdiq" path="res://scripts/core/gameplay/inter_victory_zone.gd" id="1_controller"]
-[ext_resource type="Material" uid="uid://bhnn3psvefgpq" path="res://assets/core/materials/mat_fade_goal.tres" id="3_fade_material"]
-[ext_resource type="Resource" uid="uid://bj5s8vx63yumt" path="res://resources/core/interactions/victory/cfg_victory_default.tres" id="4_victory_config"]
+[ext_resource type="Script" path="res://scripts/core/gameplay/inter_victory_zone.gd" id="1_qstqo"]
+[ext_resource type="Resource" path="res://resources/core/interactions/victory/cfg_victory_default.tres" id="2_6xr0m"]
+[ext_resource type="Script" path="res://scripts/core/resources/ecs/rs_scene_trigger_settings.gd" id="3_hadmh"]
+[ext_resource type="Material" path="res://assets/core/materials/mat_fade_goal.tres" id="4_cbfex"]
+[ext_resource type="Script" path="res://scripts/core/gameplay/helpers/u_sparkle_animator.gd" id="5_stqnw"]
+[ext_resource type="Texture2D" path="res://assets/core/textures/tex_dust_puff.png" id="6_i6vc5"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_b3ofg"]
-shading_mode = 2
+[sub_resource type="Resource" id="Resource_hdm4o"]
+resource_local_to_scene = true
+script = ExtResource("3_hadmh")
+cyl_height = 2.5
+local_offset = Vector3(0, 1.25, 0)
+ignore_initial_overlap = false
+arm_delay_physics_frames = 1
 
-[sub_resource type="TextMesh" id="TextMesh_eyiog"]
-material = SubResource("StandardMaterial3D_b3ofg")
-text = ":)"
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vdbg2"]
+transparency = 1
+cull_mode = 2
+no_depth_test = true
+shading_mode = 0
+albedo_color = Color(0.97, 0.85, 0.24, 1)
+texture_filter = 0
+billboard_mode = 3
+billboard_keep_scale = true
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
 
-[node name="E_GoalZone" type="Node3D" unique_id=1687566861]
-script = ExtResource("1_controller")
-config = ExtResource("4_victory_config")
+[node name="E_GoalZone" type="Node3D" unique_id=1994759918]
+script = ExtResource("1_qstqo")
+config = ExtResource("2_6xr0m")
+settings = SubResource("Resource_hdm4o")
 visual_paths = Array[NodePath]([NodePath("Visual"), NodePath("Sparkles")])
 entity_id = &"goalzone"
 tags = Array[StringName]([&"objective", &"goal"])
 
-[node name="Visual" type="CSGCylinder3D" parent="." unique_id=916379116]
+[node name="Visual" type="CSGCylinder3D" parent="." unique_id=711483537]
 radius = 0.7910156
 height = 2.0715332
-material = ExtResource("3_fade_material")
+material = ExtResource("4_cbfex")
 
-[node name="Sparkles" type="CPUParticles3D" parent="." unique_id=371694099]
-amount = 80
-lifetime = 1.5
-preprocess = 0.5
-mesh = SubResource("TextMesh_eyiog")
+[node name="Sparkles" type="Node3D" parent="." unique_id=985782170]
+script = ExtResource("5_stqnw")
+
+[node name="Sparkle_0" type="Sprite3D" parent="Sparkles" unique_id=41681480]
+transform = Transform3D(0.04, 0, 0, 0, 0.04, 0, 0, 0, 0.04, -0.2, 0.4, -0.15)
+visible = false
+material_override = SubResource("StandardMaterial3D_vdbg2")
+billboard = 1
+texture_filter = 0
+texture = ExtResource("6_i6vc5")
+
+[node name="Sparkle_1" type="Sprite3D" parent="Sparkles" unique_id=992291144]
+transform = Transform3D(0.04, 0, 0, 0, 0.04, 0, 0, 0, 0.04, 0, 0.9, 0.1)
+visible = false
+material_override = SubResource("StandardMaterial3D_vdbg2")
+billboard = 1
+texture_filter = 0
+texture = ExtResource("6_i6vc5")
+
+[node name="Sparkle_2" type="Sprite3D" parent="Sparkles" unique_id=1596959795]
+transform = Transform3D(0.04, 0, 0, 0, 0.04, 0, 0, 0, 0.04, 0.2, 0.6, 0.1)
+visible = false
+material_override = SubResource("StandardMaterial3D_vdbg2")
+billboard = 1
+texture_filter = 0
+texture = ExtResource("6_i6vc5")

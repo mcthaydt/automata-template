@@ -1,11 +1,15 @@
 extends SceneTree
 
+const U_SPARKLE_ANIMATOR := preload("res://scripts/core/gameplay/helpers/u_sparkle_animator.gd")
+
 func _init() -> void:
 	print("Rebuilding scenes...")
 	_rebuild_prefab_player_body()
 	_rebuild_prefab_player()
+	_rebuild_prefab_goal_zone()
 	_rebuild_gameplay_demo_room()
 	_rebuild_tmpl_base_scene()
+	_rebuild_test_exterior()
 	print("Done. Scenes rebuilt.")
 	quit()
 
@@ -129,3 +133,121 @@ func _rebuild_tmpl_base_scene() -> void:
 	builder.build_managers()
 	builder.build_entities()
 	builder.save("res://scenes/core/templates/tmpl_base_scene.tscn")
+
+func _rebuild_prefab_goal_zone() -> void:
+	print("Building prefab_goal_zone...")
+	var builder := U_EditorPrefabBuilder.new()
+	builder.create_root("Node3D", "E_GoalZone")
+	builder.override_property(".", "script", preload("res://scripts/core/gameplay/inter_victory_zone.gd"))
+	builder.override_property(".", "config", preload("res://resources/core/interactions/victory/cfg_victory_default.tres"))
+	builder.override_property(".", "entity_id", &"goalzone")
+	builder.override_property(".", "tags", [&"objective", &"goal"])
+
+	var fade_material: Material = load("res://assets/core/materials/mat_fade_goal.tres")
+	builder.add_csg_cylinder("Visual", 0.7910156, 2.0715332, Color.GREEN)
+	builder.override_property("Visual", "material", fade_material)
+
+	var sparkle_parent := Node3D.new()
+	sparkle_parent.name = "Sparkles"
+	sparkle_parent.set_script(U_SPARKLE_ANIMATOR)
+	builder.add_child_to(".", sparkle_parent)
+
+	var sparkle_mat := _create_sparkle_material()
+	for i in 3:
+		var sprite := Sprite3D.new()
+		sprite.name = "Sparkle_%d" % i
+		sprite.texture = preload("res://assets/core/textures/tex_dust_puff.png")
+		sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+		sprite.material_override = sparkle_mat
+		sprite.visible = false
+		sprite.scale = Vector3.ONE * 0.04
+		sprite.position = Vector3(
+			[-0.2, 0.0, 0.2][i],
+			[0.4, 0.9, 0.6][i],
+			[-0.15, 0.1, 0.1][i]
+		)
+		builder.add_child_to("Sparkles", sprite)
+
+	builder.override_property(".", "visual_paths", [NodePath("Visual"), NodePath("Sparkles")])
+	builder.save("res://scenes/core/prefabs/prefab_goal_zone.tscn")
+
+func _create_sparkle_material() -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.no_depth_test = true
+	mat.cull_mode = 2
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	mat.billboard_keep_scale = true
+	mat.albedo_color = Color(0.97, 0.85, 0.24, 1.0)
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	return mat
+
+func _rebuild_test_exterior() -> void:
+	print("Rebuilding test_exterior Sparkles...")
+	var packed: PackedScene = load("res://tests/scenes/test_exterior.tscn") as PackedScene
+	if packed == null:
+		push_error("Failed to load test_exterior.tscn")
+		return
+	var instance := packed.instantiate(PackedScene.GEN_EDIT_STATE_MAIN) as Node3D
+	if instance == null:
+		push_error("Failed to instantiate test_exterior.tscn")
+		return
+
+	var goal := instance.get_node_or_null("Entities/E_FinalGoal") as Node3D
+	if goal == null:
+		push_error("E_FinalGoal not found in test_exterior")
+		instance.free()
+		return
+
+	var old_sparkles := goal.get_node_or_null("Sparkles")
+	if old_sparkles != null:
+		old_sparkles.get_parent().remove_child(old_sparkles)
+		old_sparkles.queue_free()
+
+	var sparkle_parent := Node3D.new()
+	sparkle_parent.name = "Sparkles"
+	sparkle_parent.set_script(U_SPARKLE_ANIMATOR)
+	goal.add_child(sparkle_parent)
+
+	var sparkle_mat := _create_sparkle_material()
+	for i in 3:
+		var sprite := Sprite3D.new()
+		sprite.name = "Sparkle_%d" % i
+		sprite.texture = preload("res://assets/core/textures/tex_dust_puff.png")
+		sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+		sprite.material_override = sparkle_mat
+		sprite.visible = false
+		sprite.scale = Vector3.ONE * 0.04
+		sprite.position = Vector3(
+			[-0.2, 0.0, 0.2][i],
+			[0.4, 0.9, 0.6][i],
+			[-0.15, 0.1, 0.1][i]
+		)
+		sparkle_parent.add_child(sprite)
+
+	_set_owner_recursive(sparkle_parent, instance)
+
+	_set_owner_recursive(instance, instance)
+	var new_packed := PackedScene.new()
+	var pack_result := new_packed.pack(instance)
+	if pack_result != OK:
+		push_error("Failed to pack test_exterior: %d" % pack_result)
+		instance.free()
+		return
+	var save_result := ResourceSaver.save(new_packed, "res://tests/scenes/test_exterior.tscn")
+	if save_result != OK:
+		push_error("Failed to save test_exterior: %d" % save_result)
+	else:
+		print("test_exterior Sparkles replaced successfully.")
+	instance.free()
+
+func _set_owner_recursive(node: Node, owner: Node) -> void:
+	if node != owner:
+		node.set_owner(owner)
+	if not node.get_scene_file_path().is_empty():
+		return
+	for child in node.get_children():
+		_set_owner_recursive(child, owner)
