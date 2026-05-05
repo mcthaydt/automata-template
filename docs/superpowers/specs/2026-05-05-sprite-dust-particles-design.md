@@ -1,155 +1,69 @@
-# Task H: GPU Particles → Billboarded Sprite Dust — Design Spec
+# Design: Landing Cloud-Expanding Particle
 
-Date: 2026-05-05
-Branch: mobile-fixes
+## Summary
 
-## Problem
+Replace the single-frame dust puff with a 4-frame cartoon smoke puff sprite sheet animation for landing particles. The effect triggers at the entity's landing position on the ground, playing through 4 frames of expanding cloud shapes before auto-cleaning up.
 
-`U_ParticleSpawner` creates `GPUParticles3D` with `ParticleProcessMaterial` for 3 gameplay events (spawn, jump, landing). GPU particles have:
-- A 2-frame deferred activation bug workaround (3 callback methods on every caller)
-- Ignore scene tree pause (requiring manual `speed_scale=0` pause handling in `M_SceneManager`)
-- GPU overhead on mobile/gl_compatibility renderer
-- Complex `ParticleProcessMaterial` configuration per effect
+## Visual Description
 
-The goal zone also uses 2 authored `CPUParticles3D` sparkle nodes that have similar issues.
+4-frame horizontal sprite sheet (128×32 total, 32×32 per frame). Cartoon smoke puff style: soft rounded shapes, light gray/white tones, clean pixel-art style. Frames show a progression from small tight puff to large dissipating cloud.
 
-## Solution
+## Asset Generation
 
-Replace `GPUParticles3D` with individually animated `Sprite3D` puffs using the existing billboard pattern from `triggered_interactable_controller.gd`. Each dust puff is a `Sprite3D` that:
-- Uses `BaseMaterial3D.BILLBOARD_PARTICLES` mode (billboard with scale preservation)
-- Has a soft circular puff texture (`tex_dust_puff.png`, 32×32, generated via PixelLab)
-- Animates via `Tween`: scale from 0 → max scale, then fade alpha to 0
-- Auto-cleans up via `Tween` callback → `queue_free()`
+Use `pixellab_create_object`:
+- **directions=1**
+- **n_frames=4**
+- **size=32**
+- **view="side"**
+- **description="cartoon smoke puff expanding, soft rounded shape, light gray, pixel art"**
 
-This eliminates the GPU init bug workaround, simplifies pause handling (Sprite3D respects scene tree pause by default), and reduces GPU overhead.
+After generation:
+1. Review the 4 candidate frames
+2. Download images and combine into a horizontal sprite sheet (128×32)
+3. Save as `assets/core/textures/tex_landing_cloud.png`
 
-## Architecture
+## Code Changes
 
-### U_DustSpawner (replaces U_ParticleSpawner)
+### U_DustSpawner
 
-New utility class `U_DustSpawner` replaces `U_ParticleSpawner`. API mirrors the existing `ParticleConfig` pattern but with dust-specific semantics:
+Add `sprite_sheet_frames: int = 0` to `DustConfig`.
 
-```gdscript
-class_name U_DustSpawner
+When `sprite_sheet_frames > 0`:
+- Create an `AnimatedSprite3D` node instead of `Sprite3D`
+- Load `tex_landing_cloud.png` as `SpriteFrames` atlas with `sprite_sheet_frames` horizontal frames
+- Set `playing = true`, `frame = 0`
+- On `animation_finished`, call `queue_free`
 
-class DustConfig:
-    var count: int = 10           # number of puffs (was emission_count)
-    var lifetime: float = 0.5    # puff lifetime in seconds
-    var scale: float = 0.3       # max puff scale in world units
-    var spread: float = 0.4      # random position offset radius
-    var drift: Vector3 = Vector3.UP  # drift direction/speed
-    var spawn_offset: Vector3 = Vector3.ZERO
+When `sprite_sheet_frames == 0`: keep existing `Sprite3D` + Tween behavior.
 
-func spawn_dust(position: Vector3, container: Node3D, config: DustConfig) -> void
-static func get_or_create_effects_container(tree: SceneTree) -> Node3D
-static func is_dust_enabled(tree: SceneTree) -> bool
-```
+### RS_LandingParticlesSettings
 
-**Key behavior of `spawn_dust()`:**
-- Creates `config.count` individual `Sprite3D` nodes
-- Each puff positioned at `position + config.spawn_offset` + random offset within `config.spread` radius
-- Each puff animated via `Tween`: scale 0 → `config.scale` over 30% of lifetime, then hold, then fade alpha 1 → 0 over last 50% of lifetime
-- Each puff drifts by `config.drift * lifetime`
-- Each puff auto-cleans up via `tween.finished → queue_free()`
-- Returns immediately (no deferred activation needed)
+Add:
+- `@export var use_cloud_animation: bool = true`
+- `@export var cloud_frame_count: int = 4`
 
-### Dust Puff Sprite Setup
+### S_LandingParticlesSystem
 
-Each `Sprite3D` puff:
-- `texture = preload("res://assets/core/textures/tex_dust_puff.png")`
-- `billboard = BaseMaterial3D.BILLBOARD_PARTICLES` (value 3)
-- Material: `transparency = ALPHA`, `shading_mode = UNSHADED`, `no_depth_test = true`, `cull_mode = DISABLED`
-- `expand_mode = IGNORE_SIZE`, `stretch_mode = STRETCH_SCALE`
-- `texture_filter = NEAREST` (matches BackgroundImage convention)
+Update `_create_dust_config()` to pass `cloud_frame_count` to `DustConfig` when `use_cloud_animation` is true.
 
-This mirrors the existing Sprite3D billboard pattern in `triggered_interactable_controller.gd`.
+## Integration
 
-### Settings Resources
+- Fully backward compatible — dust puffs without sprite sheet still work via existing Tween scale animation
+- Only landing particles affected; spawn and jump effects keep current behavior unless explicitly configured
+- No changes to VFX manager, scene manager, or state slice
 
-`RS_JumpParticlesSettings` and `RS_LandingParticlesSettings` rename particle-specific fields to dust-specific fields. The export properties change:
+## Testing
 
-| Old | New | Type | Default (Jump) | Default (Landing) |
-|-----|-----|------|---------|--------|
-| emission_count | count | int | 10 | 15 |
-| particle_lifetime | lifetime | float | 0.5 | 0.6 |
-| particle_scale | scale | float | 0.1 | 0.12 |
-| spread_angle | spread | float | 0.4 | 0.5 |
-| initial_velocity | drift_strength | float | 3.0 | 2.5 |
-| spawn_offset | spawn_offset | Vector3 | (0,-0.5,0) | (0,-0.5,0) |
-| particle_material | (removed) | — | — | — |
+- `test_dust_spawner.gd`: verify AnimatedSprite3D creation and cleanup when `sprite_sheet_frames > 0`
+- `test_landing_particles_system.gd`: verify new config fields propagate correctly
 
-`enabled` stays. A new `drift_direction: Vector3 = Vector3.UP` is added.
-
-The `.tres` resource files are recreated with new field names.
-
-### ECS Systems
-
-Three systems updated to use `U_DustSpawner` instead of `U_ParticleSpawner`:
-
-1. `S_SpawnParticlesSystem` → `S_SpawnDustSystem`
-2. `S_JumpParticlesSystem` → `S_JumpDustSystem`
-3. `S_LandingParticlesSystem` → `S_LandingDustSystem`
-
-Each:
-- Removes `_u_particle_spawner_activate_frame1/2` callback methods
-- Uses `U_DustSpawner.DustConfig` instead of `U_ParticleSpawner.ParticleConfig`
-- Returns `void` from `process_tick()` (no GPUParticles3D to return)
-
-### Goal Zone Sparkles
-
-Replace the 2 authored `CPUParticles3D` "Sparkles" nodes with a `Sprite3D`-based sparkle system:
-
-- In `prefab_goal_zone.tscn`, remove the `Sparkles` CPUParticles3D node
-- In the goal zone script, add a periodic sparkle effect: 2-3 `Sprite3D` puffs that pulse in scale and alpha on a timer (e.g., every 1.5 seconds, spawn a sparkle puff at a random position within the goal zone radius)
-- Same billboard material pattern as dust puffs
-
-### Pause/Visibility Compatibility
-
-**`M_SceneManager._set_particles_paused()`:** Remove the GPUParticles3D/CPUParticles3D collection logic. Sprite3D puffs respect `get_tree().paused` by default — no manual pause handling needed. Remove the method entirely, or leave a no-op stub if called from elsewhere.
-
-**`BaseVolumeController._apply_visual_visibility()`:** Remove the GPUParticles3D/CPUParticles3D emitting toggle. If volume controllers need to toggle dust visibility, add `Sprite3D` detection logic (find Sprite3D children named "DustPuff*" and toggle visibility).
-
-### Test Updates
-
-Replace `test_particle_spawner.gd` with `test_dust_spawner.gd`:
-- `DustConfig` default values test
-- `DustConfig` custom values test
-- `spawn_dust()` creates N Sprite3D nodes as children of container
-- Each Sprite3D has billboard material with correct properties
-- Each Sprite3D has Tween animation attached
-- Each Sprite3D positioned within spread radius of spawn point
-- Null container / null config early returns
-- `is_dust_enabled()` reads from VFX Redux state
-
-## Files Changed
+## Files Affected
 
 | File | Change |
 |------|--------|
-| `scripts/core/utils/u_particle_spawner.gd` | **Renamed** → `u_dust_spawner.gd`, full rewrite |
-| `scripts/core/ecs/systems/s_spawn_particles_system.gd` | **Renamed** → `s_spawn_dust_system.gd`, uses U_DustSpawner |
-| `scripts/core/ecs/systems/s_jump_particles_system.gd` | **Renamed** → `s_jump_dust_system.gd`, uses U_DustSpawner |
-| `scripts/core/ecs/systems/s_landing_particles_system.gd` | **Renamed** → `s_landing_dust_system.gd`, uses U_DustSpawner |
-| `scripts/core/resources/ecs/rs_jump_particles_settings.gd` | **Rewrite** with new field names |
-| `scripts/core/resources/ecs/rs_landing_particles_settings.gd` | **Rewrite** with new field names |
-| `resources/core/base_settings/gameplay/cfg_jump_particles_default.tres` | **Recreate** with new fields |
-| `resources/core/base_settings/gameplay/cfg_landing_particles_default.tres` | **Recreate** with new fields |
-| `scripts/core/managers/m_scene_manager.gd` | Remove particle pause logic |
-| `scripts/core/gameplay/base_volume_controller.gd` | Remove GPU/CPU particle emitting toggle |
-| `scenes/core/prefabs/prefab_goal_zone.tscn` | Remove CPUParticles3D Sparkles |
-| `scripts/core/gameplay/goal_zone.gd` (or similar) | Add Sprite3D sparkle timer |
-| `tests/unit/utils/test_particle_spawner.gd` | **Renamed** → `test_dust_spawner.gd`, full rewrite |
-| `tests/scenes/test_exterior.tscn` | Remove CPUParticles3D Sparkles |
-| `assets/core/textures/tex_dust_puff.png` | **New** — 32×32 soft circular puff |
-
-## Out of Scope
-
-- No animation spritesheet — each puff is a single static texture, animated via Tween
-- No dust pooling/object reuse — create and queue_free is sufficient for low counts (10-15 puffs per event)
-- No shader-based effects — purely Sprite3D + Tween
-- No changes to `BaseEventVFXSystem` contract (still uses `requests` array pattern)
-
-## Backward Compatibility
-
-`U_ParticleSpawner` is removed entirely. All callers are updated to use `U_DustSpawner`. The `.tres` resource files are recreated with new field names, so old resource files will not load correctly — they must be regenerated.
-
-The `U_ParticleSpawner.activate_particles_frame2/activate_particles_final` static methods and the `_u_particle_spawner_activate_frame1/2` callback protocol are removed. Systems no longer need deferred activation methods.
+| `assets/core/textures/tex_landing_cloud.png` | **New** — sprite sheet asset |
+| `scripts/core/utils/u_dust_spawner.gd` | Add sprite-sheet path to `spawn_dust()` and `_animate_puff()` |
+| `scripts/core/resources/ecs/rs_landing_particles_settings.gd` | Add `use_cloud_animation` and `cloud_frame_count` |
+| `scripts/core/ecs/systems/s_landing_particles_system.gd` | Pass new config fields to dust config |
+| `tests/unit/utils/test_dust_spawner.gd` | Add sprite-sheet tests |
+| `tests/unit/ecs/systems/test_landing_particles_system.gd` | Add config field tests |
