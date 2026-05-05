@@ -179,3 +179,12 @@ func test_settings_drift_direction_configurable() -> void:
 	var settings := SETTINGS.new()
 	settings.drift_direction = Vector3(1, 0, 0)
 	assert_eq(settings.drift_direction, Vector3(1, 0, 0), "Drift direction should be configurable")
+
+func test_default_jump_dust_is_low_and_horizontal() -> void:
+	var settings := SETTINGS.new()
+	assert_false(settings.enabled, "Jump takeoff dust should be disabled by default; landing dust carries the feedback")
+	assert_true(settings.count <= 6, "Jump dust should be a small single puff, not a dense burst")
+	assert_true(settings.lifetime <= 0.35, "Jump dust should dissipate quickly")
+	assert_true(settings.spread <= 0.3, "Jump dust should stay close to the feet")
+	assert_true(settings.drift_strength <= 1.2, "Jump dust should not shoot upward")
+	assert_true(settings.drift_direction.y <= 0.0, "Jump dust should drift along/down from the ground, not upward")

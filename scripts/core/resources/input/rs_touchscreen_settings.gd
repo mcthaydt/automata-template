@@ -11,7 +11,7 @@ class_name RS_TouchscreenSettings
 @export_range(0.5, 2.0, 0.1) var virtual_joystick_size: float = 0.8
 @export_range(0.0, 1.0, 0.01) var joystick_deadzone: float = 0.15
 @export_range(0.0, 1.0, 0.05) var virtual_joystick_opacity: float = 0.7
-@export_range(0.5, 2.0, 0.1) var button_size: float = 1.1
+@export_range(0.5, 2.0, 0.1) var button_size: float = 1.0
 @export_range(0.0, 1.0, 0.05) var button_opacity: float = 0.8
 @export_range(0.1, 5.0, 0.1) var look_drag_sensitivity: float = 1.0
 

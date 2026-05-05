@@ -31,6 +31,11 @@ func test_press_and_release_toggle_state_and_signals() -> void:
 	assert_false(button.is_pressed(), "Button should reset after release")
 	assert_eq(released_count[0], 1, "Release signal should fire once")
 
+func test_default_touch_target_is_large_enough_for_mobile() -> void:
+	var button := await _create_button()
+	assert_true(button.size.x >= 80.0, "Virtual button touch target should be visibly larger than the old 72px default")
+	assert_true(button.size.y >= 80.0, "Virtual button touch target should be visibly larger than the old 72px default")
+
 func test_release_requires_matching_touch_id() -> void:
 	var button := await _create_button()
 	var release_calls: Array = [0]
@@ -236,6 +241,19 @@ func test_visual_feedback_updates_on_press_and_release() -> void:
 	button._input(release)
 	assert_color_eq(button.modulate, Color(1, 1, 1, 1), "Release should restore default modulate")
 	assert_vector_almost_eq(button.scale, Vector2.ONE, 0.001, "Release should restore default scale")
+
+func test_visual_feedback_preserves_configured_scale_after_release() -> void:
+	var button := await _create_button()
+	button.scale = Vector2.ONE * 1.3
+	var configured_scale := button.scale
+
+	var press := _make_touch_event(14, _point_inside(button), true)
+	button._input(press)
+	assert_false(button.scale.is_equal_approx(configured_scale), "Press should still provide scale feedback")
+
+	var release := _make_touch_event(14, press.position, false)
+	button._input(release)
+	assert_vector_almost_eq(button.scale, configured_scale, 0.001, "Release should restore configured control size")
 
 func test_pause_button_toggles_navigation_pause() -> void:
 	var store := await _create_state_store()

@@ -10,10 +10,11 @@ func test_dust_config_defaults() -> void:
 	assert_eq(config.spread, 0.4)
 	assert_eq(config.drift, Vector3.UP)
 	assert_eq(config.spawn_offset, Vector3.ZERO)
+	assert_eq(config.vertical_spread_scale, 1.0)
 
 func test_dust_config_custom_values() -> void:
 	var config := DUST_SPAWNER.DustConfig.new(
-		20, 1.0, 0.5, 0.8, Vector3(1, 2, 3), Vector3(0, -1, 0)
+		20, 1.0, 0.5, 0.8, Vector3(1, 2, 3), Vector3(0, -1, 0), 0.1
 	)
 	assert_eq(config.count, 20)
 	assert_eq(config.lifetime, 1.0)
@@ -21,6 +22,22 @@ func test_dust_config_custom_values() -> void:
 	assert_eq(config.spread, 0.8)
 	assert_eq(config.drift, Vector3(1, 2, 3))
 	assert_eq(config.spawn_offset, Vector3(0, -1, 0))
+	assert_eq(config.vertical_spread_scale, 0.1)
+
+func test_ground_hugging_dust_limits_vertical_scatter() -> void:
+	seed(1)
+	var spawner := DUST_SPAWNER.new()
+	var config := DUST_SPAWNER.DustConfig.new(12, 0.5, 0.3, 0.8, Vector3.ZERO, Vector3.ZERO, 0.05)
+	var container := Node3D.new()
+	add_child(container)
+	autofree(container)
+
+	spawner.spawn_dust(Vector3.ZERO, container, config)
+
+	for child in container.get_children():
+		var puff := child as Sprite3D
+		assert_not_null(puff, "Puff should be Sprite3D")
+		assert_true(absf(puff.global_position.y) <= 0.041, "Ground-hugging dust should barely scatter vertically")
 
 func test_spawn_dust_creates_sprite3d_nodes() -> void:
 	var spawner := DUST_SPAWNER.new()

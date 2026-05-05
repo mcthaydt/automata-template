@@ -12,4 +12,4 @@ class_name RS_LandingParticlesSettings
 @export var spread: float = 0.5
 @export var drift_strength: float = 2.5
 @export var spawn_offset: Vector3 = Vector3(0, -0.5, 0)
-@export var drift_direction: Vector3 = Vector3.UP
+@export var drift_direction: Vector3 = Vector3(0, -0.2, 0)

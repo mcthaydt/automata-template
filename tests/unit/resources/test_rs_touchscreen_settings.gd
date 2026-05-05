@@ -6,7 +6,7 @@ func test_defaults_match_spec() -> void:
 	assert_almost_eq(settings.virtual_joystick_size, 0.8, 0.0001, "Default joystick size should be 0.8")
 	assert_almost_eq(settings.joystick_deadzone, 0.15, 0.0001, "Default joystick deadzone should be 0.15")
 	assert_almost_eq(settings.virtual_joystick_opacity, 0.7, 0.0001, "Default joystick opacity should be 0.7")
-	assert_almost_eq(settings.button_size, 1.1, 0.0001, "Default button size should be 1.1")
+	assert_almost_eq(settings.button_size, 1.0, 0.0001, "Default button size should be 1.0")
 	assert_almost_eq(settings.button_opacity, 0.8, 0.0001, "Default button opacity should be 0.8")
 	assert_almost_eq(settings.look_drag_sensitivity, 1.0, 0.0001, "Default look drag sensitivity should be 1.0")
 

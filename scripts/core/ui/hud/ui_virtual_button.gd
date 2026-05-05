@@ -15,7 +15,7 @@ enum ActionType {
 @export var can_reposition: bool = false
 @export var control_name: StringName = StringName()
 
-const DEFAULT_SIZE := Vector2(72, 72)
+const DEFAULT_SIZE := Vector2(80, 80)
 const PRESSED_SCALE := Vector2(0.95, 0.95)
 const RELEASED_SCALE := Vector2.ONE
 const PRESSED_MODULATE := Color(0.8, 0.8, 0.8, 1.0)
@@ -48,6 +48,8 @@ var _is_pressed: bool = false
 var _is_repositioning: bool = false
 var _touch_offset_from_control: Vector2 = Vector2.ZERO
 var _store: I_StateStore = null
+var _visual_base_scale: Vector2 = Vector2.ONE
+var _visual_base_modulate: Color = Color(1, 1, 1, 1)
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -102,6 +104,8 @@ func _handle_drag(event: InputEventScreenDrag) -> void:
 		_release(true)
 
 func _press() -> void:
+	_visual_base_scale = scale
+	_visual_base_modulate = modulate
 	_is_pressed = true
 	_apply_pressed_visuals()
 	_bridge_on_press()
@@ -125,7 +129,7 @@ func _release(was_canceled: bool = false) -> void:
 		_save_position()
 
 func _ensure_default_size() -> void:
-	if size.is_zero_approx():
+	if size.x < DEFAULT_SIZE.x or size.y < DEFAULT_SIZE.y:
 		size = DEFAULT_SIZE
 	custom_minimum_size = DEFAULT_SIZE
 
@@ -159,12 +163,22 @@ func _refresh_icon() -> void:
 	_load_icon()
 
 func _apply_pressed_visuals() -> void:
-	modulate = PRESSED_MODULATE
-	scale = PRESSED_SCALE
+	modulate = Color(
+		_visual_base_modulate.r * PRESSED_MODULATE.r,
+		_visual_base_modulate.g * PRESSED_MODULATE.g,
+		_visual_base_modulate.b * PRESSED_MODULATE.b,
+		_visual_base_modulate.a
+	)
+	scale = Vector2(_visual_base_scale.x * PRESSED_SCALE.x, _visual_base_scale.y * PRESSED_SCALE.y)
 
 func _apply_release_visuals() -> void:
-	modulate = RELEASED_MODULATE
-	scale = RELEASED_SCALE
+	modulate = Color(
+		_visual_base_modulate.r * RELEASED_MODULATE.r,
+		_visual_base_modulate.g * RELEASED_MODULATE.g,
+		_visual_base_modulate.b * RELEASED_MODULATE.b,
+		_visual_base_modulate.a * RELEASED_MODULATE.a
+	)
+	scale = Vector2(_visual_base_scale.x * RELEASED_SCALE.x, _visual_base_scale.y * RELEASED_SCALE.y)
 
 func _is_touch_inside(touch_position: Vector2) -> bool:
 	return get_global_rect().has_point(touch_position)

@@ -347,7 +347,7 @@ func _apply_touchscreen_settings(settings: Dictionary) -> void:
 		_joystick.modulate.a = clampf(joystick_alpha, 0.0, 1.0)
 		_joystick.deadzone = float(settings.get("joystick_deadzone", _default_touchscreen_settings.joystick_deadzone))
 
-	var button_scale: float = float(settings.get("button_size", 1.0))
+	var button_scale: float = float(settings.get("button_size", _default_touchscreen_settings.button_size))
 	var button_alpha: float = float(settings.get("button_opacity", 0.8))
 	var custom_sizes: Dictionary = {}
 	var custom_opacities: Dictionary = {}

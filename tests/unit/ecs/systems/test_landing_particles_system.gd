@@ -179,3 +179,16 @@ func test_settings_drift_direction_configurable() -> void:
 	var settings := SETTINGS.new()
 	settings.drift_direction = Vector3(1, 0, 0)
 	assert_eq(settings.drift_direction, Vector3(1, 0, 0), "Drift direction should be configurable")
+
+func test_default_landing_dust_does_not_drift_upward() -> void:
+	var settings := SETTINGS.new()
+	assert_true(settings.drift_direction.y <= 0.0, "Landing dust should spread along/down from the ground, not upward")
+
+func test_landing_dust_config_is_ground_hugging() -> void:
+	var context := await _create_system_with_settings()
+	autofree_context(context)
+	var system: S_LandingParticlesSystem = context["system"]
+
+	var config := system._create_dust_config()
+
+	assert_true(config.vertical_spread_scale <= 0.1, "Landing dust should use mostly horizontal scatter")

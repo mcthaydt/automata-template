@@ -18,6 +18,7 @@ class DustConfig:
 	var spread: float = 0.4
 	var drift: Vector3 = Vector3.UP
 	var spawn_offset: Vector3 = Vector3.ZERO
+	var vertical_spread_scale: float = 1.0
 
 	func _init(
 		p_count: int = 10,
@@ -25,7 +26,8 @@ class DustConfig:
 		p_scale: float = 0.3,
 		p_spread: float = 0.4,
 		p_drift: Vector3 = Vector3.UP,
-		p_spawn_offset: Vector3 = Vector3.ZERO
+		p_spawn_offset: Vector3 = Vector3.ZERO,
+		p_vertical_spread_scale: float = 1.0
 	) -> void:
 		count = p_count
 		lifetime = p_lifetime
@@ -33,6 +35,7 @@ class DustConfig:
 		spread = p_spread
 		drift = p_drift
 		spawn_offset = p_spawn_offset
+		vertical_spread_scale = maxf(p_vertical_spread_scale, 0.0)
 
 static func _get_default_material() -> StandardMaterial3D:
 	if _default_material != null:
@@ -67,7 +70,7 @@ func spawn_dust(position: Vector3, container: Node3D, config: DustConfig) -> voi
 		container.add_child(puff)
 		puff.global_position = position + config.spawn_offset + Vector3(
 			(randf() - 0.5) * 2 * config.spread,
-			(randf() - 0.5) * 2 * config.spread,
+			(randf() - 0.5) * 2 * config.spread * config.vertical_spread_scale,
 			(randf() - 0.5) * 2 * config.spread
 		)
 		_animate_puff(puff, config)

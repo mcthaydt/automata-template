@@ -53,5 +53,6 @@ func _create_dust_config() -> DUST_SPAWNER.DustConfig:
 		settings.scale,
 		settings.spread,
 		settings.drift_direction * settings.drift_strength,
-		settings.spawn_offset
+		settings.spawn_offset,
+		0.05
 	)
