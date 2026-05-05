@@ -166,19 +166,6 @@ func test_transition_queue_high_priority() -> void:
 	# Since we can't easily inspect queue order, we verify the system doesn't crash
 	assert_true(true, "Queue should handle mixed priorities")
 
-## Test particle speed cache prune handles freed nodes
-func test_prune_particle_speed_cache_skips_freed_nodes() -> void:
-	var particle := GPUParticles3D.new()
-	add_child_autofree(particle)
-	_manager._particle_original_speeds[particle] = 1.0
-
-	particle.queue_free()
-	await get_tree().process_frame
-
-	_manager._prune_particle_speed_cache()
-
-	assert_eq(_manager._particle_original_speeds.size(), 0, "Freed particle keys should be removed from cache")
-
 ## Test get_current_scene returns current scene ID
 func test_get_current_scene() -> void:
 	# Set up initial scene in state

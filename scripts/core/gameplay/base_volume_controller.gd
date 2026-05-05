@@ -183,10 +183,6 @@ func _apply_visual_visibility(enabled: bool) -> void:
 			(node as CanvasItem).visible = enabled
 		elif node is Node3D:
 			(node as Node3D).visible = enabled
-		if node is GPUParticles3D:
-			(node as GPUParticles3D).emitting = enabled
-		elif node is CPUParticles3D:
-			(node as CPUParticles3D).emitting = enabled
 
 func _get_settings() -> RS_SceneTriggerSettings:
 	if _cached_settings != null:

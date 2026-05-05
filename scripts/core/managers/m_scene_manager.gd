@@ -151,7 +151,6 @@ var _scene_loader := U_SCENE_LOADER.new()
 var _overlay_helper := U_OVERLAY_STACK_MANAGER.new()
 var _transition_orchestrator := U_TRANSITION_ORCHESTRATOR.new()
 var _spawned_scene_roots: Dictionary = {} # instance_id -> WeakRef
-var _particle_original_speeds: Dictionary = {}
 
 ## Scene type handlers (T137a: Phase 10B-3)
 ## Maps SceneType enum values to handler instances
@@ -264,7 +263,7 @@ func _request_navigation_reconciliation() -> void:
 		Callable(_scene_loader, "load_scene"),
 		_ui_overlay_stack,
 		_store,
-		Callable(self , "_update_particles_and_focus"),
+		func(): pass,
 		get_tree().root,
 		Callable(self , "_get_transition_queue_state"),
 		Callable(self , "_set_overlay_reconciliation_pending")
@@ -669,7 +668,7 @@ func push_overlay(scene_id: StringName, force: bool = false) -> void:
 		Callable(_scene_loader, "load_scene"),
 		_ui_overlay_stack,
 		_store,
-		Callable(self , "_update_particles_and_focus")
+		func(): pass
 	)
 
 ## Pop top overlay from UIOverlayStack
@@ -678,7 +677,7 @@ func pop_overlay() -> void:
 	_overlay_helper.pop_overlay(
 		_ui_overlay_stack,
 		_store,
-		Callable(self , "_update_particles_and_focus"),
+		func(): pass,
 		viewport
 	)
 
@@ -725,7 +724,7 @@ func push_overlay_with_return(overlay_id: StringName) -> void:
 		Callable(_scene_loader, "load_scene"),
 		_ui_overlay_stack,
 		_store,
-		Callable(self , "_update_particles_and_focus"),
+		func(): pass,
 		viewport
 	)
 
@@ -745,7 +744,7 @@ func pop_overlay_with_return() -> void:
 		Callable(_scene_loader, "load_scene"),
 		_ui_overlay_stack,
 		_store,
-		Callable(self , "_update_particles_and_focus"),
+		func(): pass,
 		viewport,
 		deferred_push_overlay_for_return
 	)
@@ -763,22 +762,6 @@ func _get_top_overlay_id() -> StringName:
 ## Configure overlay scene for pause handling
 func _configure_overlay_scene(overlay_scene: Node, scene_id: StringName) -> void:
 	_overlay_helper.configure_overlay_scene(overlay_scene, scene_id)
-
-## Update particles and focus based on overlay stack
-##
-## Phase 2 (T022): Refactored to remove pause/cursor authority.
-## M_TimeManager is now the sole authority for get_tree().paused and cursor state.
-## This method only handles GPU particle workaround (particles ignore SceneTree pause).
-func _update_particles_and_focus() -> void:
-	if _ui_overlay_stack == null:
-		return
-
-	var overlay_count: int = _ui_overlay_stack.get_child_count()
-	var should_pause: bool = overlay_count > 0
-
-	# Ensure particles in gameplay respect pause (GPU particles ignore SceneTree pause)
-	# This is a workaround - M_TimeManager controls actual pause via get_tree().paused
-	_set_particles_paused(should_pause)
 
 func has_scene_been_spawned(scene_root: Node) -> bool:
 	_prune_spawned_scene_roots()
@@ -804,47 +787,6 @@ func _prune_spawned_scene_roots() -> void:
 	for id in stale:
 		_spawned_scene_roots.erase(id)
 
-## Recursively collect particle nodes and set speed_scale to pause/resume simulation
-func _set_particles_paused(should_pause: bool) -> void:
-	if _active_scene_container == null:
-		return
-	_prune_spawned_scene_roots()
-
-	var particles: Array = []
-	_collect_particle_nodes(_active_scene_container, particles)
-	_prune_particle_speed_cache()
-
-	for p in particles:
-		# Store original speed once
-		if should_pause:
-			if not _particle_original_speeds.has(p):
-				var current: Variant = p.get("speed_scale")
-				var orig_speed: float = (current as float) if current is float else 1.0
-				_particle_original_speeds[p] = orig_speed
-			p.set("speed_scale", 0.0)
-		else:
-			# Restore on resume
-			if _particle_original_speeds.has(p):
-				var orig: Variant = _particle_original_speeds.get(p, 1.0)
-				p.set("speed_scale", float(orig) if orig is float else 1.0)
-				_particle_original_speeds.erase(p)
-
-func _collect_particle_nodes(node: Node, out: Array) -> void:
-	# Check for both 2D and 3D particle node types
-	if node is GPUParticles3D or node is CPUParticles3D or node is GPUParticles2D or node is CPUParticles2D:
-		out.append(node)
-
-	for child in node.get_children():
-		_collect_particle_nodes(child, out)
-
-func _prune_particle_speed_cache() -> void:
-	var stale: Array = []
-	for particle_variant in _particle_original_speeds.keys():
-		if not is_instance_valid(particle_variant):
-			stale.append(particle_variant)
-	for key in stale:
-		_particle_original_speeds.erase(key)
-
 func _on_slice_updated(slice_name: StringName, slice_state: Dictionary) -> void:
 	if slice_name != StringName("navigation"):
 		return
@@ -858,7 +800,7 @@ func _on_slice_updated(slice_name: StringName, slice_state: Dictionary) -> void:
 		Callable(_scene_loader, "load_scene"),
 		_ui_overlay_stack,
 		_store,
-		Callable(self , "_update_particles_and_focus"),
+		func(): pass,
 		get_tree().root,
 		Callable(self , "_get_transition_queue_state"),
 		Callable(self , "_set_overlay_reconciliation_pending")
@@ -897,7 +839,7 @@ func _reconcile_overlay_stack(desired_overlay_ids: Array[StringName], current_st
 		Callable(_scene_loader, "load_scene"),
 		_ui_overlay_stack,
 		_store,
-		Callable(self , "_update_particles_and_focus"),
+		func(): pass,
 		viewport,
 		Callable(self , "_get_transition_queue_state"),
 		Callable(self , "_set_overlay_reconciliation_pending")
@@ -910,7 +852,7 @@ func _reconcile_pending_navigation_overlays() -> void:
 		Callable(_scene_loader, "load_scene"),
 		_ui_overlay_stack,
 		_store,
-		Callable(self , "_update_particles_and_focus"),
+		func(): pass,
 		get_tree().root,
 		Callable(self , "_get_transition_queue_state"),
 		Callable(self , "_set_overlay_reconciliation_pending")
@@ -933,7 +875,6 @@ func _sync_overlay_stack_state() -> void:
 	var desired_stack: Array[StringName] = _get_overlay_scene_ids_from_ui()
 
 	if _overlay_stacks_match(current_stack, desired_stack):
-		_update_particles_and_focus()
 		return
 
 	if current_stack.size() > 0:
@@ -941,8 +882,6 @@ func _sync_overlay_stack_state() -> void:
 
 	for scene_id in desired_stack:
 		_store.dispatch(U_SCENE_ACTIONS.push_overlay(scene_id))
-
-	_update_particles_and_focus()
 
 ## Collect overlay scene IDs from UIOverlayStack metadata
 func _get_overlay_scene_ids_from_ui() -> Array[StringName]:
