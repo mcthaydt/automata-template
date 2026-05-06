@@ -202,14 +202,20 @@ func add_button_row(
 ) -> U_SettingsTabBuilder:
 	var row := HBoxContainer.new()
 	row.name = "ActionButtons"
+	row.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_current_parent.add_child(row)
-	_theme_map.append({"control": row, "role": &"compact_row"})
+	_theme_map.append({"control": row, "role": &"action_row"})
 	_add_optional_button(row, apply_key, apply_callback, apply_fallback, "ApplyButton")
 	_add_optional_button(row, cancel_key, cancel_callback, cancel_fallback, "CancelButton")
 	_add_optional_button(row, reset_key, reset_callback, reset_fallback, "ResetButton")
 	return self
 func build() -> Control:
-	apply_theme_tokens(U_UI_THEME_BUILDER.active_config)
+	var config: Resource = U_UI_THEME_BUILDER.active_config
+	if not (config is RS_UI_THEME_CONFIG):
+		var default_config := RS_UI_THEME_CONFIG.new()
+		default_config.ensure_runtime_defaults()
+		config = default_config
+	apply_theme_tokens(config)
 	localize_labels()
 	if not _focusable_controls.is_empty():
 		U_FOCUS_CONFIGURATOR.configure_vertical_focus(_focusable_controls, true)

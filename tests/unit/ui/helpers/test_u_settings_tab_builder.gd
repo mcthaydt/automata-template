@@ -448,6 +448,22 @@ func test_add_slider_uses_fallback_text_when_key_missing() -> void:
 	assert_true(label.get_parent() is HBoxContainer, "Slider label should be in a row")
 
 
+func test_action_buttons_row_has_comfortable_spacing_and_padding_role():
+	var builder_script := _get_builder_script()
+	if builder_script == null:
+		return
+	var tab := VBoxContainer.new()
+	add_child_autofree(tab)
+	var builder = builder_script.new(tab)
+	builder.add_button_row(Callable(), Callable(), Callable(), &"common.apply", &"common.cancel", &"common.reset", "Apply", "Cancel", "Reset")
+	builder.build()
+
+	var row := tab.find_child("ActionButtons", true, false) as HBoxContainer
+	assert_not_null(row, "Builder should create action row")
+	assert_eq(row.get_theme_constant("separation"), 12, "Action row should use default button spacing")
+	assert_eq(row.size_flags_horizontal, Control.SIZE_SHRINK_BEGIN, "Action row should keep compact button group width")
+
+
 func test_toggle_controls_do_not_expand_to_full_row_width():
 	var builder_script := _get_builder_script()
 	if builder_script == null:
