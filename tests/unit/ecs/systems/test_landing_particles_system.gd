@@ -120,9 +120,9 @@ func test_process_tick_clears_spawn_requests_after_processing() -> void:
 
 	assert_eq(system.spawn_requests.size(), 0, "Requests should be cleared after processing")
 
-func test_default_spawn_offset_is_down() -> void:
+func test_default_spawn_offset_places_cloud_above_floor() -> void:
 	var settings = SETTINGS.new()
-	assert_eq(settings.spawn_offset, Vector3(0, -0.5, 0), "Default spawn_offset should be Vector3(0, -0.5, 0)")
+	assert_true(settings.spawn_offset.y > 0.0, "Default spawn_offset should place the cloud above the floor")
 
 func test_multiple_spawn_requests_all_queued() -> void:
 	var context := await _create_system_with_settings()
@@ -222,3 +222,24 @@ func test_landing_dust_config_includes_cloud_settings() -> void:
 	var config := system._create_dust_config()
 	assert_eq(config.sprite_sheet_frames, 4, "Config should include cloud_frame_count")
 	assert_not_null(config.sprite_sheet_texture, "Config should include sprite sheet texture when use_cloud_animation is true")
+
+func test_landing_cloud_uses_single_sprite_sheet_animation_by_default() -> void:
+	var context := await _create_system_with_settings()
+	autofree_context(context)
+	var system: S_LandingParticlesSystem = context["system"]
+
+	var config := system._create_dust_config()
+
+	assert_eq(config.count, 1, "One landing event should create one sprite-sheet cloud")
+	assert_eq(config.sprite_sheet_frames, 4, "Landing cloud should use the default sprite sheet animation")
+	assert_not_null(config.sprite_sheet_texture, "Landing cloud should use the sprite sheet texture")
+
+func test_landing_cloud_uses_landing_cloud_texture_resource() -> void:
+	var context := await _create_system_with_settings()
+	autofree_context(context)
+	var system: S_LandingParticlesSystem = context["system"]
+
+	var config := system._create_dust_config()
+
+	assert_not_null(config.sprite_sheet_texture, "Landing cloud should include a sprite sheet texture")
+	assert_eq(config.sprite_sheet_texture.resource_path, "res://assets/core/textures/tex_landing_cloud.png")
