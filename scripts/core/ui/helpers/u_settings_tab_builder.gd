@@ -206,12 +206,9 @@ func build() -> Control:
 	localize_labels()
 	if not _focusable_controls.is_empty():
 		U_FOCUS_CONFIGURATOR.configure_vertical_focus(_focusable_controls, true)
-		_bind_motion_to_focusable()
+		for control: Control in _focusable_controls:
+			U_UIMotion.bind_interactive(control, CFG_MOTION_BUTTON_DEFAULT)
 	return _tab
-func _bind_motion_to_focusable() -> void:
-	for control: Control in _focusable_controls:
-		U_UIMotion.bind_interactive(control, CFG_MOTION_BUTTON_DEFAULT)
-
 func localize_labels() -> void:
 	for control in _label_keys.keys():
 		var fallback: String = _label_fallbacks.get(control, str(_label_keys[control]))
