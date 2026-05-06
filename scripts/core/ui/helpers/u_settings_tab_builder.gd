@@ -5,6 +5,7 @@ const U_LOCALIZATION_UTILS := preload("res://scripts/core/utils/localization/u_l
 const U_UI_THEME_ROLE_UTILS := preload("res://scripts/core/ui/helpers/u_ui_theme_role_utils.gd")
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
 const RS_UI_THEME_CONFIG := preload("res://scripts/core/resources/ui/rs_ui_theme_config.gd")
+const CFG_MOTION_BUTTON_DEFAULT := preload("res://resources/core/ui/motions/cfg_motion_button_default.tres")
 var _tab: Control = null
 var _current_parent: Control = null
 var _label_keys: Dictionary = {}
@@ -206,7 +207,12 @@ func build() -> Control:
 	localize_labels()
 	if not _focusable_controls.is_empty():
 		U_FOCUS_CONFIGURATOR.configure_vertical_focus(_focusable_controls, true)
+		_bind_motion_to_focusable()
 	return _tab
+func _bind_motion_to_focusable() -> void:
+	for control: Control in _focusable_controls:
+		U_UIMotion.bind_interactive(control, CFG_MOTION_BUTTON_DEFAULT)
+
 func localize_labels() -> void:
 	for control in _label_keys.keys():
 		var fallback: String = _label_fallbacks.get(control, str(_label_keys[control]))
