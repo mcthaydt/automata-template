@@ -169,11 +169,6 @@ func _attach_close_button_to_chrome() -> void:
 		_panel_chrome.add_child(_close_button_margin)
 	if _close_button.get_parent() != _close_button_margin:
 		_close_button.reparent(_close_button_margin)
-	_close_button.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_close_button.offset_left = 0.0
-	_close_button.offset_top = 0.0
-	_close_button.offset_right = 0.0
-	_close_button.offset_bottom = 0.0
 	_panel_chrome.move_child(_close_button_margin, _panel_chrome.get_child_count() - 1)
 
 func _create_menu_background() -> void:

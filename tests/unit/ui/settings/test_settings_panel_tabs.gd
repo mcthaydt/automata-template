@@ -218,7 +218,21 @@ func test_shoulder_prompts_are_inline_with_tab_bar():
 	assert_true(prompt_row.size_flags_horizontal == Control.SIZE_SHRINK_END, "Prompt row should stay compact at the right side")
 	panel.queue_free()
 
-func test_standalone_menu_background_is_subtle_inside_panel():
+func test_tab_header_spacer_is_in_panel_chrome_between_tabs_and_prompts():
+	var panel := await _create_panel()
+	var chrome := panel.find_child("PanelChrome", true, false) as HBoxContainer
+	var spacer := panel.find_child("TabHeaderSpacer", true, false) as Control
+	var tab_bar := panel.find_child("TabBar", true, false) as HBoxContainer
+	var prompt_row := panel.find_child("ShoulderPromptRow", true, false) as HBoxContainer
+
+	assert_not_null(spacer, "TabHeaderSpacer should exist in the scene tree")
+	assert_eq(spacer.get_parent(), chrome, "TabHeaderSpacer should be a direct child of PanelChrome")
+	assert_eq(spacer.size_flags_horizontal, Control.SIZE_EXPAND_FILL, "TabHeaderSpacer should fill remaining space to push prompts right")
+	assert_true(tab_bar.get_index() < spacer.get_index(), "Spacer should come after the tab bar")
+	assert_true(spacer.get_index() < prompt_row.get_index(), "Spacer should come before the prompt row")
+	panel.queue_free()
+
+func test_panel_surface_alpha_is_boosted_to_readable_floor():
 	var config := RS_UIThemeConfig.new()
 	config.panel_section_opacity = 0.78
 	config.ensure_runtime_defaults()
