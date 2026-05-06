@@ -181,6 +181,7 @@ static func _apply_text_colors(
 	var danger_color: Color = config.danger
 	var slider_fill: Color = config.slider_fill_color
 	var section_header_col: Color = config.section_header_color
+	var bg_base: Color = config.bg_base
 
 	if has_palette:
 		var typed_palette := palette as RS_UI_COLOR_PALETTE
@@ -193,6 +194,7 @@ static func _apply_text_colors(
 		success_color = typed_palette.success
 		warning_color = typed_palette.warning
 		danger_color = typed_palette.danger
+		bg_base = typed_palette.background
 
 	for type_name: StringName in _TEXT_COLOR_TYPES:
 		if preserve_existing and theme.has_color(&"font_color", type_name):
