@@ -18,7 +18,6 @@ const UI_GamepadSettingsTab := preload("res://scripts/core/ui/settings/ui_gamepa
 const UI_KeyboardMouseSettingsTab := preload("res://scripts/core/ui/settings/ui_keyboard_mouse_settings_tab.gd")
 const UI_TouchscreenSettingsTab := preload("res://scripts/core/ui/settings/ui_touchscreen_settings_tab.gd")
 const CFG_MOTION_BUTTON_DEFAULT := preload("res://resources/core/ui/motions/cfg_motion_button_default.tres")
-const U_UI_MOTION := preload("res://scripts/core/ui/utils/u_ui_motion.gd")
 
 enum TabId {
 	DISPLAY,
