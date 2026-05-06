@@ -93,6 +93,31 @@ func test_display_builder_applies_theme_tokens() -> void:
 	assert_true(window_size_label.get_theme_color(&"font_color").is_equal_approx(config.text_secondary), "Field labels should use secondary color")
 
 
+func test_display_tab_uses_compact_natural_toggles():
+	_instantiate_tab()
+
+	var vsync := _tab.find_child("VSyncToggle", true, false) as CheckBox
+	var post_processing := _tab.find_child("PostProcessingToggle", true, false) as CheckBox
+	var high_contrast := _tab.find_child("HighContrastToggle", true, false) as CheckBox
+
+	assert_eq(vsync.size_flags_horizontal, Control.SIZE_SHRINK_BEGIN, "VSync toggle should not stretch as a full-width bar")
+	assert_eq(post_processing.size_flags_horizontal, Control.SIZE_SHRINK_BEGIN, "Post-processing toggle should not stretch as a full-width bar")
+	assert_eq(high_contrast.size_flags_horizontal, Control.SIZE_SHRINK_BEGIN, "High contrast toggle should not stretch as a full-width bar")
+
+
+func test_display_tab_field_controls_have_consistent_widths():
+	_instantiate_tab()
+
+	var window_size := _tab.find_child("WindowSizeOption", true, false) as OptionButton
+	var window_mode := _tab.find_child("WindowModeOption", true, false) as OptionButton
+	var quality := _tab.find_child("QualityPresetOption", true, false) as OptionButton
+	var color_blind := _tab.find_child("ColorBlindModeOption", true, false) as OptionButton
+
+	assert_eq(window_size.custom_minimum_size.x, window_mode.custom_minimum_size.x, "Display dropdown widths should match")
+	assert_eq(quality.custom_minimum_size.x, color_blind.custom_minimum_size.x, "Display dropdown widths should match")
+	assert_true(window_size.custom_minimum_size.x >= 320.0, "Display dropdowns should be readable but not full-width")
+
+
 func _instantiate_tab() -> void:
 	_tab = TAB_SCENE.instantiate() as UI_DisplaySettingsTab
 	add_child_autofree(_tab)
