@@ -557,6 +557,9 @@ func _apply_layout_tokens() -> void:
 		panel_style.content_margin_right = float(typed_config.margin_section)
 		panel_style.content_margin_top = float(typed_config.margin_section)
 		panel_style.content_margin_bottom = float(typed_config.margin_section)
+		var panel_bg := panel_style.bg_color
+		panel_bg.a = maxf(panel_bg.a, 0.94)
+		panel_style.bg_color = panel_bg
 		panel.add_theme_stylebox_override("panel", panel_style)
 	var vbox := get_node_or_null("CenterContainer/Panel/VBox") as VBoxContainer
 	if vbox != null:

@@ -218,6 +218,21 @@ func test_shoulder_prompts_are_inline_with_tab_bar():
 	assert_true(prompt_row.size_flags_horizontal == Control.SIZE_SHRINK_END, "Prompt row should stay compact at the right side")
 	panel.queue_free()
 
+func test_standalone_menu_background_is_subtle_inside_panel():
+	var config := RS_UIThemeConfig.new()
+	config.panel_section_opacity = 0.78
+	config.ensure_runtime_defaults()
+	U_UIThemeBuilder.active_config = config
+
+	var panel := await _create_panel()
+	panel._apply_layout_tokens()
+	var shell := panel.get_node("CenterContainer/Panel") as PanelContainer
+	var stylebox := shell.get_theme_stylebox("panel") as StyleBoxFlat
+
+	assert_true(stylebox.bg_color.a >= 0.92, "Settings panel surface should be opaque enough for readable forms")
+	panel.queue_free()
+	U_UIThemeBuilder.active_config = null
+
 func _create_panel() -> UI_SettingsPanel:
 	var scene := load(SCENE_PATH) as PackedScene
 	var panel := scene.instantiate() as UI_SettingsPanel
