@@ -4,7 +4,7 @@
 [ext_resource type="Resource" uid="uid://b72010a71rlh7" path="res://resources/core/ui/motions/cfg_motion_fade_slide.tres" id="2_motion_set"]
 [ext_resource type="Script" uid="uid://cvi7rh32jhp6d" path="res://scripts/core/ui/helpers/u_localization_root.gd" id="localization_root"]
 [ext_resource type="Script" uid="uid://dfg7i5kfpjwg1" path="res://scripts/core/ui/helpers/u_ui_scale_root.gd" id="ui_scale_root"]
-[ext_resource type="Texture2D" uid="uid://ca61o1l8i8twh" path="res://assets/core/textures/bg_menu_main.png" id="bg_menu_main"]
+[ext_resource type="Texture2D" uid="uid://ca61o1l8i8twh" path="res://assets/core/textures/tex_bg_menu_main.png" id="bg_menu_main"]
 
 [node name="Victory" type="Control" unique_id=1385982108]
 layout_mode = 3

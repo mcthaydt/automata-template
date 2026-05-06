@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://cptlteoj6rse6" path="res://scripts/core/ui/hud/ui_loading_screen.gd" id="loading_screen_script"]
 [ext_resource type="Script" uid="uid://cvi7rh32jhp6d" path="res://scripts/core/ui/helpers/u_localization_root.gd" id="localization_root"]
 [ext_resource type="Script" uid="uid://dfg7i5kfpjwg1" path="res://scripts/core/ui/helpers/u_ui_scale_root.gd" id="ui_scale_root"]
-[ext_resource type="Texture2D" uid="uid://vww8tq24tmfu" path="res://assets/core/textures/bg_menu_pause.png" id="bg_menu_pause"]
+[ext_resource type="Texture2D" uid="uid://vww8tq24tmfu" path="res://assets/core/textures/tex_bg_menu_pause.png" id="bg_menu_pause"]
 
 [node name="LoadingScreen" type="Control" unique_id=1622492159]
 process_mode = 3

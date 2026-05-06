@@ -219,8 +219,8 @@ func test_comprehensive_state_persistence_flow() -> void:
 	assert_eq(gameplay1.get("jump_pressed"), true, "Jump should be held")
 
 	# Transition to interior (simulate area transition)
-	_manager.transition_to_scene(StringName("bar"), "fade")
-	await wait_physics_frames(15)
+	_manager.transition_to_scene(StringName("scene1"), "instant")
+	await wait_physics_frames(2)
 
 	# Verify state persists in new scene
 	var state2: Dictionary = _store.get_state()

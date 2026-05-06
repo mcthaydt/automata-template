@@ -33,6 +33,7 @@ func test_create_root_produces_gameplay_root() -> void:
 		return
 	builder.call("create_root")
 	var root: Variant = builder.call("build")
+	autofree(root as Node)
 	assert_not_null(root, "build() must return root")
 	assert_true(root is Node3D, "Root must be Node3D")
 	assert_eq((root as Node).name, "GameplayRoot", "Root must be named GameplayRoot")
@@ -45,6 +46,7 @@ func test_scene_objects_contains_walls_floor_ceiling() -> void:
 	builder.call("create_root")
 	builder.call("build_scene_objects")
 	var root: Node = builder.call("build") as Node
+	autofree(root)
 	var so: Node = root.get_node_or_null("SceneObjects")
 	assert_not_null(so, "SceneObjects group must exist")
 	assert_not_null(so.get_node_or_null("SO_Floor"), "Floor must exist")
@@ -61,6 +63,7 @@ func test_scene_objects_follow_2_5d_units_and_scale_contract() -> void:
 	builder.call("create_root")
 	builder.call("build_scene_objects")
 	var root: Node = builder.call("build") as Node
+	autofree(root)
 	var so: Node = root.get_node_or_null("SceneObjects")
 	assert_not_null(so, "SceneObjects group must exist")
 	if so == null:
@@ -97,6 +100,7 @@ func test_environment_has_world_environment_and_light() -> void:
 	builder.call("create_root")
 	builder.call("build_environment")
 	var root: Node = builder.call("build") as Node
+	autofree(root)
 	var env: Node = root.get_node_or_null("Environment")
 	assert_not_null(env, "Environment group must exist")
 	var we: Node = env.get_node_or_null("Env_WorldEnvironment")
@@ -114,6 +118,7 @@ func test_systems_have_all_four_groups() -> void:
 	builder.call("create_root")
 	builder.call("build_systems")
 	var root: Node = builder.call("build") as Node
+	autofree(root)
 	var systems: Node = root.get_node_or_null("Systems")
 	assert_not_null(systems, "Systems group must exist")
 	assert_not_null(systems.get_node_or_null("Core"), "Core systems must exist")
@@ -128,6 +133,7 @@ func test_core_systems_contain_input_vcam_wallcutout() -> void:
 	builder.call("create_root")
 	builder.call("build_systems")
 	var root: Node = builder.call("build") as Node
+	autofree(root)
 	var core: Node = root.get_node_or_null("Systems/Core")
 	assert_not_null(core, "Core systems must exist")
 	assert_not_null(core.get_node_or_null("S_InputSystem"), "InputSystem must exist")
@@ -142,6 +148,7 @@ func test_movement_systems_contain_all_five() -> void:
 	builder.call("create_root")
 	builder.call("build_systems")
 	var root: Node = builder.call("build") as Node
+	autofree(root)
 	var movement: Node = root.get_node_or_null("Systems/Movement")
 	assert_not_null(movement, "Movement systems must exist")
 	assert_not_null(movement.get_node_or_null("S_MovementSystem"), "MovementSystem must exist")
@@ -157,6 +164,7 @@ func test_managers_contain_ecs_manager() -> void:
 	builder.call("create_root")
 	builder.call("build_managers")
 	var root: Node = builder.call("build") as Node
+	autofree(root)
 	var managers: Node = root.get_node_or_null("Managers")
 	assert_not_null(managers, "Managers group must exist")
 	assert_not_null(managers.get_node_or_null("M_ECSManager"), "ECSManager must exist")
@@ -168,6 +176,7 @@ func test_entities_contain_player_camera_and_spawn_points() -> void:
 	builder.call("create_root")
 	builder.call("build_entities")
 	var root: Node = builder.call("build") as Node
+	autofree(root)
 	var entities: Node = root.get_node_or_null("Entities")
 	assert_not_null(entities, "Entities group must exist")
 	assert_not_null(entities.get_node_or_null("E_Player"), "Player entity must exist")
@@ -185,6 +194,7 @@ func test_save_writes_tscn_file() -> void:
 	builder.call("build_systems")
 	builder.call("build_managers")
 	builder.call("build_entities")
+	autofree(builder.call("build") as Node)
 	var save_path: String = "res://tests/unit/editors/_test_tmpl_base_scene.tscn"
 	var result: Variant = builder.call("save", save_path)
 	assert_true(result, "save() must return true")
