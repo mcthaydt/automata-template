@@ -20,6 +20,7 @@ const UI_TouchscreenSettingsTab := preload("res://scripts/core/ui/settings/ui_to
 const CFG_MOTION_BUTTON_DEFAULT := preload("res://resources/core/ui/motions/cfg_motion_button_default.tres")
 const CFG_MOTION_FADE_SLIDE := preload("res://resources/core/ui/motions/cfg_motion_fade_slide.tres")
 const U_UI_PALETTE_RESOLVER := preload("res://scripts/core/ui/utils/u_ui_palette_resolver.gd")
+const U_SETTINGS_SELECTORS := preload("res://scripts/core/state/selectors/u_settings_selectors.gd")
 
 enum TabId {
 	DISPLAY,
@@ -57,6 +58,7 @@ var _tab_contents: Dictionary = {}
 var _last_device_type: int = -1
 var _consume_next_nav: bool = false
 var _close_button: Button = null
+var _current_palette: Resource = null
 
 @onready var _tab_bar: HBoxContainer = $CenterContainer/Panel/VBox/TabBar
 @onready var _separator: HSeparator = $CenterContainer/Panel/VBox/HSeparator
@@ -71,6 +73,7 @@ func _ready() -> void:
 	_update_tab_visibility()
 	switch_to_tab(TabId.DISPLAY)
 	_bind_tab_bar_motion()
+	_subscribe_accessibility()
 
 func get_active_tab_id() -> TabId:
 	return _active_tab as TabId
@@ -330,8 +333,35 @@ func _on_store_ready(store: M_StateStore) -> void:
 	store.slice_updated.connect(_on_slice_updated)
 	_update_tab_visibility()
 
+func _subscribe_accessibility() -> void:
+	var store := get_store()
+	if store == null:
+		return
+
+func _rebuild_theme_from_state() -> void:
+	var store := get_store()
+	if store == null:
+		return
+	var state: Dictionary = store.get_state()
+	var accessibility: Dictionary = U_SETTINGS_SELECTORS.get_accessibility_settings(state)
+	var color_blind_mode: String = accessibility.get("color_blind_mode", "normal")
+	var high_contrast: bool = accessibility.get("high_contrast", false)
+	var palette := U_UI_PALETTE_RESOLVER.resolve_palette(color_blind_mode, high_contrast)
+	_current_palette = palette
+	_rebuild_theme(palette)
+
+func _rebuild_theme(palette: Resource) -> void:
+	var config: Resource = U_UI_THEME_BUILDER.active_config
+	if not (config is RS_UI_THEME_CONFIG):
+		return
+	var typed_config := config as RS_UI_THEME_CONFIG
+	typed_config.ensure_runtime_defaults()
+	self.theme = U_UI_THEME_BUILDER.build_theme(typed_config, null, palette)
+
 func _on_slice_updated(_slice_name: StringName, _slice_state: Dictionary) -> void:
 	_update_tab_visibility()
+	if _slice_name == StringName("accessibility"):
+		_rebuild_theme_from_state()
 
 func _on_locale_changed(_locale: StringName) -> void:
 	_localize_tab_buttons()
