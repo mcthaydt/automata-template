@@ -1,8 +1,6 @@
 extends RefCounted
 class_name U_UIPaletteResolver
 
-const RS_UI_COLOR_PALETTE := preload("res://scripts/core/resources/ui/rs_ui_color_palette.gd")
-
 const PALETTE_NORMAL := preload("res://resources/core/ui_themes/cfg_palette_normal.tres")
 const PALETTE_DEUTERANOPIA := preload("res://resources/core/ui_themes/cfg_palette_deuteranopia.tres")
 const PALETTE_DEUTERANOPIA_HC := preload("res://resources/core/ui_themes/cfg_palette_deuteranopia_high_contrast.tres")
