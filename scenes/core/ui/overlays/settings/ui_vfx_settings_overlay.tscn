@@ -1,0 +1,163 @@
+[gd_scene format=3 uid="uid://1q1kn3435l12"]
+
+[ext_resource type="Script" uid="uid://bgfcvrql55x4q" path="res://scripts/core/ui/settings/ui_vfx_settings_overlay.gd" id="1"]
+[ext_resource type="Resource" uid="uid://b72010a71rlh7" path="res://resources/core/ui/motions/cfg_motion_fade_slide.tres" id="2_motion_set"]
+[ext_resource type="Script" uid="uid://cvi7rh32jhp6d" path="res://scripts/core/ui/helpers/u_localization_root.gd" id="localization_root"]
+[ext_resource type="Script" uid="uid://dfg7i5kfpjwg1" path="res://scripts/core/ui/helpers/u_ui_scale_root.gd" id="ui_scale_root"]
+
+[node name="VFXSettingsOverlay" type="Control" unique_id=1933874596]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+background_color = Color(0.114, 0.114, 0.129, 0.5)
+motion_target_path = NodePath("CenterContainer/Panel")
+background_shader_preset = "scanline_drift"
+background_shader_intensity = 0.24
+background_shader_speed = 0.8
+motion_set = ExtResource("2_motion_set")
+
+[node name="UIScaleRoot" type="Node" parent="." unique_id=731155615]
+script = ExtResource("ui_scale_root")
+
+[node name="LocalizationRoot" type="Node" parent="." unique_id=847634339]
+script = ExtResource("localization_root")
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1959435959]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -180.0
+offset_right = 260.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="CenterContainer" unique_id=531968714]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel" unique_id=169655934]
+custom_minimum_size = Vector2(520, 360)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Title" type="Label" parent="CenterContainer/Panel/VBox" unique_id=479097257]
+layout_mode = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HSeparator1" type="HSeparator" parent="CenterContainer/Panel/VBox" unique_id=1956785349]
+layout_mode = 2
+
+[node name="ShakeEnabledRow" type="HBoxContainer" parent="CenterContainer/Panel/VBox" unique_id=1918265323]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ShakeEnabledLabel" type="Label" parent="CenterContainer/Panel/VBox/ShakeEnabledRow" unique_id=621040662]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ShakeEnabledToggle" type="CheckButton" parent="CenterContainer/Panel/VBox/ShakeEnabledRow" unique_id=567053578]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+button_pressed = true
+
+[node name="ShakeIntensityRow" type="HBoxContainer" parent="CenterContainer/Panel/VBox" unique_id=58024301]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="IntensityLabel" type="Label" parent="CenterContainer/Panel/VBox/ShakeIntensityRow" unique_id=613434608]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="IntensitySlider" type="HSlider" parent="CenterContainer/Panel/VBox/ShakeIntensityRow" unique_id=1031488075]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 2.0
+step = 0.1
+value = 1.0
+
+[node name="IntensityPercentage" type="Label" parent="CenterContainer/Panel/VBox/ShakeIntensityRow" unique_id=1337498857]
+unique_name_in_owner = true
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 1
+
+[node name="HSeparator2" type="HSeparator" parent="CenterContainer/Panel/VBox" unique_id=969023436]
+layout_mode = 2
+
+[node name="FlashEnabledRow" type="HBoxContainer" parent="CenterContainer/Panel/VBox" unique_id=105966182]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FlashEnabledLabel" type="Label" parent="CenterContainer/Panel/VBox/FlashEnabledRow" unique_id=1997847511]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FlashEnabledToggle" type="CheckButton" parent="CenterContainer/Panel/VBox/FlashEnabledRow" unique_id=630126435]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+button_pressed = true
+
+[node name="ParticlesEnabledRow" type="HBoxContainer" parent="CenterContainer/Panel/VBox" unique_id=125171345]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ParticlesEnabledLabel" type="Label" parent="CenterContainer/Panel/VBox/ParticlesEnabledRow" unique_id=1557170091]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ParticlesEnabledToggle" type="CheckButton" parent="CenterContainer/Panel/VBox/ParticlesEnabledRow" unique_id=1201343904]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+button_pressed = true
+
+[node name="SilhouetteEnabledRow" type="HBoxContainer" parent="CenterContainer/Panel/VBox" unique_id=2001137001]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SilhouetteEnabledLabel" type="Label" parent="CenterContainer/Panel/VBox/SilhouetteEnabledRow" unique_id=1948180139]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SilhouetteEnabledToggle" type="CheckButton" parent="CenterContainer/Panel/VBox/SilhouetteEnabledRow" unique_id=1864562238]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+button_pressed = true
+
+[node name="Spacer" type="Control" parent="CenterContainer/Panel/VBox" unique_id=393290215]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ButtonRow" type="HBoxContainer" parent="CenterContainer/Panel/VBox" unique_id=378023102]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="CancelButton" type="Button" parent="CenterContainer/Panel/VBox/ButtonRow" unique_id=231636240]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ResetButton" type="Button" parent="CenterContainer/Panel/VBox/ButtonRow" unique_id=1298362725]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ApplyButton" type="Button" parent="CenterContainer/Panel/VBox/ButtonRow" unique_id=1039263468]
+unique_name_in_owner = true
+layout_mode = 2
