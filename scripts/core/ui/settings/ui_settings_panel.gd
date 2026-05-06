@@ -73,7 +73,6 @@ func _ready() -> void:
 	_update_tab_visibility()
 	switch_to_tab(TabId.DISPLAY)
 	_bind_tab_bar_motion()
-	_subscribe_accessibility()
 
 func get_active_tab_id() -> TabId:
 	return _active_tab as TabId
@@ -332,11 +331,6 @@ func _on_store_ready(store: M_StateStore) -> void:
 		return
 	store.slice_updated.connect(_on_slice_updated)
 	_update_tab_visibility()
-
-func _subscribe_accessibility() -> void:
-	var store := get_store()
-	if store == null:
-		return
 
 func _rebuild_theme_from_state() -> void:
 	var store := get_store()

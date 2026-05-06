@@ -180,7 +180,6 @@ static func _apply_text_colors(
 	var danger_color: Color = config.danger
 	var slider_fill: Color = config.slider_fill_color
 	var section_header_col: Color = config.section_header_color
-	var bg_base: Color = config.bg_base
 
 	if has_palette:
 		var typed_palette := palette as RS_UI_COLOR_PALETTE
@@ -193,7 +192,6 @@ static func _apply_text_colors(
 		success_color = typed_palette.success
 		warning_color = typed_palette.warning
 		danger_color = typed_palette.danger
-		bg_base = typed_palette.background
 
 	for type_name: StringName in _TEXT_COLOR_TYPES:
 		if preserve_existing and theme.has_color(&"font_color", type_name):
@@ -204,10 +202,6 @@ static func _apply_text_colors(
 	_set_color_if_allowed(theme, &"font_pressed_color", &"Button", text_color, preserve_existing)
 	_set_color_if_allowed(theme, &"font_hover_color", &"Button", text_color, preserve_existing)
 	_set_color_if_allowed(theme, &"font_focus_color", &"Button", text_color, preserve_existing)
-
-	if has_palette:
-		theme.set_color(&"font_color", &"Button", text_color)
-		theme.set_color(&"font_color", &"Label", text_color)
 
 static func _set_stylebox(theme: Theme, name: StringName, type_name: StringName, stylebox: StyleBox) -> void:
 	if stylebox == null:
