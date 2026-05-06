@@ -18,6 +18,8 @@ const UI_GamepadSettingsTab := preload("res://scripts/core/ui/settings/ui_gamepa
 const UI_KeyboardMouseSettingsTab := preload("res://scripts/core/ui/settings/ui_keyboard_mouse_settings_tab.gd")
 const UI_TouchscreenSettingsTab := preload("res://scripts/core/ui/settings/ui_touchscreen_settings_tab.gd")
 const CFG_MOTION_BUTTON_DEFAULT := preload("res://resources/core/ui/motions/cfg_motion_button_default.tres")
+const CFG_MOTION_FADE_SLIDE := preload("res://resources/core/ui/motions/cfg_motion_fade_slide.tres")
+const U_UI_PALETTE_RESOLVER := preload("res://scripts/core/ui/utils/u_ui_palette_resolver.gd")
 
 enum TabId {
 	DISPLAY,
@@ -62,11 +64,13 @@ var _close_button: Button = null
 
 func _ready() -> void:
 	super._ready()
+	_apply_base_theme()
 	_create_close_button()
 	_build_tab_bar()
 	_create_tab_contents()
 	_update_tab_visibility()
 	switch_to_tab(TabId.DISPLAY)
+	_bind_tab_bar_motion()
 
 func get_active_tab_id() -> TabId:
 	return _active_tab as TabId
@@ -84,6 +88,15 @@ func switch_to_tab(tab_id: TabId) -> void:
 	var first_focusable: Control = _find_first_focusable_in_tab(tab_id)
 	if first_focusable != null:
 		first_focusable.grab_focus()
+
+func _apply_base_theme() -> void:
+	var config: Resource = U_UI_THEME_BUILDER.active_config
+	if not (config is RS_UI_THEME_CONFIG):
+		return
+	var typed_config := config as RS_UI_THEME_CONFIG
+	typed_config.ensure_runtime_defaults()
+	self.theme = U_UI_THEME_BUILDER.build_theme(typed_config)
+	motion_set = CFG_MOTION_FADE_SLIDE
 
 func _create_close_button() -> void:
 	_close_button = Button.new()
@@ -220,6 +233,13 @@ func _update_tab_visibility(state: Dictionary = {}) -> void:
 	if _active_tab < 0 or _is_tab_hidden(_active_tab as TabId):
 		_snap_to_first_visible_tab()
 	_configure_focus_neighbors()
+
+func _bind_tab_bar_motion() -> void:
+	for tab_key: int in _tab_buttons:
+		var entry: Dictionary = _tab_buttons[tab_key]
+		var button: Button = entry.button as Button
+		if button != null:
+			U_UIMotion.bind_interactive(button, CFG_MOTION_BUTTON_DEFAULT)
 
 func _configure_focus_neighbors() -> void:
 	var visible_buttons: Array[Control] = []
