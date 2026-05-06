@@ -205,9 +205,9 @@ func add_button_row(
 	row.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_current_parent.add_child(row)
 	_theme_map.append({"control": row, "role": &"action_row"})
-	_add_optional_button(row, apply_key, apply_callback, apply_fallback, "ApplyButton")
-	_add_optional_button(row, cancel_key, cancel_callback, cancel_fallback, "CancelButton")
-	_add_optional_button(row, reset_key, reset_callback, reset_fallback, "ResetButton")
+	_add_optional_button(row, apply_key, apply_callback, apply_fallback, "ApplyButton", &"action_primary")
+	_add_optional_button(row, cancel_key, cancel_callback, cancel_fallback, "CancelButton", &"action")
+	_add_optional_button(row, reset_key, reset_callback, reset_fallback, "ResetButton", &"action_ghost")
 	return self
 func build() -> Control:
 	var config: Resource = U_UI_THEME_BUILDER.active_config
@@ -250,7 +250,7 @@ func _add_label(key: StringName, parent: Control, fallback: String = "") -> Labe
 	if fallback != "":
 		_label_fallbacks[label] = fallback
 	return label
-func _add_button(parent: Control, key: StringName, callback: Callable, fallback: String = "") -> Button:
+func _add_button(parent: Control, key: StringName, callback: Callable, fallback: String = "", role: StringName = &"action") -> Button:
 	var button := Button.new()
 	var fb: String = fallback if fallback != "" else str(key)
 	button.text = _localize(key, fb)
@@ -258,14 +258,14 @@ func _add_button(parent: Control, key: StringName, callback: Callable, fallback:
 	_label_keys[button] = key
 	if fallback != "":
 		_label_fallbacks[button] = fallback
-	_theme_map.append({"control": button, "role": &"action"})
+	_theme_map.append({"control": button, "role": role})
 	_focusable_controls.append(button)
 	_connect(button.pressed, callback)
 	return button
-func _add_optional_button(parent: Control, key: StringName, callback: Callable, fallback: String, button_name: String) -> Button:
+func _add_optional_button(parent: Control, key: StringName, callback: Callable, fallback: String, button_name: String, role: StringName = &"action") -> Button:
 	if key == &"" and fallback == "" and not callback.is_valid():
 		return null
-	var button := _add_button(parent, key, callback, fallback)
+	var button := _add_button(parent, key, callback, fallback, role)
 	button.name = button_name
 	return button
 func _register_field(label: Label, control: Control) -> void:

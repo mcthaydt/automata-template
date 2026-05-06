@@ -25,7 +25,6 @@ const LABEL_POST_PROCESSING_PRESET_KEY := &"settings.display.label.post_processi
 const LABEL_UI_SCALE_KEY := &"settings.display.label.ui_scale"
 const LABEL_COLOR_BLIND_MODE_KEY := &"settings.display.label.color_blind_mode"
 const LABEL_HIGH_CONTRAST_KEY := &"settings.display.label.high_contrast"
-const LABEL_TOGGLE_ENABLED_KEY := &"settings.display.label.enabled"
 
 const TOOLTIP_WINDOW_SIZE_KEY := &"settings.display.tooltip.window_size"
 const TOOLTIP_WINDOW_MODE_KEY := &"settings.display.tooltip.window_mode"
@@ -725,17 +724,6 @@ func _localize_labels() -> void:
 	if _builder != null:
 		_builder.localize_labels()
 
-	var enabled_text: String = U_LOCALIZATION_UTILS.localize_with_fallback(LABEL_TOGGLE_ENABLED_KEY, "Enabled")
-	var vsync_toggle := _get_vsync_toggle()
-	if vsync_toggle != null:
-		vsync_toggle.text = enabled_text
-	var post_processing_toggle := _get_post_processing_toggle()
-	if post_processing_toggle != null:
-		post_processing_toggle.text = enabled_text
-	var high_contrast_toggle := _get_high_contrast_toggle()
-	if high_contrast_toggle != null:
-		high_contrast_toggle.text = enabled_text
-
 	var cancel_button := _get_cancel_button()
 	if cancel_button != null:
 		cancel_button.text = U_LOCALIZATION_UTILS.localize_with_fallback(&"common.cancel", "Cancel")
@@ -829,7 +817,6 @@ func _configure_focus_neighbors() -> void:
 		[_get_window_size_option(), _get_window_mode_option()],
 		[_get_vsync_toggle(), _get_quality_preset_option()],
 		[_get_post_processing_toggle(), _get_post_processing_preset_option()],
-		[_get_color_blind_mode_option(), _get_high_contrast_toggle()],
 	]
 	for pair in pairs:
 		var left: Control = pair[0]

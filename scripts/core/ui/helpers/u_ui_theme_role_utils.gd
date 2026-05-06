@@ -76,6 +76,49 @@ static func apply_settings_role(entry: Dictionary, control: Control, config: RS_
 			control.add_theme_color_override(&"font_color", config.text_secondary)
 		&"field_control", &"action":
 			control.add_theme_font_size_override(&"font_size", config.section_header)
+		&"action_primary":
+			control.add_theme_font_size_override(&"font_size", config.section_header)
+			var n := config.button_normal.duplicate(true) as StyleBoxFlat
+			n.bg_color = config.accent_primary
+			n.border_color = config.accent_primary
+			control.add_theme_stylebox_override(&"normal", n)
+			var h := config.button_hover.duplicate(true) as StyleBoxFlat
+			h.bg_color = config.accent_hover
+			h.border_color = config.accent_hover
+			control.add_theme_stylebox_override(&"hover", h)
+			var p := config.button_pressed.duplicate(true) as StyleBoxFlat
+			p.bg_color = config.accent_pressed
+			p.border_color = config.accent_pressed
+			control.add_theme_stylebox_override(&"pressed", p)
+			var f := config.button_focus.duplicate(true) as StyleBoxFlat
+			f.bg_color = config.accent_primary
+			f.border_color = config.accent_focus
+			control.add_theme_stylebox_override(&"focus", f)
+			var dark := Color(0.06, 0.06, 0.07, 1.0)
+			control.add_theme_color_override(&"font_color", dark)
+			control.add_theme_color_override(&"font_hover_color", dark)
+			control.add_theme_color_override(&"font_pressed_color", dark)
+			control.add_theme_color_override(&"font_focus_color", dark)
+		&"action_ghost":
+			control.add_theme_font_size_override(&"font_size", config.section_header)
+			var gn := config.button_normal.duplicate(true) as StyleBoxFlat
+			gn.bg_color = Color(config.bg_panel, 0.0)
+			gn.border_color = config.bg_panel_light
+			control.add_theme_stylebox_override(&"normal", gn)
+			var gh := config.button_hover.duplicate(true) as StyleBoxFlat
+			gh.bg_color = config.bg_panel_light
+			gh.border_color = config.bg_panel_light
+			control.add_theme_stylebox_override(&"hover", gh)
+			var gp := gh.duplicate(true) as StyleBoxFlat
+			gp.bg_color = config.bg_surface
+			control.add_theme_stylebox_override(&"pressed", gp)
+			var gf := config.button_focus.duplicate(true) as StyleBoxFlat
+			gf.bg_color = Color(config.bg_panel, 0.0)
+			gf.border_color = config.accent_focus
+			control.add_theme_stylebox_override(&"focus", gf)
+			control.add_theme_color_override(&"font_color", config.text_secondary)
+			control.add_theme_color_override(&"font_hover_color", config.text_primary)
+			control.add_theme_color_override(&"font_pressed_color", config.text_primary)
 		&"value_label":
 			control.add_theme_font_size_override(&"font_size", config.body_small)
 			control.add_theme_color_override(&"font_color", config.text_secondary)

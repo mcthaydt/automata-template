@@ -242,7 +242,7 @@ translations = {
 "settings.display.section.accessibility": "Accessibility",
 "settings.display.section.graphics": "Graphics",
 "settings.display.section.post_processing": "Post-Processing",
-"settings.display.section.ui": "UI",
+"settings.display.section.ui": "Interface",
 "settings.display.title": "Display Settings",
 "settings.display.tooltip.post_processing_preset": "Intensity level for post-processing effects (Film Grain, Dither).",
 "settings.display.tooltip.ui_scale": "Scales the UI size.",

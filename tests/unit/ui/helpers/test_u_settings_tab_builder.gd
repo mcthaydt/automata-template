@@ -495,6 +495,37 @@ func test_dropdown_controls_use_consistent_field_width():
 	assert_eq(dropdown.custom_minimum_size.x, 360.0, "Dropdowns should have stable field width")
 
 
+func test_action_buttons_have_distinct_theme_roles() -> void:
+	var builder_script := _get_builder_script()
+	if builder_script == null:
+		return
+	var tab := VBoxContainer.new()
+	add_child_autofree(tab)
+	var builder = builder_script.new(tab)
+	builder.add_button_row(
+		_on_apply_pressed,
+		_on_cancel_pressed,
+		_on_reset_pressed
+	).build()
+
+	var apply_btn := _find_button_by_name(tab, "ApplyButton")
+	var cancel_btn := _find_button_by_name(tab, "CancelButton")
+	var reset_btn := _find_button_by_name(tab, "ResetButton")
+
+	assert_not_null(apply_btn, "ApplyButton should exist")
+	assert_not_null(cancel_btn, "CancelButton should exist")
+	assert_not_null(reset_btn, "ResetButton should exist")
+
+	assert_true(
+		apply_btn.get_theme_stylebox(&"normal") != cancel_btn.get_theme_stylebox(&"normal"),
+		"ApplyButton should have a different normal stylebox than CancelButton"
+	)
+	assert_true(
+		reset_btn.get_theme_color(&"font_color") != cancel_btn.get_theme_color(&"font_color"),
+		"ResetButton font color should differ from CancelButton"
+	)
+
+
 func _find_button_by_name(node: Node, name: String) -> Button:
 	if node is Button and node.name == name:
 		return node as Button
