@@ -93,6 +93,19 @@ func test_shoulder_prompt_icons_use_existing_lb_rb_assets():
 	assert_eq(rb_icon.texture.resource_path, "res://assets/core/button_prompts/gamepad/button_rb.png", "RB icon should use existing prompt art")
 	panel.queue_free()
 
+func test_shoulder_prompt_icons_are_wide_lb_rb_glyphs():
+	var panel := await _create_panel()
+	var lb_icon := panel.find_child("ShoulderPromptLBIcon", true, false) as TextureRect
+	var rb_icon := panel.find_child("ShoulderPromptRBIcon", true, false) as TextureRect
+	var prompt_row := panel.find_child("ShoulderPromptRow", true, false) as HBoxContainer
+
+	assert_true(lb_icon.custom_minimum_size.x > lb_icon.custom_minimum_size.y, "LB icon should preserve shoulder-button aspect")
+	assert_true(rb_icon.custom_minimum_size.x > rb_icon.custom_minimum_size.y, "RB icon should preserve shoulder-button aspect")
+	assert_eq(prompt_row.get_theme_constant("separation"), 8, "Shoulder prompt spacing should be compact")
+	assert_eq(lb_icon.stretch_mode, TextureRect.STRETCH_KEEP_ASPECT_CENTERED, "LB icon should not be distorted")
+	assert_eq(rb_icon.stretch_mode, TextureRect.STRETCH_KEEP_ASPECT_CENTERED, "RB icon should not be distorted")
+	panel.queue_free()
+
 func test_close_in_gameplay_overlay_closes_top_overlay():
 	var panel := await _create_panel()
 	_store.dispatch(U_NavigationActions.start_game(StringName("demo_room")))

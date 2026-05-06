@@ -247,7 +247,7 @@ func _create_prompt_icon(node_name: String, texture: Texture2D) -> TextureRect:
 	var icon := TextureRect.new()
 	icon.name = node_name
 	icon.texture = texture
-	icon.custom_minimum_size = Vector2(28, 28)
+	icon.custom_minimum_size = Vector2(44, 26)
 	icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -539,9 +539,9 @@ func _apply_context_background() -> void:
 
 func _apply_layout_tokens() -> void:
 	var config: Resource = U_UI_THEME_BUILDER.active_config
-	if not (config is RS_UI_THEME_CONFIG):
-		return
 	var typed_config := config as RS_UI_THEME_CONFIG
+	if typed_config == null:
+		typed_config = RS_UI_THEME_CONFIG.new()
 	typed_config.ensure_runtime_defaults()
 	var center := get_node_or_null("CenterContainer") as CenterContainer
 	if center != null:
@@ -567,6 +567,13 @@ func _apply_layout_tokens() -> void:
 		_panel_chrome.add_theme_constant_override("separation", typed_config.separation_default)
 	if _content_container != null:
 		_content_container.add_theme_constant_override("separation", typed_config.separation_default)
+	var prompt_row := find_child("ShoulderPromptRow", true, false) as HBoxContainer
+	if prompt_row != null:
+		prompt_row.add_theme_constant_override("separation", typed_config.separation_compact)
+	var prompt_label := find_child("ShoulderPromptLabel", true, false) as Label
+	if prompt_label != null:
+		prompt_label.add_theme_font_size_override("font_size", typed_config.body_small)
+		prompt_label.add_theme_color_override("font_color", typed_config.text_secondary)
 	if _close_button_margin != null:
 		var margin := typed_config.margin_inner
 		_close_button_margin.add_theme_constant_override("margin_left", margin)
