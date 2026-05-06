@@ -115,7 +115,7 @@ func test_display_tab_field_controls_have_consistent_widths():
 
 	assert_eq(window_size.custom_minimum_size.x, window_mode.custom_minimum_size.x, "Display dropdown widths should match")
 	assert_eq(quality.custom_minimum_size.x, color_blind.custom_minimum_size.x, "Display dropdown widths should match")
-	assert_true(window_size.custom_minimum_size.x >= 320.0, "Display dropdowns should be readable but not full-width")
+	assert_eq(window_size.size_flags_horizontal, Control.SIZE_EXPAND_FILL, "Inline display dropdowns should expand to share available space")
 
 
 func _instantiate_tab() -> void:

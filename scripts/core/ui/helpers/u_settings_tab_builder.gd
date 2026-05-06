@@ -92,11 +92,14 @@ func add_dropdown(key: StringName, options: Array[Dictionary], callback: Callabl
 	if custom_name != "":
 		var label_name := custom_name.replace("Option", "Label")
 		label.name = label_name if label_name != custom_name else custom_name + "Label"
-	label.custom_minimum_size = Vector2(0, 0) if (is_inline and _inline_group_item_count > 0) else Vector2(FIELD_LABEL_WIDTH, 0)
+	label.custom_minimum_size = Vector2(0, 0) if is_inline else Vector2(FIELD_LABEL_WIDTH, 0)
 	var dropdown := OptionButton.new()
 	dropdown.name = custom_name if custom_name != "" else key.capitalize().replace(" ", "") + "Option"
-	dropdown.custom_minimum_size = Vector2(FIELD_CONTROL_WIDTH, 0)
-	dropdown.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	if is_inline:
+		dropdown.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	else:
+		dropdown.custom_minimum_size = Vector2(FIELD_CONTROL_WIDTH, 0)
+		dropdown.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	row.add_child(dropdown)
 	for option in options:
 		dropdown.add_item(_localize(option.get("label_key", key), str(option.get("id", ""))))
@@ -106,7 +109,6 @@ func add_dropdown(key: StringName, options: Array[Dictionary], callback: Callabl
 	if is_inline:
 		_inline_group_item_count += 1
 	return self
-
 func add_toggle(key: StringName, callback: Callable, tooltip_key: StringName = &"", fallback: String = "", custom_name: String = "") -> U_SettingsTabBuilder:
 	var is_inline: bool = _inline_group_row != null
 	var row: HBoxContainer = _inline_group_row if is_inline else _add_row()
@@ -114,7 +116,7 @@ func add_toggle(key: StringName, callback: Callable, tooltip_key: StringName = &
 	if custom_name != "":
 		var label_name := custom_name.replace("Toggle", "Label").replace("CheckButton", "Label")
 		label.name = label_name if label_name != custom_name else custom_name + "Label"
-	label.custom_minimum_size = Vector2(0, 0) if (is_inline and _inline_group_item_count > 0) else Vector2(FIELD_LABEL_WIDTH, 0)
+	label.custom_minimum_size = Vector2(0, 0) if is_inline else Vector2(FIELD_LABEL_WIDTH, 0)
 	var toggle := CheckBox.new()
 	toggle.name = custom_name if custom_name != "" else key.capitalize().replace(" ", "") + "Toggle"
 	toggle.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
@@ -125,7 +127,6 @@ func add_toggle(key: StringName, callback: Callable, tooltip_key: StringName = &
 	if is_inline:
 		_inline_group_item_count += 1
 	return self
-
 func add_slider(key: StringName, min_val: float, max_val: float, step: float, callback: Callable, _value_label_key: StringName = &"", tooltip_key: StringName = &"", fallback: String = "", custom_name: String = "") -> U_SettingsTabBuilder:
 	var is_inline: bool = _inline_group_row != null
 	var row: HBoxContainer = _inline_group_row if is_inline else _add_row()
@@ -133,7 +134,7 @@ func add_slider(key: StringName, min_val: float, max_val: float, step: float, ca
 	if custom_name != "":
 		var label_name := custom_name.replace("Slider", "Label")
 		label.name = label_name if label_name != custom_name else custom_name + "Label"
-	label.custom_minimum_size = Vector2(0, 0) if (is_inline and _inline_group_item_count > 0) else Vector2(FIELD_LABEL_WIDTH, 0)
+	label.custom_minimum_size = Vector2(0, 0) if is_inline else Vector2(FIELD_LABEL_WIDTH, 0)
 	var slider := HSlider.new()
 	slider.name = custom_name if custom_name != "" else key.capitalize().replace(" ", "") + "Slider"
 	slider.min_value = min_val
