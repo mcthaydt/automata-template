@@ -169,15 +169,27 @@ func test_panel_shell_has_viewport_margin_and_close_inside_panel_chrome():
 
 	var panel := await _create_panel()
 	panel._apply_layout_tokens()
+	await get_tree().process_frame
 	var center := panel.get_node("CenterContainer") as CenterContainer
 	var close_button := panel.find_child("CloseButton", true, false) as Button
+	var close_button_margin := panel.find_child("CloseButtonMargin", true, false) as MarginContainer
 
 	assert_eq(center.offset_left, 32.0, "Settings modal should have left viewport margin")
 	assert_eq(center.offset_top, 32.0, "Settings modal should have top viewport margin")
 	assert_eq(center.offset_right, -32.0, "Settings modal should have right viewport margin")
 	assert_eq(center.offset_bottom, -32.0, "Settings modal should have bottom viewport margin")
-	assert_true(close_button.get_parent().name == "PanelChrome", "Close button should live inside panel chrome")
-	assert_eq(close_button.offset_right, -12.0, "Close button should use inner panel padding")
+	assert_not_null(close_button_margin, "Close button should have a container-aware margin wrapper")
+	if close_button_margin == null:
+		panel.queue_free()
+		U_UIThemeBuilder.active_config = null
+		return
+	assert_true(close_button_margin.get_parent().name == "PanelChrome", "Close button wrapper should live inside panel chrome")
+	assert_eq(close_button.get_parent(), close_button_margin, "Close button should live inside its margin wrapper")
+	assert_eq(close_button_margin.get_theme_constant("margin_left"), 12, "Close wrapper should use inner left padding")
+	assert_eq(close_button_margin.get_theme_constant("margin_top"), 12, "Close wrapper should use inner top padding")
+	assert_eq(close_button_margin.get_theme_constant("margin_right"), 12, "Close wrapper should use inner right padding")
+	assert_eq(close_button_margin.get_theme_constant("margin_bottom"), 12, "Close wrapper should use inner bottom padding")
+	assert_eq(close_button_margin.size_flags_horizontal, Control.SIZE_SHRINK_END, "Close wrapper should stay compact at the right side")
 	panel.queue_free()
 	U_UIThemeBuilder.active_config = null
 

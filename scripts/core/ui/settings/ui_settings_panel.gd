@@ -79,6 +79,7 @@ var _tab_button_group: ButtonGroup = ButtonGroup.new()
 var _menu_background: TextureRect = null
 var _panel_chrome: HBoxContainer = null
 var _tab_header_spacer: Control = null
+var _close_button_margin: MarginContainer = null
 
 @onready var _tab_bar: HBoxContainer = $CenterContainer/Panel/VBox/TabBar
 @onready var _separator: HSeparator = $CenterContainer/Panel/VBox/HSeparator
@@ -141,11 +142,6 @@ func _create_close_button() -> void:
 	_close_button.pressed.connect(_on_close_pressed)
 	U_UIMotion.bind_interactive(_close_button, CFG_MOTION_BUTTON_DEFAULT)
 	add_child(_close_button)
-	_close_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_close_button.offset_right = 0
-	_close_button.offset_top = 8
-	_close_button.offset_left = -44
-	_close_button.offset_bottom = 52
 
 func _create_panel_chrome() -> void:
 	var vbox := get_node_or_null("CenterContainer/Panel/VBox") as VBoxContainer
@@ -165,9 +161,20 @@ func _create_panel_chrome() -> void:
 func _attach_close_button_to_chrome() -> void:
 	if _panel_chrome == null or _close_button == null:
 		return
-	if _close_button.get_parent() != _panel_chrome:
-		_close_button.reparent(_panel_chrome)
-	_close_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	if _close_button_margin == null:
+		_close_button_margin = MarginContainer.new()
+		_close_button_margin.name = "CloseButtonMargin"
+		_close_button_margin.size_flags_horizontal = Control.SIZE_SHRINK_END
+	if _close_button_margin.get_parent() != _panel_chrome:
+		_panel_chrome.add_child(_close_button_margin)
+	if _close_button.get_parent() != _close_button_margin:
+		_close_button.reparent(_close_button_margin)
+	_close_button.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_close_button.offset_left = 0.0
+	_close_button.offset_top = 0.0
+	_close_button.offset_right = 0.0
+	_close_button.offset_bottom = 0.0
+	_panel_chrome.move_child(_close_button_margin, _panel_chrome.get_child_count() - 1)
 
 func _create_menu_background() -> void:
 	_menu_background = TextureRect.new()
@@ -193,8 +200,8 @@ func _build_tab_bar() -> void:
 		_panel_chrome.move_child(_tab_bar, 0)
 		if _tab_header_spacer != null and _tab_header_spacer.get_parent() == null:
 			_panel_chrome.add_child(_tab_header_spacer)
-		if _close_button != null and _close_button.get_parent() == _panel_chrome:
-			_panel_chrome.move_child(_close_button, _panel_chrome.get_child_count() - 1)
+		if _close_button_margin != null and _close_button_margin.get_parent() == _panel_chrome:
+			_panel_chrome.move_child(_close_button_margin, _panel_chrome.get_child_count() - 1)
 	_tab_buttons.clear()
 	_tab_button_group.allow_unpress = false
 	for tab_id: TabId in _TAB_ORDER:
@@ -224,8 +231,8 @@ func _create_shoulder_prompts() -> void:
 	prompt_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	prompt_row.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_panel_chrome.add_child(prompt_row)
-	if _close_button != null and _close_button.get_parent() == _panel_chrome:
-		_panel_chrome.move_child(_close_button, _panel_chrome.get_child_count() - 1)
+	if _close_button_margin != null and _close_button_margin.get_parent() == _panel_chrome:
+		_panel_chrome.move_child(_close_button_margin, _panel_chrome.get_child_count() - 1)
 
 	var lb_icon := _create_prompt_icon("ShoulderPromptLBIcon", TEX_BUTTON_LB)
 	var label := Label.new()
@@ -560,9 +567,9 @@ func _apply_layout_tokens() -> void:
 		_panel_chrome.add_theme_constant_override("separation", typed_config.separation_default)
 	if _content_container != null:
 		_content_container.add_theme_constant_override("separation", typed_config.separation_default)
-	if _close_button != null:
-		var margin := float(typed_config.margin_inner)
-		_close_button.offset_top = margin
-		_close_button.offset_left = -44.0 - margin
-		_close_button.offset_right = -margin
-		_close_button.offset_bottom = margin + 44.0
+	if _close_button_margin != null:
+		var margin := typed_config.margin_inner
+		_close_button_margin.add_theme_constant_override("margin_left", margin)
+		_close_button_margin.add_theme_constant_override("margin_top", margin)
+		_close_button_margin.add_theme_constant_override("margin_right", margin)
+		_close_button_margin.add_theme_constant_override("margin_bottom", margin)
