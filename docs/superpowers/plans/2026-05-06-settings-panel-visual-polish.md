@@ -39,7 +39,7 @@
 - Modify: `tests/unit/ui/settings/test_settings_panel_tabs.gd`
 - Modify: `scripts/core/ui/settings/ui_settings_panel.gd`
 
-- [ ] **Step 1: Write failing tests for outer modal margin, panel padding, close button placement, and compact prompt row**
+- [x] **Step 1: Write failing tests for outer modal margin, panel padding, close button placement, and compact prompt row**
 
 Add these tests to `tests/unit/ui/settings/test_settings_panel_tabs.gd` after `test_panel_spacing_tokens_apply_to_outer_panel_not_inner_vbox`:
 
@@ -79,7 +79,7 @@ func test_shoulder_prompts_are_inline_with_tab_bar():
 	panel.queue_free()
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -89,7 +89,7 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/ui/settings/test_settings_panel_t
 
 Expected: the two new tests fail because `CenterContainer` has no outer offsets, `CloseButton` is a root child, and `ShoulderPromptRow` is still a separate row under `VBox`.
 
-- [ ] **Step 3: Implement runtime header chrome without editing `.tscn`**
+- [x] **Step 3: Implement runtime header chrome without editing `.tscn`**
 
 In `scripts/core/ui/settings/ui_settings_panel.gd`, add members:
 
@@ -206,7 +206,7 @@ Update `_apply_layout_tokens()`:
 		_close_button.offset_bottom = margin + 44.0
 ```
 
-- [ ] **Step 4: Run tests to verify pass**
+- [x] **Step 4: Run tests to verify pass**
 
 Run:
 
@@ -216,7 +216,7 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/ui/settings/test_settings_panel_t
 
 Expected: all tests in `test_settings_panel_tabs.gd` pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/core/ui/settings/ui_settings_panel.gd tests/unit/ui/settings/test_settings_panel_tabs.gd
@@ -231,7 +231,7 @@ git commit -m "Polish settings panel shell layout"
 - Modify: `tests/unit/ui/settings/test_settings_panel_tabs.gd`
 - Modify: `scripts/core/ui/settings/ui_settings_panel.gd`
 
-- [ ] **Step 1: Write failing test for prompt texture dimensions and compact spacing**
+- [x] **Step 1: Write failing test for prompt texture dimensions and compact spacing**
 
 Add:
 
@@ -250,7 +250,7 @@ func test_shoulder_prompt_icons_are_wide_lb_rb_glyphs():
 	panel.queue_free()
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run:
 
@@ -260,7 +260,7 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/ui/settings/test_settings_panel_t
 
 Expected: failure because prompt icons are square `28x28` and the prompt row has no explicit compact spacing.
 
-- [ ] **Step 3: Implement prompt sizing**
+- [x] **Step 3: Implement prompt sizing**
 
 Change `_create_prompt_icon(...)` in `ui_settings_panel.gd`:
 
@@ -288,7 +288,7 @@ In `_apply_layout_tokens()` add:
 		prompt_label.add_theme_color_override("font_color", typed_config.text_secondary)
 ```
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 
 Run:
 
@@ -298,7 +298,7 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/ui/settings/test_settings_panel_t
 
 Expected: prompt tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/core/ui/settings/ui_settings_panel.gd tests/unit/ui/settings/test_settings_panel_tabs.gd
@@ -313,7 +313,7 @@ git commit -m "Fix settings shoulder prompt layout"
 - Modify: `tests/unit/ui/settings/test_settings_panel_tabs.gd`
 - Modify: `scripts/core/ui/settings/ui_settings_panel.gd`
 
-- [ ] **Step 1: Write failing test for panel opacity**
+- [x] **Step 1: Write failing test for panel opacity**
 
 Add:
 
@@ -334,7 +334,7 @@ func test_standalone_menu_background_is_subtle_inside_panel():
 	U_UIThemeBuilder.active_config = null
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run:
 
@@ -344,7 +344,7 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/ui/settings/test_settings_panel_t
 
 Expected: failure because the panel style currently duplicates `panel_section`, which can be too transparent.
 
-- [ ] **Step 3: Increase settings panel surface opacity locally**
+- [x] **Step 3: Increase settings panel surface opacity locally**
 
 In `_apply_layout_tokens()`, after duplicating `panel_style`, add:
 
@@ -356,7 +356,7 @@ In `_apply_layout_tokens()`, after duplicating `panel_style`, add:
 
 Keep this local to `UI_SettingsPanel`; do not change global theme resources.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 
 Run:
 
@@ -366,7 +366,7 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/ui/settings/test_settings_panel_t
 
 Expected: all settings panel shell tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/core/ui/settings/ui_settings_panel.gd tests/unit/ui/settings/test_settings_panel_tabs.gd
@@ -382,7 +382,7 @@ git commit -m "Improve settings panel surface readability"
 - Modify: `scripts/core/ui/helpers/u_settings_tab_builder.gd`
 - Modify: `scripts/core/ui/helpers/u_ui_theme_role_utils.gd`
 
-- [ ] **Step 1: Write failing builder tests**
+- [x] **Step 1: Write failing builder tests**
 
 Add tests to `tests/unit/ui/helpers/test_u_settings_tab_builder.gd`:
 
@@ -410,7 +410,7 @@ func test_dropdown_controls_use_consistent_field_width():
 	tab.free()
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -420,7 +420,7 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/ui/helpers/test_u_settings_tab_bu
 
 Expected: toggle test fails because toggles use `SIZE_EXPAND_FILL`; dropdown width test fails because no custom minimum width is set.
 
-- [ ] **Step 3: Add builder sizing constants and apply them**
+- [x] **Step 3: Add builder sizing constants and apply them**
 
 In `u_settings_tab_builder.gd`, add constants near the top:
 
@@ -471,7 +471,7 @@ In `_create_slider_value_label(...)`, add:
 
 In `u_ui_theme_role_utils.gd`, keep `field_control` font sizing only; do not force expand flags there.
 
-- [ ] **Step 4: Run builder tests to verify pass**
+- [x] **Step 4: Run builder tests to verify pass**
 
 Run:
 
@@ -481,7 +481,7 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/ui/helpers/test_u_settings_tab_bu
 
 Expected: all builder helper tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/core/ui/helpers/u_settings_tab_builder.gd scripts/core/ui/helpers/u_ui_theme_role_utils.gd tests/unit/ui/helpers/test_u_settings_tab_builder.gd
@@ -497,7 +497,7 @@ git commit -m "Refine settings builder form control sizing"
 - Modify: `scripts/core/ui/settings/ui_display_settings_tab.gd`
 - Modify: `scripts/core/ui/helpers/u_settings_tab_builder.gd` if Task 4 row APIs need a small extension
 
-- [ ] **Step 1: Write failing Display layout tests**
+- [x] **Step 1: Write failing Display layout tests**
 
 Add to `tests/unit/ui/settings/test_ui_display_settings_tab_builder.gd`:
 
@@ -530,7 +530,7 @@ func test_display_tab_field_controls_have_consistent_widths():
 	assert_true(window_size.custom_minimum_size.x >= 320.0, "Display dropdowns should be readable but not full-width")
 ```
 
-- [ ] **Step 2: Run tests to verify fail**
+- [x] **Step 2: Run tests to verify fail**
 
 Run:
 
@@ -540,7 +540,7 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/ui/settings/test_ui_display_setti
 
 Expected: tests fail before Task 4 or until Display controls inherit the new builder sizing.
 
-- [ ] **Step 3: Ensure Display builder uses the common sizing**
+- [x] **Step 3: Ensure Display builder uses the common sizing**
 
 In `ui_display_settings_tab.gd`, keep `_setup_builder()` using `U_UI_SETTINGS_CATALOG.create_display_builder(...)`. Do not hand-create Display rows.
 
@@ -555,7 +555,7 @@ builder.add_button_row(...)
 
 If the catalog already uses those methods, no production edit is needed beyond Task 4.
 
-- [ ] **Step 4: Run Display builder tests**
+- [x] **Step 4: Run Display builder tests**
 
 Run:
 
@@ -565,7 +565,7 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/ui/settings/test_ui_display_setti
 
 Expected: Display builder tests pass.
 
-- [ ] **Step 5: Run Display focus tests**
+- [x] **Step 5: Run Display focus tests**
 
 Run:
 
@@ -575,7 +575,7 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/ui/test_display_settings_focus_wr
 
 Expected: focus wrapping still passes after layout changes.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add scripts/core/ui/settings/ui_display_settings_tab.gd scripts/core/ui/helpers/u_settings_tab_builder.gd tests/unit/ui/settings/test_ui_display_settings_tab_builder.gd tests/unit/ui/test_display_settings_focus_wrapping.gd
@@ -591,7 +591,7 @@ git commit -m "Align display settings form controls"
 - Modify: `scripts/core/ui/helpers/u_settings_tab_builder.gd`
 - Modify: `scripts/core/ui/helpers/u_ui_theme_role_utils.gd`
 
-- [ ] **Step 1: Write failing action row test**
+- [x] **Step 1: Write failing action row test**
 
 Add to `test_u_settings_tab_builder.gd`:
 
@@ -609,7 +609,7 @@ func test_action_buttons_row_has_comfortable_spacing_and_padding_role():
 	tab.free()
 ```
 
-- [ ] **Step 2: Run test to verify fail**
+- [x] **Step 2: Run test to verify fail**
 
 Run:
 
@@ -619,7 +619,7 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/ui/helpers/test_u_settings_tab_bu
 
 Expected: action row uses compact spacing and may not have shrink sizing.
 
-- [ ] **Step 3: Add explicit action row role**
+- [x] **Step 3: Add explicit action row role**
 
 In `u_settings_tab_builder.gd`, change `add_button_row(...)`:
 
@@ -638,7 +638,7 @@ In `u_ui_theme_role_utils.gd`, add to `apply_settings_role(...)`:
 			control.add_theme_constant_override(&"separation", config.separation_default)
 ```
 
-- [ ] **Step 4: Run builder tests**
+- [x] **Step 4: Run builder tests**
 
 Run:
 
@@ -648,7 +648,7 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/ui/helpers/test_u_settings_tab_bu
 
 Expected: builder tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/core/ui/helpers/u_settings_tab_builder.gd scripts/core/ui/helpers/u_ui_theme_role_utils.gd tests/unit/ui/helpers/test_u_settings_tab_builder.gd
@@ -663,7 +663,7 @@ git commit -m "Polish settings action row spacing"
 - Modify: no production files unless a test exposes a concrete issue.
 - Test: settings/UI and style suites.
 
-- [ ] **Step 1: Run focused settings suite**
+- [x] **Step 1: Run focused settings suite**
 
 Run:
 
@@ -673,7 +673,7 @@ tools/run_gut_suite.sh -gdir=res://tests/unit/ui/settings
 
 Expected: all tests pass.
 
-- [ ] **Step 2: Run builder helper tests**
+- [x] **Step 2: Run builder helper tests**
 
 Run:
 
@@ -683,7 +683,7 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/ui/helpers/test_u_settings_tab_bu
 
 Expected: all tests pass.
 
-- [ ] **Step 3: Run Display focus test**
+- [x] **Step 3: Run Display focus test**
 
 Run:
 
@@ -693,7 +693,7 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/ui/test_display_settings_focus_wr
 
 Expected: all tests pass.
 
-- [ ] **Step 4: Run required style guard**
+- [x] **Step 4: Run required style guard**
 
 Run:
 
@@ -703,7 +703,7 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd
 
 Expected: 0 failures. This is required because UI script structure changed.
 
-- [ ] **Step 5: Optional manual screenshot check**
+- [x] **Step 5: Optional manual screenshot check**
 
 Run the scene or game path normally used for UI smoke. Verify the Settings screen visually against the approved mockup:
 
@@ -716,7 +716,7 @@ Run the scene or game path normally used for UI smoke. Verify the Settings scree
 - slider value does not collide;
 - action buttons have bottom breathing room.
 
-- [ ] **Step 6: Commit any final fixes**
+- [x] **Step 6: Commit any final fixes**
 
 If Step 5 reveals a concrete issue, write a focused failing test first, fix it, rerun relevant tests, then commit:
 

@@ -161,7 +161,6 @@ func _create_slider_value_label(key: StringName, custom_name: String = "") -> La
 	label.custom_minimum_size = Vector2(SLIDER_VALUE_WIDTH, 0)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	return label
-
 func _apply_tooltip(control: Control, tooltip_key: StringName) -> void:
 	if tooltip_key != &"":
 		control.tooltip_text = U_LOCALIZATION_UTILS.localize_with_fallback(tooltip_key, str(tooltip_key))
@@ -241,7 +240,6 @@ func _add_row() -> HBoxContainer:
 	_current_parent.add_child(row)
 	_theme_map.append({"control": row, "role": &"default_row"})
 	return row
-
 func _add_label(key: StringName, parent: Control, fallback: String = "") -> Label:
 	var label := Label.new()
 	var fb: String = fallback if fallback != "" else str(key)
@@ -251,7 +249,6 @@ func _add_label(key: StringName, parent: Control, fallback: String = "") -> Labe
 	if fallback != "":
 		_label_fallbacks[label] = fallback
 	return label
-
 func _add_button(parent: Control, key: StringName, callback: Callable, fallback: String = "") -> Button:
 	var button := Button.new()
 	var fb: String = fallback if fallback != "" else str(key)
@@ -264,19 +261,16 @@ func _add_button(parent: Control, key: StringName, callback: Callable, fallback:
 	_focusable_controls.append(button)
 	_connect(button.pressed, callback)
 	return button
-
 func _add_optional_button(parent: Control, key: StringName, callback: Callable, fallback: String, button_name: String) -> Button:
 	if key == &"" and fallback == "" and not callback.is_valid():
 		return null
 	var button := _add_button(parent, key, callback, fallback)
 	button.name = button_name
 	return button
-
 func _register_field(label: Label, control: Control) -> void:
 	_theme_map.append({"control": label, "role": &"field_label"})
 	_theme_map.append({"control": control, "role": &"field_control"})
 	_focusable_controls.append(control)
-
 func _bind_label(label: Label, key: StringName, role: StringName, fallback: String = "") -> void:
 	if label == null:
 		return
@@ -284,7 +278,6 @@ func _bind_label(label: Label, key: StringName, role: StringName, fallback: Stri
 	if fallback != "":
 		_label_fallbacks[label] = fallback
 	_theme_map.append({"control": label, "role": role})
-
 func bind_panel(panel: PanelContainer, content_vbox: VBoxContainer = null, padding: MarginContainer = null) -> U_SettingsTabBuilder:
 	if panel != null:
 		_theme_map.append({"control": panel, "role": &"main_panel"})
@@ -293,11 +286,9 @@ func bind_panel(panel: PanelContainer, content_vbox: VBoxContainer = null, paddi
 	if padding != null:
 		_theme_map.append({"control": padding, "role": &"panel_padding"})
 	return self
-
 func bind_overlay_background(alpha: float, overlay_background: ColorRect = null) -> U_SettingsTabBuilder:
 	_theme_map.append({"control": overlay_background, "role": &"overlay_dim", "alpha": alpha})
 	return self
-
 func bind_theme_role(control: Control, role: StringName, extras: Dictionary = {}) -> U_SettingsTabBuilder:
 	if control == null:
 		return self
@@ -306,7 +297,6 @@ func bind_theme_role(control: Control, role: StringName, extras: Dictionary = {}
 		entry[key] = extras[key]
 	_theme_map.append(entry)
 	return self
-
 func _wire_control_callback(control: Control, callback: Callable) -> void:
 	if callback == Callable():
 		return
@@ -316,16 +306,13 @@ func _wire_control_callback(control: Control, callback: Callable) -> void:
 		_connect((control as BaseButton).toggled, callback)
 	elif control is Range:
 		_connect((control as Range).value_changed, callback)
-
 func _connect(signal_ref: Signal, callback: Callable) -> void:
 	if callback.is_valid() and not signal_ref.is_connected(callback):
 		signal_ref.connect(callback)
-
 func _localize(key: Variant, fallback: String) -> String:
 	if key is StringName:
 		return U_LOCALIZATION_UTILS.localize_with_fallback(key, fallback)
 	return fallback
-
 func _apply_theme_entry(entry: Dictionary, config: RS_UI_THEME_CONFIG) -> void:
 	var control := entry.get("control") as Control
 	if control == null:
