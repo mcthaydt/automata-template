@@ -77,6 +77,8 @@ var _close_button: Button = null
 var _current_palette: Resource = null
 var _tab_button_group: ButtonGroup = ButtonGroup.new()
 var _menu_background: TextureRect = null
+var _panel_chrome: HBoxContainer = null
+var _tab_header_spacer: Control = null
 
 @onready var _tab_bar: HBoxContainer = $CenterContainer/Panel/VBox/TabBar
 @onready var _separator: HSeparator = $CenterContainer/Panel/VBox/HSeparator
@@ -87,6 +89,8 @@ func _ready() -> void:
 	_apply_base_theme()
 	_create_menu_background()
 	_create_close_button()
+	_create_panel_chrome()
+	_attach_close_button_to_chrome()
 	_build_tab_bar()
 	_create_shoulder_prompts()
 	_create_tab_contents()
@@ -143,6 +147,28 @@ func _create_close_button() -> void:
 	_close_button.offset_left = -44
 	_close_button.offset_bottom = 52
 
+func _create_panel_chrome() -> void:
+	var vbox := get_node_or_null("CenterContainer/Panel/VBox") as VBoxContainer
+	if vbox == null:
+		return
+	_panel_chrome = HBoxContainer.new()
+	_panel_chrome.name = "PanelChrome"
+	_panel_chrome.alignment = BoxContainer.ALIGNMENT_BEGIN
+	_panel_chrome.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_child(_panel_chrome)
+	vbox.move_child(_panel_chrome, 0)
+
+	_tab_header_spacer = Control.new()
+	_tab_header_spacer.name = "TabHeaderSpacer"
+	_tab_header_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+func _attach_close_button_to_chrome() -> void:
+	if _panel_chrome == null or _close_button == null:
+		return
+	if _close_button.get_parent() != _panel_chrome:
+		_close_button.reparent(_panel_chrome)
+	_close_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+
 func _create_menu_background() -> void:
 	_menu_background = TextureRect.new()
 	_menu_background.name = "MenuBackground"
@@ -162,6 +188,13 @@ func _create_menu_background() -> void:
 func _build_tab_bar() -> void:
 	if _tab_bar == null:
 		return
+	if _panel_chrome != null and _tab_bar.get_parent() != _panel_chrome:
+		_tab_bar.reparent(_panel_chrome)
+		_panel_chrome.move_child(_tab_bar, 0)
+		if _tab_header_spacer != null and _tab_header_spacer.get_parent() == null:
+			_panel_chrome.add_child(_tab_header_spacer)
+		if _close_button != null and _close_button.get_parent() == _panel_chrome:
+			_panel_chrome.move_child(_close_button, _panel_chrome.get_child_count() - 1)
 	_tab_buttons.clear()
 	_tab_button_group.allow_unpress = false
 	for tab_id: TabId in _TAB_ORDER:
@@ -183,15 +216,16 @@ func _build_tab_bar() -> void:
 		}
 
 func _create_shoulder_prompts() -> void:
-	var vbox := _tab_bar.get_parent() as VBoxContainer if _tab_bar != null else null
-	if vbox == null:
+	if _panel_chrome == null:
 		return
 	var prompt_row := HBoxContainer.new()
 	prompt_row.name = "ShoulderPromptRow"
 	prompt_row.alignment = BoxContainer.ALIGNMENT_END
 	prompt_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vbox.add_child(prompt_row)
-	vbox.move_child(prompt_row, _tab_bar.get_index() + 1)
+	prompt_row.size_flags_horizontal = Control.SIZE_SHRINK_END
+	_panel_chrome.add_child(prompt_row)
+	if _close_button != null and _close_button.get_parent() == _panel_chrome:
+		_panel_chrome.move_child(_close_button, _panel_chrome.get_child_count() - 1)
 
 	var lb_icon := _create_prompt_icon("ShoulderPromptLBIcon", TEX_BUTTON_LB)
 	var label := Label.new()
@@ -502,6 +536,13 @@ func _apply_layout_tokens() -> void:
 		return
 	var typed_config := config as RS_UI_THEME_CONFIG
 	typed_config.ensure_runtime_defaults()
+	var center := get_node_or_null("CenterContainer") as CenterContainer
+	if center != null:
+		var outer := float(typed_config.margin_outer)
+		center.offset_left = outer
+		center.offset_top = outer
+		center.offset_right = -outer
+		center.offset_bottom = -outer
 	var panel := get_node_or_null("CenterContainer/Panel") as PanelContainer
 	if panel != null:
 		var panel_style := typed_config.panel_section.duplicate() as StyleBoxFlat
@@ -515,6 +556,8 @@ func _apply_layout_tokens() -> void:
 		vbox.add_theme_constant_override("separation", typed_config.separation_default)
 	if _tab_bar != null:
 		_tab_bar.add_theme_constant_override("separation", typed_config.separation_compact)
+	if _panel_chrome != null:
+		_panel_chrome.add_theme_constant_override("separation", typed_config.separation_default)
 	if _content_container != null:
 		_content_container.add_theme_constant_override("separation", typed_config.separation_default)
 	if _close_button != null:

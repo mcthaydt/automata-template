@@ -159,6 +159,40 @@ func test_panel_spacing_tokens_apply_to_outer_panel_not_inner_vbox():
 	panel.queue_free()
 	U_UIThemeBuilder.active_config = null
 
+func test_panel_shell_has_viewport_margin_and_close_inside_panel_chrome():
+	var config := RS_UIThemeConfig.new()
+	config.margin_outer = 32
+	config.margin_section = 24
+	config.margin_inner = 12
+	config.ensure_runtime_defaults()
+	U_UIThemeBuilder.active_config = config
+
+	var panel := await _create_panel()
+	panel._apply_layout_tokens()
+	var center := panel.get_node("CenterContainer") as CenterContainer
+	var close_button := panel.find_child("CloseButton", true, false) as Button
+
+	assert_eq(center.offset_left, 32.0, "Settings modal should have left viewport margin")
+	assert_eq(center.offset_top, 32.0, "Settings modal should have top viewport margin")
+	assert_eq(center.offset_right, -32.0, "Settings modal should have right viewport margin")
+	assert_eq(center.offset_bottom, -32.0, "Settings modal should have bottom viewport margin")
+	assert_true(close_button.get_parent().name == "PanelChrome", "Close button should live inside panel chrome")
+	assert_eq(close_button.offset_right, -12.0, "Close button should use inner panel padding")
+	panel.queue_free()
+	U_UIThemeBuilder.active_config = null
+
+func test_shoulder_prompts_are_inline_with_tab_bar():
+	var panel := await _create_panel()
+	var header := panel.find_child("PanelChrome", true, false) as Control
+	var tab_bar := panel.find_child("TabBar", true, false) as HBoxContainer
+	var prompt_row := panel.find_child("ShoulderPromptRow", true, false) as HBoxContainer
+
+	assert_not_null(header, "Settings panel should create a header chrome row")
+	assert_eq(tab_bar.get_parent(), header, "Tab bar should be inside header chrome")
+	assert_eq(prompt_row.get_parent(), header, "Shoulder prompts should be inline in header chrome")
+	assert_true(prompt_row.size_flags_horizontal == Control.SIZE_SHRINK_END, "Prompt row should stay compact at the right side")
+	panel.queue_free()
+
 func _create_panel() -> UI_SettingsPanel:
 	var scene := load(SCENE_PATH) as PackedScene
 	var panel := scene.instantiate() as UI_SettingsPanel
