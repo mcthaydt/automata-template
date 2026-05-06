@@ -115,6 +115,7 @@ func _build_tab_bar() -> void:
 		button.name = "TabButton_%d" % tab_id
 		button.focus_mode = Control.FOCUS_ALL
 		button.pressed.connect(_on_tab_button_pressed.bind(tab_id))
+		button.focus_entered.connect(_on_tab_button_focused.bind(tab_id))
 		_tab_bar.add_child(button)
 		_tab_buttons[tab_id] = {
 			"button": button,
@@ -157,6 +158,9 @@ func _on_close_pressed() -> void:
 	if store == null:
 		return
 	store.dispatch(U_NAVIGATION_ACTIONS.close_top_overlay())
+
+func _on_tab_button_focused(tab_id: TabId) -> void:
+	switch_to_tab(tab_id)
 
 func _on_tab_button_pressed(tab_id: TabId) -> void:
 	U_UISoundPlayer.play_confirm()
