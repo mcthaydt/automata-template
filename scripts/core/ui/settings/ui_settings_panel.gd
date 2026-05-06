@@ -90,7 +90,7 @@ func _create_close_button() -> void:
 	_close_button.name = "CloseButton"
 	_close_button.text = "X"
 	_close_button.flat = true
-	_close_button.focus_mode = Control.FOCUS_ALL
+	_close_button.focus_mode = Control.FOCUS_NONE
 	_close_button.custom_minimum_size = Vector2(44, 44)
 	_close_button.pressed.connect(_on_close_pressed)
 	U_UIMotion.bind_interactive(_close_button, CFG_MOTION_BUTTON_DEFAULT)
@@ -98,7 +98,7 @@ func _create_close_button() -> void:
 	_close_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	_close_button.offset_right = 0
 	_close_button.offset_top = 8
-	_close_button.offset_left = -52
+	_close_button.offset_left = -44
 	_close_button.offset_bottom = 52
 
 func _build_tab_bar() -> void:
