@@ -17,6 +17,8 @@ const UI_LocalizationSettingsTab := preload("res://scripts/core/ui/settings/ui_l
 const UI_GamepadSettingsTab := preload("res://scripts/core/ui/settings/ui_gamepad_settings_tab.gd")
 const UI_KeyboardMouseSettingsTab := preload("res://scripts/core/ui/settings/ui_keyboard_mouse_settings_tab.gd")
 const UI_TouchscreenSettingsTab := preload("res://scripts/core/ui/settings/ui_touchscreen_settings_tab.gd")
+const CFG_MOTION_BUTTON_DEFAULT := preload("res://resources/core/ui/motions/cfg_motion_button_default.tres")
+const U_UI_MOTION := preload("res://scripts/core/ui/utils/u_ui_motion.gd")
 
 enum TabId {
 	DISPLAY,
@@ -53,6 +55,7 @@ var _tab_buttons: Dictionary = {}
 var _tab_contents: Dictionary = {}
 var _last_device_type: int = -1
 var _consume_next_nav: bool = false
+var _close_button: Button = null
 
 @onready var _tab_bar: HBoxContainer = $CenterContainer/Panel/VBox/TabBar
 @onready var _separator: HSeparator = $CenterContainer/Panel/VBox/HSeparator
@@ -60,6 +63,7 @@ var _consume_next_nav: bool = false
 
 func _ready() -> void:
 	super._ready()
+	_create_close_button()
 	_build_tab_bar()
 	_create_tab_contents()
 	_update_tab_visibility()
@@ -81,6 +85,22 @@ func switch_to_tab(tab_id: TabId) -> void:
 	var first_focusable: Control = _find_first_focusable_in_tab(tab_id)
 	if first_focusable != null:
 		first_focusable.grab_focus()
+
+func _create_close_button() -> void:
+	_close_button = Button.new()
+	_close_button.name = "CloseButton"
+	_close_button.text = "X"
+	_close_button.flat = true
+	_close_button.focus_mode = Control.FOCUS_ALL
+	_close_button.custom_minimum_size = Vector2(44, 44)
+	_close_button.pressed.connect(_on_close_pressed)
+	U_UIMotion.bind_interactive(_close_button, CFG_MOTION_BUTTON_DEFAULT)
+	add_child(_close_button)
+	_close_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_close_button.offset_right = 0
+	_close_button.offset_top = 8
+	_close_button.offset_left = -52
+	_close_button.offset_bottom = 52
 
 func _build_tab_bar() -> void:
 	if _tab_bar == null:
@@ -130,6 +150,13 @@ func _create_tab_contents() -> void:
 		instance.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		_content_container.add_child(instance)
 		_tab_contents[id] = instance
+
+func _on_close_pressed() -> void:
+	U_UISoundPlayer.play_cancel()
+	var store := get_store()
+	if store == null:
+		return
+	store.dispatch(U_NAVIGATION_ACTIONS.close_top_overlay())
 
 func _on_tab_button_pressed(tab_id: TabId) -> void:
 	U_UISoundPlayer.play_confirm()
