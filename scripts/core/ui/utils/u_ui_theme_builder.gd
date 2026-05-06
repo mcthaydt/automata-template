@@ -55,7 +55,6 @@ static func _apply_type_variations(theme: Theme, config) -> void:
 static func _create_tab_active_normal(config) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = config.bg_panel_light
-	style.border_color = config.bg_panel_light
 	style.set_border_width_all(0)
 	style.border_width_bottom = 2
 	style.border_color = config.accent_primary
