@@ -8,6 +8,7 @@ const U_LOCALIZATION_UTILS := preload("res://scripts/core/utils/localization/u_l
 const U_UI_SETTINGS_CATALOG := preload("res://scripts/core/ui/helpers/u_ui_settings_catalog.gd")
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
 const RS_UI_THEME_CONFIG := preload("res://scripts/core/resources/ui/rs_ui_theme_config.gd")
+const U_FOCUS_CONFIGURATOR := preload("res://scripts/core/ui/helpers/u_focus_configurator.gd")
 
 const TITLE_KEY := &"settings.display.title"
 const SECTION_GRAPHICS_KEY := &"settings.display.section.graphics"
@@ -803,6 +804,27 @@ func _on_option_button_popup_about_to_show(popup: PopupMenu) -> void:
 	popup.grab_focus()
 
 func _configure_focus_neighbors() -> void:
+	var vertical_controls: Array[Control] = [
+		_get_window_size_option(),
+		_get_window_mode_option(),
+		_get_vsync_toggle(),
+		_get_quality_preset_option(),
+		_get_post_processing_toggle(),
+		_get_post_processing_preset_option(),
+		_get_ui_scale_slider(),
+		_get_color_blind_mode_option(),
+		_get_high_contrast_toggle(),
+		_get_cancel_button(),
+		_get_apply_button(),
+		_get_reset_button(),
+	]
+	var visible_controls: Array[Control] = []
+	for control: Control in vertical_controls:
+		if control != null and control.focus_mode != Control.FOCUS_NONE and control.visible:
+			visible_controls.append(control)
+	if not visible_controls.is_empty():
+		U_FOCUS_CONFIGURATOR.configure_vertical_focus(visible_controls)
+
 	var pairs: Array = [
 		[_get_window_size_option(), _get_window_mode_option()],
 		[_get_vsync_toggle(), _get_quality_preset_option()],

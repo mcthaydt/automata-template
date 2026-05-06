@@ -122,22 +122,22 @@ func _configure_focus_neighbors() -> void:
 		vertical_controls.append(_keyboard_look_enabled_check)
 	if _keyboard_look_speed_slider != null:
 		vertical_controls.append(_keyboard_look_speed_slider)
+	if _reset_button != null:
+		vertical_controls.append(_reset_button)
+	if _rebind_button != null:
+		vertical_controls.append(_rebind_button)
 
-	if not vertical_controls.is_empty():
-		U_FOCUS_CONFIGURATOR.configure_vertical_focus(vertical_controls, false)
+	var visible_controls: Array[Control] = []
+	for control: Control in vertical_controls:
+		if control != null and control.focus_mode != Control.FOCUS_NONE and control.visible:
+			visible_controls.append(control)
 
-	if _reset_button != null and not vertical_controls.is_empty():
-		var last_control := vertical_controls[vertical_controls.size() - 1]
-		last_control.focus_neighbor_bottom = last_control.get_path_to(_reset_button)
-		_reset_button.focus_neighbor_top = _reset_button.get_path_to(last_control)
-		if _rebind_button != null:
-			_reset_button.focus_neighbor_right = _reset_button.get_path_to(_rebind_button)
-			_reset_button.focus_neighbor_bottom = _reset_button.get_path_to(_rebind_button)
-			_rebind_button.focus_neighbor_left = _rebind_button.get_path_to(_reset_button)
-			_rebind_button.focus_neighbor_top = _rebind_button.get_path_to(_reset_button)
-			_rebind_button.focus_neighbor_bottom = _rebind_button.get_path_to(last_control)
-		else:
-			_reset_button.focus_neighbor_bottom = _reset_button.get_path_to(last_control)
+	if not visible_controls.is_empty():
+		U_FOCUS_CONFIGURATOR.configure_vertical_focus(visible_controls)
+
+	if _reset_button != null and _rebind_button != null:
+		_reset_button.focus_neighbor_right = _reset_button.get_path_to(_rebind_button)
+		_rebind_button.focus_neighbor_left = _rebind_button.get_path_to(_reset_button)
 
 func _configure_tooltips() -> void:
 	if _mouse_sensitivity_slider != null:

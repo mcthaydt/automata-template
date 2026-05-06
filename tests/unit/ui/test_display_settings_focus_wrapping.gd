@@ -60,6 +60,28 @@ func test_focus_wraps_from_last_to_first_control() -> void:
 		var down_node := last_control.get_node_or_null(down_neighbor)
 		assert_eq(down_node, first_control, "Down from last control should focus first control (wrapping)")
 
+func test_display_focus_chain_reconfigures_after_dependency_visibility_changes() -> void:
+	var scene := load("res://scenes/core/ui/overlays/settings/ui_display_settings_tab.tscn")
+	_tab = scene.instantiate()
+	add_child_autofree(_tab)
+	await get_tree().process_frame
+
+	var post_processing_toggle := _tab.find_child("PostProcessingToggle", true, false) as CheckBox
+	var post_processing_preset := _tab.find_child("PostProcessPresetOption", true, false) as OptionButton
+	assert_not_null(post_processing_toggle, "Post processing toggle should exist")
+	assert_not_null(post_processing_preset, "Post processing preset option should exist")
+
+	post_processing_toggle.button_pressed = false
+	_tab._set_control_group_enabled(post_processing_preset, false)
+	_tab._configure_focus_neighbors()
+
+	var focusables := _get_all_focusables(_tab)
+	var first_control := focusables[0]
+	var last_control := focusables[focusables.size() - 1]
+	assert_eq(first_control.get_node_or_null(first_control.focus_neighbor_top), last_control, "Up from first visible display control should wrap after dependency changes")
+	assert_eq(last_control.get_node_or_null(last_control.focus_neighbor_bottom), first_control, "Down from last visible display control should wrap after dependency changes")
+	assert_false(focusables.has(post_processing_preset), "Disabled dependency control should not remain in display focus chain")
+
 func _find_first_focusable(root: Node) -> Control:
 	var focusables := _get_all_focusables(root)
 	if focusables.size() > 0:

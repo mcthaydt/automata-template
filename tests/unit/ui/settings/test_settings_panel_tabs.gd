@@ -52,6 +52,113 @@ func test_switch_tab_shows_content_hides_others():
 	assert_false(display_content.visible, "Display content should be hidden when inactive")
 	panel.queue_free()
 
+func test_focus_next_switches_to_next_visible_tab():
+	var panel := await _create_panel()
+	panel._update_tab_visibility({"input": {"gamepad_connected": false, "active_device_type": M_INPUT_DEVICE_MANAGER.DeviceType.KEYBOARD_MOUSE}})
+	panel.switch_to_tab(UI_SettingsPanel.TAB_LANGUAGE)
+
+	var event := InputEventAction.new()
+	event.action = "ui_focus_next"
+	event.pressed = true
+	panel._unhandled_input(event)
+	await get_tree().process_frame
+
+	assert_eq(panel.get_active_tab_id(), UI_SettingsPanel.TAB_KEYBOARD_MOUSE, "RB should skip hidden Gamepad tab and focus Keyboard/Mouse")
+	panel.queue_free()
+
+func test_focus_prev_switches_to_previous_visible_tab():
+	var panel := await _create_panel()
+	panel._update_tab_visibility({"input": {"gamepad_connected": false, "active_device_type": M_INPUT_DEVICE_MANAGER.DeviceType.KEYBOARD_MOUSE}})
+	panel.switch_to_tab(UI_SettingsPanel.TAB_DISPLAY)
+
+	var event := InputEventAction.new()
+	event.action = "ui_focus_prev"
+	event.pressed = true
+	panel._unhandled_input(event)
+	await get_tree().process_frame
+
+	assert_eq(panel.get_active_tab_id(), UI_SettingsPanel.TAB_KEYBOARD_MOUSE, "LB should wrap to last visible tab and skip hidden tabs")
+	panel.queue_free()
+
+func test_shoulder_prompt_icons_use_existing_lb_rb_assets():
+	var panel := await _create_panel()
+	var lb_icon := panel.find_child("ShoulderPromptLBIcon", true, false) as TextureRect
+	var rb_icon := panel.find_child("ShoulderPromptRBIcon", true, false) as TextureRect
+	var label := panel.find_child("ShoulderPromptLabel", true, false) as Label
+
+	assert_not_null(lb_icon, "Settings panel should show LB prompt icon")
+	assert_not_null(rb_icon, "Settings panel should show RB prompt icon")
+	assert_not_null(label, "Settings panel should label shoulder prompts")
+	assert_eq(lb_icon.texture.resource_path, "res://assets/core/button_prompts/gamepad/button_lb.png", "LB icon should use existing prompt art")
+	assert_eq(rb_icon.texture.resource_path, "res://assets/core/button_prompts/gamepad/button_rb.png", "RB icon should use existing prompt art")
+	panel.queue_free()
+
+func test_close_in_gameplay_overlay_closes_top_overlay():
+	var panel := await _create_panel()
+	_store.dispatch(U_NavigationActions.start_game(StringName("demo_room")))
+	_store.dispatch(U_NavigationActions.open_pause())
+	_store.dispatch(U_NavigationActions.open_overlay(StringName("settings_panel")))
+	await get_tree().process_frame
+
+	panel._on_close_pressed()
+	await get_tree().process_frame
+
+	var nav_slice := _store.get_slice(StringName("navigation"))
+	assert_eq(nav_slice.get("overlay_stack"), [StringName("pause_menu")], "Close button should close settings overlay back to pause")
+	panel.queue_free()
+
+func test_cancel_in_main_menu_standalone_returns_to_main_menu():
+	var panel := await _create_panel()
+	_store.dispatch(U_NavigationActions.set_shell(StringName("main_menu"), StringName("settings_panel")))
+	await get_tree().process_frame
+
+	var event := InputEventAction.new()
+	event.action = "ui_cancel"
+	event.pressed = true
+	panel._unhandled_input(event)
+	await get_tree().process_frame
+
+	var nav_slice := _store.get_slice(StringName("navigation"))
+	assert_eq(nav_slice.get("base_scene_id"), StringName("main_menu"), "Cancel should navigate standalone settings back to main_menu")
+	panel.queue_free()
+
+func test_background_is_context_aware_for_overlay_and_standalone():
+	var panel := await _create_panel()
+	_store.dispatch(U_NavigationActions.start_game(StringName("demo_room")))
+	_store.dispatch(U_NavigationActions.open_overlay(StringName("settings_panel")))
+	panel._apply_context_background()
+	var overlay_bg := panel.find_child("OverlayBackground", true, false) as ColorRect
+	var menu_bg := panel.find_child("MenuBackground", true, false) as Control
+	assert_true(overlay_bg.visible, "Gameplay overlay settings should keep dim background visible")
+	assert_false(menu_bg.visible, "Gameplay overlay settings should hide menu background")
+
+	_store.dispatch(U_NavigationActions.set_shell(StringName("main_menu"), StringName("settings_panel")))
+	panel._apply_context_background()
+	assert_false(overlay_bg.visible, "Standalone main-menu settings should hide dim overlay")
+	assert_true(menu_bg.visible, "Standalone main-menu settings should show menu background")
+	panel.queue_free()
+
+func test_panel_spacing_tokens_apply_to_outer_panel_not_inner_vbox():
+	var config := RS_UIThemeConfig.new()
+	config.margin_section = 18
+	config.margin_outer = 28
+	config.ensure_runtime_defaults()
+	U_UIThemeBuilder.active_config = config
+
+	var panel := await _create_panel()
+	panel._apply_layout_tokens()
+	var shell := panel.get_node("CenterContainer/Panel") as PanelContainer
+	var vbox := panel.get_node("CenterContainer/Panel/VBox") as VBoxContainer
+	var stylebox := shell.get_theme_stylebox("panel") as StyleBoxFlat
+
+	assert_not_null(stylebox, "Settings panel should apply a panel shell stylebox")
+	assert_eq(stylebox.content_margin_left, 18.0, "Panel shell should own left padding")
+	assert_eq(stylebox.content_margin_right, 18.0, "Panel shell should own right padding")
+	assert_false(vbox.has_theme_constant_override("margin_left"), "Inner VBox should not own outer panel margin")
+	assert_false(vbox.has_theme_constant_override("margin_top"), "Inner VBox should not own outer panel margin")
+	panel.queue_free()
+	U_UIThemeBuilder.active_config = null
+
 func _create_panel() -> UI_SettingsPanel:
 	var scene := load(SCENE_PATH) as PackedScene
 	var panel := scene.instantiate() as UI_SettingsPanel
