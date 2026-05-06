@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cl8wd2ah0lfq8"
-path="res://.godot/imported/tex_bg_game_over.png-409a28efef8ec22bb2ad62225219df2a.ctex"
+path="res://.godot/imported/tex_bg_game_over.png-6116d6279f8e81a2fd6e07cf5496a0aa.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://assets/core/textures/tex_bg_game_over.png"
-dest_files=["res://.godot/imported/tex_bg_game_over.png-409a28efef8ec22bb2ad62225219df2a.ctex"]
+dest_files=["res://.godot/imported/tex_bg_game_over.png-6116d6279f8e81a2fd6e07cf5496a0aa.ctex"]
 
 [params]
 

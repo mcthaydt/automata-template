@@ -1393,8 +1393,8 @@ gut_cmdln.gd -gdir=res://tests/unit/ecs -gexit
 ## Related Documentation
 
 - **docs/ecs/ecs_architecture.md** - Current architecture details
-- **docs/ecs/for humans/ecs_ELI5.md** - Beginner-friendly guide
-- **docs/ecs/for humans/ecs_tradeoffs.md** - Pros and cons analysis
+- **docs/systems/ecs/for_humans/ecs_ELI5.md** - Beginner-friendly guide
+- **docs/systems/ecs/for_humans/ecs_tradeoffs.md** - Pros and cons analysis
 - **tests/unit/ecs/** - Existing test suite
 
 **End of Refactoring Recommendations**

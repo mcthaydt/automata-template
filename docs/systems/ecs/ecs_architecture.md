@@ -1789,9 +1789,9 @@ Per `docs/architecture/adr/0001-channel-taxonomy.md`, ECS components and systems
 
 ### 9.4 Related Documentation
 
-- **docs/ecs/for humans/ecs_ELI5.md** - Beginner-friendly explanation
-- **docs/ecs/for humans/ecs_tradeoffs.md** - Pros/cons analysis
-- **docs/ecs/refactor recommendations/ecs_refactor_recommendations.md** - Improvement proposals
+- **docs/systems/ecs/for_humans/ecs_ELI5.md** - Beginner-friendly explanation
+- **docs/systems/ecs/for_humans/ecs_tradeoffs.md** - Pros/cons analysis
+- **docs/systems/ecs/general/ecs_refactor_recommendations.md** - Improvement proposals
 - **tests/unit/ecs/** - Example usage in tests
 
 ---

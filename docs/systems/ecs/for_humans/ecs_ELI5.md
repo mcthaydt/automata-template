@@ -935,8 +935,8 @@ ECS is like **LEGO for game code**:
 Want to learn more? Check out:
 
 - **docs/ecs/ecs_architecture.md** - Detailed technical architecture
-- **docs/ecs/for humans/ecs_tradeoffs.md** - Pros and cons analysis
-- **docs/ecs/refactor recommendations/ecs_refactor_recommendations.md** - Improvement proposals
+- **docs/systems/ecs/for_humans/ecs_tradeoffs.md** - Pros and cons analysis
+- **docs/systems/ecs/general/ecs_refactor_recommendations.md** - Improvement proposals
 - **scripts/core/ecs/** - Actual implementation files
 - **tests/unit/ecs/** - Example usage in tests
 

@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://vww8tq24tmfu"
-path="res://.godot/imported/tex_bg_menu_pause.png-c6ebf8fd3a3f5c3caf1057b39ce6c014.ctex"
+path="res://.godot/imported/tex_bg_menu_pause.png-e6b3e249d51f11d07fcfa84306ff5ffc.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://assets/core/textures/tex_bg_menu_pause.png"
-dest_files=["res://.godot/imported/tex_bg_menu_pause.png-c6ebf8fd3a3f5c3caf1057b39ce6c014.ctex"]
+dest_files=["res://.godot/imported/tex_bg_menu_pause.png-e6b3e249d51f11d07fcfa84306ff5ffc.ctex"]
 
 [params]
 

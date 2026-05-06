@@ -153,7 +153,7 @@ _cursor_manager.set_cursor_state(true, false)  # locked, hidden
 ### 📄 Documentation References (Not Code)
 
 Files containing `set_cursor_state` references in documentation/examples:
-- `docs/state_store/for humans/redux-state-store-usage-guide.md`
+- `docs/systems/state_store/for_humans/redux-state-store-usage-guide.md`
 - `docs/history/cleanup_v1/style-scene-cleanup-tasks.md`
 - `docs/history/cleanup_v1/pause-cursor-authority-model.md`
 - `docs/guides/DEV_PITFALLS.md:482` (outdated reference to M_SceneManager calling it)

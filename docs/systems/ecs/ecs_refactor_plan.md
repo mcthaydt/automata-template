@@ -1158,7 +1158,7 @@ func _sort_systems() -> void:
 
 **Update ELI5 Documentation**
 
-- [x] 3.2 – Update `docs/ecs/for humans/ecs_ELI5.md`
+- [x] 3.2 – Update `docs/systems/ecs/for_humans/ecs_ELI5.md`
 - ✅ Added query-based system patterns (Pattern 2 & 3)
 - ✅ Added event bus with Discord analogy (Pattern 5)
 - ✅ Updated all code examples with query_entities()
@@ -1167,7 +1167,7 @@ func _sort_systems() -> void:
 
 **Update Refactor Recommendations**
 
-- [x] 3.3 – Mark completed items in `docs/ecs/refactor recommendations/ecs_refactor_recommendations.md`
+- [x] 3.3 – Mark completed items in `docs/systems/ecs/general/ecs_refactor_recommendations.md`
 - ✅ Multi-component queries marked complete (Stories 2.1-2.6)
 - ✅ Event bus marked complete (Stories 3.1-3.4)
 - ✅ Component decoupling marked complete (Stories 4.1-4.4)
@@ -1331,9 +1331,9 @@ No blocking bugs remain
 Finalize all documentation:
 
 - [x] `docs/ecs/ecs_architecture.md` updated with query/event/ordering sections
-- [ ] `docs/ecs/for humans/ecs_ELI5.md` updated with query examples
+- [ ] `docs/systems/ecs/for_humans/ecs_ELI5.md` updated with query examples
 - [ ] `docs/ecs/scene_migration_guide.md` created with step-by-step guide
-- [x] `docs/ecs/refactor recommendations/ecs_refactor_recommendations.md` marked completed items
+- [x] `docs/systems/ecs/general/ecs_refactor_recommendations.md` marked completed items
 - [ ] Add API documentation for U_EntityQuery, U_ECSEventBus, U_ECSUtils
 
 ### Step 6: Deployment Readiness Checklist

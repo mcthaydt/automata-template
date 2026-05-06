@@ -147,14 +147,14 @@ func process_tick(delta: float):
 ## Documentation
 
 ### For Developers
-- **`docs/ecs/for humans/ecs_ELI5.md`** - Beginner-friendly guide with analogies
+- **`docs/systems/ecs/for_humans/ecs_ELI5.md`** - Beginner-friendly guide with analogies
 - **`docs/ecs/ecs_architecture.md`** - Technical architecture reference
-- **`docs/ecs/for humans/ecs_tradeoffs.md`** - Pros/cons analysis
+- **`docs/systems/ecs/for_humans/ecs_tradeoffs.md`** - Pros/cons analysis
 
 ### For Implementation
 - **`docs/ecs/ecs_refactor_plan.md`** - Complete implementation timeline
 - **`docs/ecs/ecs_refactor_prd.md`** - Product requirements
-- **`docs/ecs/refactor recommendations/ecs_refactor_recommendations.md`** - Completed recommendations
+- **`docs/systems/ecs/general/ecs_refactor_recommendations.md`** - Completed recommendations
 
 ### For Testing
 - **`tests/integration/test_ecs_full_refactor.gd`** - End-to-end validation

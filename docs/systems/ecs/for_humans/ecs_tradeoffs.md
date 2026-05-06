@@ -743,7 +743,7 @@ The ECS architecture is **not a silver bullet**. It solves specific problems (en
 ## Related Documentation
 
 - **docs/ecs/ecs_architecture.md** - Technical details
-- **docs/ecs/for humans/ecs_ELI5.md** - Beginner explanation
-- **docs/ecs/refactor recommendations/ecs_refactor_recommendations.md** - How to improve current implementation
+- **docs/systems/ecs/for_humans/ecs_ELI5.md** - Beginner explanation
+- **docs/systems/ecs/general/ecs_refactor_recommendations.md** - How to improve current implementation
 
 **End of Trade-Offs Analysis**

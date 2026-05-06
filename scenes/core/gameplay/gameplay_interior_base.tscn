@@ -57,7 +57,7 @@
 [ext_resource type="Resource" uid="uid://d3fqw081d4sgl" path="res://resources/core/spawn_metadata/cfg_sp_base.tres" id="55_x3b4u"]
 [ext_resource type="Script" uid="uid://dr2u7w3ufadya" path="res://scripts/core/gameplay/inter_hazard_zone.gd" id="56_lj6cy"]
 [ext_resource type="Resource" uid="uid://dckux76yd7ug0" path="res://resources/core/interactions/hazards/cfg_hazard_default.tres" id="57_eropg"]
-[ext_resource type="PackedScene" uid="uid://bo65niskmxv2" path="res://scenes/core/prefabs/prefab_player.tscn" id="58_b02xr"]
+[ext_resource type="PackedScene" path="res://scenes/core/prefabs/prefab_player.tscn" id="58_b02xr"]
 [ext_resource type="PackedScene" uid="uid://4f8xryxbxit0" path="res://scenes/core/templates/tmpl_camera.tscn" id="59_qu3gu"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
