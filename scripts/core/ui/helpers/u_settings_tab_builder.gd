@@ -153,7 +153,6 @@ func _create_slider_value_label(key: StringName, custom_name: String = "") -> La
 	var label := Label.new()
 	var base_name := custom_name if custom_name != "" else key.capitalize().replace(" ", "")
 	label.name = base_name + "Value"
-	label.add_theme_color_override("font_color", Color(0.25, 0.5, 0.75, 1.0))
 	return label
 
 func _apply_tooltip(control: Control, tooltip_key: StringName) -> void:
