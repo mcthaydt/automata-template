@@ -6,6 +6,9 @@ const U_UI_THEME_ROLE_UTILS := preload("res://scripts/core/ui/helpers/u_ui_theme
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
 const RS_UI_THEME_CONFIG := preload("res://scripts/core/resources/ui/rs_ui_theme_config.gd")
 const CFG_MOTION_BUTTON_DEFAULT := preload("res://resources/core/ui/motions/cfg_motion_button_default.tres")
+const FIELD_LABEL_WIDTH := 220.0
+const FIELD_CONTROL_WIDTH := 360.0
+const SLIDER_VALUE_WIDTH := 72.0
 var _tab: Control = null
 var _current_parent: Control = null
 var _label_keys: Dictionary = {}
@@ -89,10 +92,11 @@ func add_dropdown(key: StringName, options: Array[Dictionary], callback: Callabl
 	if custom_name != "":
 		var label_name := custom_name.replace("Option", "Label")
 		label.name = label_name if label_name != custom_name else custom_name + "Label"
-	label.custom_minimum_size = Vector2(0, 0) if (is_inline and _inline_group_item_count > 0) else Vector2(180, 0)
+	label.custom_minimum_size = Vector2(0, 0) if (is_inline and _inline_group_item_count > 0) else Vector2(FIELD_LABEL_WIDTH, 0)
 	var dropdown := OptionButton.new()
 	dropdown.name = custom_name if custom_name != "" else key.capitalize().replace(" ", "") + "Option"
-	dropdown.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dropdown.custom_minimum_size = Vector2(FIELD_CONTROL_WIDTH, 0)
+	dropdown.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	row.add_child(dropdown)
 	for option in options:
 		dropdown.add_item(_localize(option.get("label_key", key), str(option.get("id", ""))))
@@ -110,10 +114,10 @@ func add_toggle(key: StringName, callback: Callable, tooltip_key: StringName = &
 	if custom_name != "":
 		var label_name := custom_name.replace("Toggle", "Label").replace("CheckButton", "Label")
 		label.name = label_name if label_name != custom_name else custom_name + "Label"
-	label.custom_minimum_size = Vector2(0, 0) if (is_inline and _inline_group_item_count > 0) else Vector2(180, 0)
+	label.custom_minimum_size = Vector2(0, 0) if (is_inline and _inline_group_item_count > 0) else Vector2(FIELD_LABEL_WIDTH, 0)
 	var toggle := CheckBox.new()
 	toggle.name = custom_name if custom_name != "" else key.capitalize().replace(" ", "") + "Toggle"
-	toggle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	toggle.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	row.add_child(toggle)
 	_connect(toggle.toggled, callback)
 	_register_field(label, toggle)
@@ -129,12 +133,13 @@ func add_slider(key: StringName, min_val: float, max_val: float, step: float, ca
 	if custom_name != "":
 		var label_name := custom_name.replace("Slider", "Label")
 		label.name = label_name if label_name != custom_name else custom_name + "Label"
-	label.custom_minimum_size = Vector2(0, 0) if (is_inline and _inline_group_item_count > 0) else Vector2(180, 0)
+	label.custom_minimum_size = Vector2(0, 0) if (is_inline and _inline_group_item_count > 0) else Vector2(FIELD_LABEL_WIDTH, 0)
 	var slider := HSlider.new()
 	slider.name = custom_name if custom_name != "" else key.capitalize().replace(" ", "") + "Slider"
 	slider.min_value = min_val
 	slider.max_value = max_val
 	slider.step = step
+	slider.custom_minimum_size = Vector2(FIELD_CONTROL_WIDTH, 0)
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(slider)
 	var value_label := _create_slider_value_label(key, custom_name)
@@ -153,6 +158,8 @@ func _create_slider_value_label(key: StringName, custom_name: String = "") -> La
 	var label := Label.new()
 	var base_name := custom_name if custom_name != "" else key.capitalize().replace(" ", "")
 	label.name = base_name + "Value"
+	label.custom_minimum_size = Vector2(SLIDER_VALUE_WIDTH, 0)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	return label
 
 func _apply_tooltip(control: Control, tooltip_key: StringName) -> void:

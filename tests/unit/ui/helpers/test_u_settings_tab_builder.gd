@@ -448,6 +448,37 @@ func test_add_slider_uses_fallback_text_when_key_missing() -> void:
 	assert_true(label.get_parent() is HBoxContainer, "Slider label should be in a row")
 
 
+func test_toggle_controls_do_not_expand_to_full_row_width():
+	var builder_script := _get_builder_script()
+	if builder_script == null:
+		return
+	var tab := VBoxContainer.new()
+	add_child_autofree(tab)
+	var builder = builder_script.new(tab)
+	builder.add_toggle(&"settings.test.toggle", Callable(), &"", "Toggle", "TestToggle")
+	builder.build()
+
+	var toggle := tab.find_child("TestToggle", true, false) as CheckBox
+	assert_not_null(toggle, "Builder should create toggle")
+	assert_eq(toggle.size_flags_horizontal, Control.SIZE_SHRINK_BEGIN, "Toggles should keep natural width")
+
+
+func test_dropdown_controls_use_consistent_field_width():
+	var builder_script := _get_builder_script()
+	if builder_script == null:
+		return
+	var tab := VBoxContainer.new()
+	add_child_autofree(tab)
+	var builder = builder_script.new(tab)
+	var opts: Array[Dictionary] = [{"id": &"one", "label_key": &"one"}]
+	builder.add_dropdown(&"settings.test.dropdown", opts, Callable(), &"", "Dropdown", "TestOption")
+	builder.build()
+
+	var dropdown := tab.find_child("TestOption", true, false) as OptionButton
+	assert_not_null(dropdown, "Builder should create dropdown")
+	assert_eq(dropdown.custom_minimum_size.x, 360.0, "Dropdowns should have stable field width")
+
+
 func _find_button_by_name(node: Node, name: String) -> Button:
 	if node is Button and node.name == name:
 		return node as Button
