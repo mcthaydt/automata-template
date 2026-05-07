@@ -118,7 +118,58 @@ func test_display_tab_field_controls_have_consistent_widths():
 	assert_eq(window_size.size_flags_horizontal, Control.SIZE_EXPAND_FILL, "Inline display dropdowns should expand to share available space")
 
 
+func test_display_inline_rows_use_equal_two_column_cells():
+	_instantiate_tab()
+
+	var window_row := _tab.find_child("WindowSizeRow", true, false) as HBoxContainer
+	var vsync_row := _tab.find_child("VSyncRow", true, false) as HBoxContainer
+	var total_cell_min_width := 0.0
+
+	assert_not_null(window_row, "Window size row should exist")
+	assert_not_null(vsync_row, "VSync row should exist")
+	assert_eq(window_row.get_child_count(), 2, "Window row should contain two equal setting cells")
+	assert_eq(vsync_row.get_child_count(), 2, "VSync row should contain two equal setting cells")
+	for child in window_row.get_children():
+		var cell := child as HBoxContainer
+		assert_not_null(cell, "Inline row children should be setting cells")
+		assert_eq(cell.size_flags_horizontal, Control.SIZE_EXPAND_FILL, "Setting cells should divide the row evenly")
+		total_cell_min_width += _sum_child_min_widths(cell)
+	assert_lte(total_cell_min_width, 810.0, "Two-column rows should fit inside the settings panel content width")
+
+
+func test_display_toggles_show_enabled_value_text():
+	_instantiate_tab()
+
+	var vsync := _tab.find_child("VSyncToggle", true, false) as CheckBox
+	var post_processing := _tab.find_child("PostProcessingToggle", true, false) as CheckBox
+	var high_contrast := _tab.find_child("HighContrastToggle", true, false) as CheckBox
+
+	assert_eq(vsync.text, "Enabled", "VSync toggle should show the enabled value text")
+	assert_eq(post_processing.text, "Enabled", "Post-processing toggle should show the enabled value text")
+	assert_eq(high_contrast.text, "Enabled", "High contrast toggle should show the enabled value text")
+
+
+func test_display_action_buttons_are_right_aligned_reset_cancel_apply():
+	_instantiate_tab()
+
+	var action_row := _tab.find_child("ActionButtons", true, false) as HBoxContainer
+
+	assert_not_null(action_row, "Action button row should exist")
+	assert_eq(action_row.size_flags_horizontal, Control.SIZE_SHRINK_END, "Action buttons should align to the lower right")
+	assert_eq(action_row.get_child(0).name, "ResetButton", "Reset should be the first action")
+	assert_eq(action_row.get_child(1).name, "CancelButton", "Cancel should be the second action")
+	assert_eq(action_row.get_child(2).name, "ApplyButton", "Apply should be the final action")
+
+
 func _instantiate_tab() -> void:
 	_tab = TAB_SCENE.instantiate() as UI_DisplaySettingsTab
 	add_child_autofree(_tab)
 	await get_tree().process_frame
+
+
+func _sum_child_min_widths(control: Control) -> float:
+	var total := 0.0
+	for child in control.get_children():
+		if child is Control:
+			total += (child as Control).custom_minimum_size.x
+	return total

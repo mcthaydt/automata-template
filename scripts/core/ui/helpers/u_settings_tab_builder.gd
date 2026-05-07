@@ -6,9 +6,10 @@ const U_UI_THEME_ROLE_UTILS := preload("res://scripts/core/ui/helpers/u_ui_theme
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
 const RS_UI_THEME_CONFIG := preload("res://scripts/core/resources/ui/rs_ui_theme_config.gd")
 const CFG_MOTION_BUTTON_DEFAULT := preload("res://resources/core/ui/motions/cfg_motion_button_default.tres")
-const FIELD_LABEL_WIDTH := 220.0
-const FIELD_CONTROL_WIDTH := 360.0
+const FIELD_LABEL_WIDTH := 150.0
+const FIELD_CONTROL_WIDTH := 245.0
 const SLIDER_VALUE_WIDTH := 72.0
+const TOGGLE_ENABLED_TEXT_KEY := &"settings.display.label.enabled"
 var _tab: Control = null
 var _current_parent: Control = null
 var _label_keys: Dictionary = {}
@@ -16,7 +17,6 @@ var _label_fallbacks: Dictionary = {}
 var _theme_map: Array[Dictionary] = []
 var _focusable_controls: Array[Control] = []
 var _inline_group_row: HBoxContainer = null
-var _inline_group_item_count: int = 0
 func _init(tab: Control) -> void:
 	_tab = tab
 	_current_parent = tab
@@ -48,7 +48,6 @@ func bind_field_control(control: Control, callback: Callable = Callable()) -> U_
 	_focusable_controls.append(control)
 	_wire_control_callback(control, callback)
 	return self
-
 func bind_action_button(button: Button, key: StringName, callback: Callable = Callable(), fallback: String = "") -> U_SettingsTabBuilder:
 	if button == null:
 		return self
@@ -71,31 +70,28 @@ func begin_section(key: StringName, section_name: String = "Section", fallback: 
 func end_section() -> U_SettingsTabBuilder:
 	_current_parent = _tab
 	return self
-
 func begin_inline_group(group_name: String = "") -> U_SettingsTabBuilder:
 	var row := HBoxContainer.new()
 	row.name = group_name + "Row" if group_name != "" else "InlineGroupRow"
 	_current_parent.add_child(row)
 	_theme_map.append({"control": row, "role": &"default_row"})
 	_inline_group_row = row
-	_inline_group_item_count = 0
 	return self
 func end_inline_group() -> U_SettingsTabBuilder:
 	_inline_group_row = null
-	_inline_group_item_count = 0
 	return self
-
 func add_dropdown(key: StringName, options: Array[Dictionary], callback: Callable, tooltip_key: StringName = &"", fallback: String = "", custom_name: String = "") -> U_SettingsTabBuilder:
 	var is_inline: bool = _inline_group_row != null
-	var row: HBoxContainer = _inline_group_row if is_inline else _add_row()
+	var row: HBoxContainer = _create_inline_setting_cell() if is_inline else _add_row()
 	var label := _add_label(key, row, fallback)
 	if custom_name != "":
 		var label_name := custom_name.replace("Option", "Label")
 		label.name = label_name if label_name != custom_name else custom_name + "Label"
-	label.custom_minimum_size = Vector2(0, 0) if is_inline else Vector2(FIELD_LABEL_WIDTH, 0)
+	label.custom_minimum_size = Vector2(FIELD_LABEL_WIDTH, 0)
 	var dropdown := OptionButton.new()
 	dropdown.name = custom_name if custom_name != "" else key.capitalize().replace(" ", "") + "Option"
 	if is_inline:
+		dropdown.custom_minimum_size = Vector2(FIELD_CONTROL_WIDTH, 0)
 		dropdown.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	else:
 		dropdown.custom_minimum_size = Vector2(FIELD_CONTROL_WIDTH, 0)
@@ -106,35 +102,34 @@ func add_dropdown(key: StringName, options: Array[Dictionary], callback: Callabl
 	_connect(dropdown.item_selected, callback)
 	_register_field(label, dropdown)
 	_apply_tooltip(dropdown, tooltip_key)
-	if is_inline:
-		_inline_group_item_count += 1
 	return self
 func add_toggle(key: StringName, callback: Callable, tooltip_key: StringName = &"", fallback: String = "", custom_name: String = "") -> U_SettingsTabBuilder:
 	var is_inline: bool = _inline_group_row != null
-	var row: HBoxContainer = _inline_group_row if is_inline else _add_row()
+	var row: HBoxContainer = _create_inline_setting_cell() if is_inline else _add_row()
 	var label := _add_label(key, row, fallback)
 	if custom_name != "":
 		var label_name := custom_name.replace("Toggle", "Label").replace("CheckButton", "Label")
 		label.name = label_name if label_name != custom_name else custom_name + "Label"
-	label.custom_minimum_size = Vector2(0, 0) if is_inline else Vector2(FIELD_LABEL_WIDTH, 0)
+	label.custom_minimum_size = Vector2(FIELD_LABEL_WIDTH, 0)
 	var toggle := CheckBox.new()
 	toggle.name = custom_name if custom_name != "" else key.capitalize().replace(" ", "") + "Toggle"
+	toggle.text = _localize(TOGGLE_ENABLED_TEXT_KEY, "Enabled")
+	_label_keys[toggle] = TOGGLE_ENABLED_TEXT_KEY
+	_label_fallbacks[toggle] = "Enabled"
 	toggle.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	row.add_child(toggle)
 	_connect(toggle.toggled, callback)
 	_register_field(label, toggle)
 	_apply_tooltip(toggle, tooltip_key)
-	if is_inline:
-		_inline_group_item_count += 1
 	return self
 func add_slider(key: StringName, min_val: float, max_val: float, step: float, callback: Callable, _value_label_key: StringName = &"", tooltip_key: StringName = &"", fallback: String = "", custom_name: String = "") -> U_SettingsTabBuilder:
 	var is_inline: bool = _inline_group_row != null
-	var row: HBoxContainer = _inline_group_row if is_inline else _add_row()
+	var row: HBoxContainer = _create_inline_setting_cell() if is_inline else _add_row()
 	var label := _add_label(key, row, fallback)
 	if custom_name != "":
 		var label_name := custom_name.replace("Slider", "Label")
 		label.name = label_name if label_name != custom_name else custom_name + "Label"
-	label.custom_minimum_size = Vector2(0, 0) if is_inline else Vector2(FIELD_LABEL_WIDTH, 0)
+	label.custom_minimum_size = Vector2(FIELD_LABEL_WIDTH, 0)
 	var slider := HSlider.new()
 	slider.name = custom_name if custom_name != "" else key.capitalize().replace(" ", "") + "Slider"
 	slider.min_value = min_val
@@ -151,10 +146,7 @@ func add_slider(key: StringName, min_val: float, max_val: float, step: float, ca
 	_register_field(label, slider)
 	_theme_map.append({"control": value_label, "role": &"value_label"})
 	_apply_tooltip(slider, tooltip_key)
-	if is_inline:
-		_inline_group_item_count += 1
 	return self
-
 func _create_slider_value_label(key: StringName, custom_name: String = "") -> Label:
 	var label := Label.new()
 	var base_name := custom_name if custom_name != "" else key.capitalize().replace(" ", "")
@@ -202,12 +194,12 @@ func add_button_row(
 ) -> U_SettingsTabBuilder:
 	var row := HBoxContainer.new()
 	row.name = "ActionButtons"
-	row.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	row.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_current_parent.add_child(row)
 	_theme_map.append({"control": row, "role": &"action_row"})
-	_add_optional_button(row, apply_key, apply_callback, apply_fallback, "ApplyButton", &"action_primary")
-	_add_optional_button(row, cancel_key, cancel_callback, cancel_fallback, "CancelButton", &"action")
 	_add_optional_button(row, reset_key, reset_callback, reset_fallback, "ResetButton", &"action_ghost")
+	_add_optional_button(row, cancel_key, cancel_callback, cancel_fallback, "CancelButton", &"action")
+	_add_optional_button(row, apply_key, apply_callback, apply_fallback, "ApplyButton", &"action_primary")
 	return self
 func build() -> Control:
 	var config: Resource = U_UI_THEME_BUILDER.active_config
@@ -241,10 +233,16 @@ func _add_row() -> HBoxContainer:
 	_current_parent.add_child(row)
 	_theme_map.append({"control": row, "role": &"default_row"})
 	return row
+func _create_inline_setting_cell() -> HBoxContainer:
+	var cell := HBoxContainer.new()
+	cell.name = "SettingCell"
+	cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_inline_group_row.add_child(cell)
+	_theme_map.append({"control": cell, "role": &"compact_row"})
+	return cell
 func _add_label(key: StringName, parent: Control, fallback: String = "") -> Label:
 	var label := Label.new()
-	var fb: String = fallback if fallback != "" else str(key)
-	label.text = _localize(key, fb)
+	label.text = _localize(key, fallback if fallback != "" else str(key))
 	parent.add_child(label)
 	_label_keys[label] = key
 	if fallback != "":
@@ -252,8 +250,7 @@ func _add_label(key: StringName, parent: Control, fallback: String = "") -> Labe
 	return label
 func _add_button(parent: Control, key: StringName, callback: Callable, fallback: String = "", role: StringName = &"action") -> Button:
 	var button := Button.new()
-	var fb: String = fallback if fallback != "" else str(key)
-	button.text = _localize(key, fb)
+	button.text = _localize(key, fallback if fallback != "" else str(key))
 	parent.add_child(button)
 	_label_keys[button] = key
 	if fallback != "":

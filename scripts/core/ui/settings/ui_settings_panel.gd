@@ -81,6 +81,7 @@ var _close_button_margin: MarginContainer = null
 var _content_scroll: ScrollContainer = null
 var _shoulder_hint_lb: PanelContainer = null
 var _shoulder_hint_rb: PanelContainer = null
+var _shoulder_hint_row: HBoxContainer = null
 
 @onready var _tab_bar: HBoxContainer = $CenterContainer/Panel/VBox/TabBar
 @onready var _separator: HSeparator = $CenterContainer/Panel/VBox/HSeparator
@@ -220,13 +221,27 @@ func _build_tab_bar() -> void:
 		}
 
 func _create_shoulder_prompts() -> void:
-	if _tab_bar == null:
+	if _panel_chrome == null:
 		return
+	_shoulder_hint_row = HBoxContainer.new()
+	_shoulder_hint_row.name = "ShoulderHintRow"
+	_shoulder_hint_row.size_flags_horizontal = Control.SIZE_SHRINK_END
+	_shoulder_hint_row.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_shoulder_hint_lb = _create_shoulder_hint("ShoulderHintLB", "LB")
 	_shoulder_hint_rb = _create_shoulder_hint("ShoulderHintRB", "RB")
-	_tab_bar.add_child(_shoulder_hint_lb)
-	_tab_bar.move_child(_shoulder_hint_lb, 0)
-	_tab_bar.add_child(_shoulder_hint_rb)
+	_shoulder_hint_row.add_child(_shoulder_hint_lb)
+	var label := Label.new()
+	label.name = "ShoulderHintLabel"
+	label.text = "Tabs"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_shoulder_hint_row.add_child(label)
+	_shoulder_hint_row.add_child(_shoulder_hint_rb)
+	var close_index := _close_button_margin.get_index() if _close_button_margin != null else _panel_chrome.get_child_count()
+	_panel_chrome.add_child(_shoulder_hint_row)
+	_panel_chrome.move_child(_shoulder_hint_row, close_index)
 
 func _create_shoulder_hint(node_name: String, label_text: String) -> PanelContainer:
 	var hint := PanelContainer.new()
@@ -378,6 +393,29 @@ func _configure_focus_neighbors() -> void:
 	if visible_buttons.is_empty():
 		return
 	U_FocusConfigurator.configure_horizontal_focus(visible_buttons)
+	_configure_tab_key_focus_paths()
+
+func _configure_tab_key_focus_paths() -> void:
+	if _active_tab < 0:
+		return
+	var visible_tabs := _get_visible_tab_ids()
+	var current_index := visible_tabs.find(_active_tab)
+	if current_index < 0:
+		return
+	var next_tab: TabId = visible_tabs[wrapi(current_index + 1, 0, visible_tabs.size())] as TabId
+	var previous_tab: TabId = visible_tabs[wrapi(current_index - 1, 0, visible_tabs.size())] as TabId
+	var next_button := _get_tab_button(next_tab)
+	var previous_button := _get_tab_button(previous_tab)
+	if next_button == null or previous_button == null:
+		return
+	var focusable := _get_focusable_descendants(_tab_contents.get(_active_tab) as Node)
+	for control: Control in focusable:
+		control.focus_next = control.get_path_to(next_button)
+		control.focus_previous = control.get_path_to(previous_button)
+
+func _get_tab_button(tab_id: TabId) -> Button:
+	var entry: Dictionary = _tab_buttons.get(tab_id, {})
+	return entry.get("button") as Button
 
 func _set_tab_visible(tab_id: TabId, visible: bool) -> void:
 	var entry: Dictionary = _tab_buttons.get(tab_id, {})
@@ -577,10 +615,13 @@ func _apply_layout_tokens() -> void:
 		_tab_bar.add_theme_constant_override("separation", typed_config.separation_compact)
 	if _panel_chrome != null:
 		_panel_chrome.add_theme_constant_override("separation", typed_config.separation_default)
+	if _shoulder_hint_row != null:
+		_shoulder_hint_row.add_theme_constant_override("separation", typed_config.separation_compact)
 	if _content_container != null:
 		_content_container.add_theme_constant_override("separation", typed_config.separation_default)
 	_style_shoulder_hint(_shoulder_hint_lb, typed_config)
 	_style_shoulder_hint(_shoulder_hint_rb, typed_config)
+	_style_shoulder_hint_label(typed_config)
 	if _close_button_margin != null:
 		var margin := typed_config.margin_inner
 		_close_button_margin.add_theme_constant_override("margin_left", margin)
@@ -597,3 +638,11 @@ func _style_shoulder_hint(hint: PanelContainer, config: RS_UI_THEME_CONFIG) -> v
 	if label != null:
 		label.add_theme_font_size_override("font_size", config.caption)
 		label.add_theme_color_override("font_color", config.text_primary)
+
+func _style_shoulder_hint_label(config: RS_UI_THEME_CONFIG) -> void:
+	if _shoulder_hint_row == null or config == null:
+		return
+	var label := _shoulder_hint_row.get_node_or_null("ShoulderHintLabel") as Label
+	if label != null:
+		label.add_theme_font_size_override("font_size", config.body_small)
+		label.add_theme_color_override("font_color", config.text_secondary)

@@ -102,7 +102,7 @@ func test_builder_wires_signals_and_focus_chain() -> void:
 	assert_eq(_dropdown_selected, 0, "Dropdown callback should fire")
 	assert_true(_toggle_value, "Toggle callback should fire")
 	assert_eq(_slider_value, 1.1, "Slider callback should fire")
-	assert_eq(_pressed_buttons, ["apply", "cancel", "reset"], "Action callbacks should fire")
+	assert_eq(_pressed_buttons, ["reset", "cancel", "apply"], "Action callbacks should fire in visual row order")
 	assert_eq(dropdown.focus_neighbor_bottom, dropdown.get_path_to(toggle), "Focusable controls should use vertical chain")
 	assert_eq(toggle.focus_neighbor_bottom, toggle.get_path_to(slider), "Toggle should point to slider")
 
@@ -461,7 +461,7 @@ func test_action_buttons_row_has_comfortable_spacing_and_padding_role():
 	var row := tab.find_child("ActionButtons", true, false) as HBoxContainer
 	assert_not_null(row, "Builder should create action row")
 	assert_eq(row.get_theme_constant("separation"), 12, "Action row should use default button spacing")
-	assert_eq(row.size_flags_horizontal, Control.SIZE_SHRINK_BEGIN, "Action row should keep compact button group width")
+	assert_eq(row.size_flags_horizontal, Control.SIZE_SHRINK_END, "Action row should keep compact button group width at the right edge")
 
 
 func test_toggle_controls_do_not_expand_to_full_row_width():
@@ -492,7 +492,7 @@ func test_dropdown_controls_use_consistent_field_width():
 
 	var dropdown := tab.find_child("TestOption", true, false) as OptionButton
 	assert_not_null(dropdown, "Builder should create dropdown")
-	assert_eq(dropdown.custom_minimum_size.x, 360.0, "Dropdowns should have stable field width")
+	assert_eq(dropdown.custom_minimum_size.x, 245.0, "Dropdowns should have stable field width")
 
 
 func test_action_buttons_have_distinct_theme_roles() -> void:

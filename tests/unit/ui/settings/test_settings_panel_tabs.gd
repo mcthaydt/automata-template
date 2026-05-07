@@ -80,6 +80,32 @@ func test_focus_prev_switches_to_previous_visible_tab():
 	assert_eq(panel.get_active_tab_id(), UI_SettingsPanel.TAB_KEYBOARD_MOUSE, "LB should wrap to last visible tab and skip hidden tabs")
 	panel.queue_free()
 
+func test_tab_key_focus_path_targets_next_visible_tab_button():
+	var panel := await _create_panel()
+	panel._update_tab_visibility({"input": {"gamepad_connected": false, "active_device_type": M_INPUT_DEVICE_MANAGER.DeviceType.KEYBOARD_MOUSE}})
+	panel.switch_to_tab(UI_SettingsPanel.TAB_DISPLAY)
+	await get_tree().process_frame
+
+	var first_focusable := panel._find_first_focusable_in_tab(UI_SettingsPanel.TAB_DISPLAY)
+	var audio_button := _get_tab_button(panel, UI_SettingsPanel.TAB_AUDIO)
+
+	assert_not_null(first_focusable, "Display tab should have a focusable control")
+	assert_eq(first_focusable.focus_next, first_focusable.get_path_to(audio_button), "Native Tab focus should move to the next settings tab button")
+	panel.queue_free()
+
+func test_shift_tab_focus_path_targets_previous_visible_tab_button():
+	var panel := await _create_panel()
+	panel._update_tab_visibility({"input": {"gamepad_connected": false, "active_device_type": M_INPUT_DEVICE_MANAGER.DeviceType.KEYBOARD_MOUSE}})
+	panel.switch_to_tab(UI_SettingsPanel.TAB_DISPLAY)
+	await get_tree().process_frame
+
+	var first_focusable := panel._find_first_focusable_in_tab(UI_SettingsPanel.TAB_DISPLAY)
+	var keyboard_button := _get_tab_button(panel, UI_SettingsPanel.TAB_KEYBOARD_MOUSE)
+
+	assert_not_null(first_focusable, "Display tab should have a focusable control")
+	assert_eq(first_focusable.focus_previous, first_focusable.get_path_to(keyboard_button), "Native Shift+Tab focus should move to the previous settings tab button")
+	panel.queue_free()
+
 func test_shoulder_hints_show_lb_rb_text_labels():
 	var panel := await _create_panel()
 	var lb_hint := panel.find_child("ShoulderHintLB", true, false) as PanelContainer
@@ -98,13 +124,16 @@ func test_shoulder_hints_show_lb_rb_text_labels():
 func test_shoulder_hints_flank_tab_buttons_in_tab_bar():
 	var panel := await _create_panel()
 	var tab_bar := panel.find_child("TabBar", true, false) as HBoxContainer
+	var hint_row := panel.find_child("ShoulderHintRow", true, false) as HBoxContainer
 	var lb_hint := panel.find_child("ShoulderHintLB", true, false) as PanelContainer
 	var rb_hint := panel.find_child("ShoulderHintRB", true, false) as PanelContainer
 
-	assert_eq(lb_hint.get_parent(), tab_bar, "LB hint should live inside the tab bar")
-	assert_eq(rb_hint.get_parent(), tab_bar, "RB hint should live inside the tab bar")
-	assert_eq(lb_hint.get_index(), 0, "LB hint should be the first child of the tab bar")
-	assert_eq(rb_hint.get_index(), tab_bar.get_child_count() - 1, "RB hint should be the last child of the tab bar")
+	assert_not_null(hint_row, "Settings panel should group shoulder hints in a header row")
+	assert_eq(hint_row.get_parent().name, "PanelChrome", "Shoulder hint row should live in panel chrome")
+	assert_eq(lb_hint.get_parent(), hint_row, "LB hint should live inside the shoulder hint row")
+	assert_eq(rb_hint.get_parent(), hint_row, "RB hint should live inside the shoulder hint row")
+	assert_ne(lb_hint.get_parent(), tab_bar, "LB hint should not be mixed into tab buttons")
+	assert_ne(rb_hint.get_parent(), tab_bar, "RB hint should not be mixed into tab buttons")
 	panel.queue_free()
 
 func test_close_in_gameplay_overlay_closes_top_overlay():
@@ -221,13 +250,15 @@ func test_tab_header_spacer_separates_tabs_from_close_button():
 	var chrome := panel.find_child("PanelChrome", true, false) as HBoxContainer
 	var spacer := panel.find_child("TabHeaderSpacer", true, false) as Control
 	var tab_bar := panel.find_child("TabBar", true, false) as HBoxContainer
+	var hint_row := panel.find_child("ShoulderHintRow", true, false) as HBoxContainer
 	var close_margin := panel.find_child("CloseButtonMargin", true, false) as MarginContainer
 
 	assert_not_null(spacer, "TabHeaderSpacer should exist in the scene tree")
 	assert_eq(spacer.get_parent(), chrome, "TabHeaderSpacer should be a direct child of PanelChrome")
 	assert_eq(spacer.size_flags_horizontal, Control.SIZE_EXPAND_FILL, "TabHeaderSpacer should fill remaining space to push close button right")
 	assert_true(tab_bar.get_index() < spacer.get_index(), "Spacer should come after the tab bar")
-	assert_true(spacer.get_index() < close_margin.get_index(), "Spacer should come before the close button")
+	assert_true(spacer.get_index() < hint_row.get_index(), "Spacer should come before the shoulder hint row")
+	assert_true(hint_row.get_index() < close_margin.get_index(), "Shoulder hint row should come before the close button")
 	panel.queue_free()
 
 func test_panel_surface_alpha_is_boosted_to_readable_floor():
@@ -251,6 +282,10 @@ func _create_panel() -> UI_SettingsPanel:
 	add_child_autofree(panel)
 	await get_tree().process_frame
 	return panel
+
+func _get_tab_button(panel: UI_SettingsPanel, tab_id: int) -> Button:
+	var entry: Dictionary = panel._tab_buttons.get(tab_id, {})
+	return entry.get("button") as Button
 
 func _create_state_store() -> M_StateStore:
 	var store := M_StateStore.new()
