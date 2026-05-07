@@ -11,7 +11,6 @@ const U_INPUT_SELECTORS := preload("res://scripts/core/state/selectors/u_input_s
 const RS_TOUCHSCREEN_SETTINGS := preload("res://scripts/core/resources/input/rs_touchscreen_settings.gd")
 const U_FOCUS_CONFIGURATOR := preload("res://scripts/core/ui/helpers/u_focus_configurator.gd")
 const U_NAVIGATION_ACTIONS := preload("res://scripts/core/state/actions/u_navigation_actions.gd")
-const U_NAVIGATION_SELECTORS := preload("res://scripts/core/state/selectors/u_navigation_selectors.gd")
 const I_INPUT_PROFILE_MANAGER := preload("res://scripts/core/interfaces/i_input_profile_manager.gd")
 const U_TOUCHSCREEN_PREVIEW_HELPER := preload("res://scripts/core/ui/helpers/u_touchscreen_preview_helper.gd")
 const VirtualJoystickScene := preload("res://scenes/core/ui/widgets/ui_virtual_joystick.tscn")
@@ -430,17 +429,7 @@ func _on_edit_layout_pressed() -> void:
 func _update_edit_layout_visibility() -> void:
 	if _edit_layout_button == null:
 		return
-
-	if _state_store == null:
-		_edit_layout_button.visible = true
-		_configure_sub_overlay_focus()
-		return
-
-	var nav_state: Dictionary = _state_store.get_state()
-	var nav_slice: Dictionary = nav_state.get("navigation", {})
-	var shell: StringName = U_NavigationSelectors.get_shell(nav_slice)
-
-	_edit_layout_button.visible = (shell == StringName("gameplay"))
+	_edit_layout_button.visible = true
 	_configure_sub_overlay_focus()
 
 func _apply_preview_size_limits() -> void:

@@ -80,30 +80,31 @@ func test_focus_prev_switches_to_previous_visible_tab():
 	assert_eq(panel.get_active_tab_id(), UI_SettingsPanel.TAB_KEYBOARD_MOUSE, "LB should wrap to last visible tab and skip hidden tabs")
 	panel.queue_free()
 
-func test_shoulder_prompt_icons_use_existing_lb_rb_assets():
+func test_shoulder_hints_show_lb_rb_text_labels():
 	var panel := await _create_panel()
-	var lb_icon := panel.find_child("ShoulderPromptLBIcon", true, false) as TextureRect
-	var rb_icon := panel.find_child("ShoulderPromptRBIcon", true, false) as TextureRect
-	var label := panel.find_child("ShoulderPromptLabel", true, false) as Label
+	var lb_hint := panel.find_child("ShoulderHintLB", true, false) as PanelContainer
+	var rb_hint := panel.find_child("ShoulderHintRB", true, false) as PanelContainer
 
-	assert_not_null(lb_icon, "Settings panel should show LB prompt icon")
-	assert_not_null(rb_icon, "Settings panel should show RB prompt icon")
-	assert_not_null(label, "Settings panel should label shoulder prompts")
-	assert_eq(lb_icon.texture.resource_path, "res://assets/core/button_prompts/gamepad/button_lb.png", "LB icon should use existing prompt art")
-	assert_eq(rb_icon.texture.resource_path, "res://assets/core/button_prompts/gamepad/button_rb.png", "RB icon should use existing prompt art")
+	assert_not_null(lb_hint, "Settings panel should show LB shoulder hint")
+	assert_not_null(rb_hint, "Settings panel should show RB shoulder hint")
+	var lb_label := lb_hint.get_node_or_null("Label") as Label
+	var rb_label := rb_hint.get_node_or_null("Label") as Label
+	assert_not_null(lb_label, "LB hint should contain a label")
+	assert_not_null(rb_label, "RB hint should contain a label")
+	assert_eq(lb_label.text, "LB", "LB hint should display 'LB'")
+	assert_eq(rb_label.text, "RB", "RB hint should display 'RB'")
 	panel.queue_free()
 
-func test_shoulder_prompt_icons_are_wide_lb_rb_glyphs():
+func test_shoulder_hints_flank_tab_buttons_in_tab_bar():
 	var panel := await _create_panel()
-	var lb_icon := panel.find_child("ShoulderPromptLBIcon", true, false) as TextureRect
-	var rb_icon := panel.find_child("ShoulderPromptRBIcon", true, false) as TextureRect
-	var prompt_row := panel.find_child("ShoulderPromptRow", true, false) as HBoxContainer
+	var tab_bar := panel.find_child("TabBar", true, false) as HBoxContainer
+	var lb_hint := panel.find_child("ShoulderHintLB", true, false) as PanelContainer
+	var rb_hint := panel.find_child("ShoulderHintRB", true, false) as PanelContainer
 
-	assert_true(lb_icon.custom_minimum_size.x > lb_icon.custom_minimum_size.y, "LB icon should preserve shoulder-button aspect")
-	assert_true(rb_icon.custom_minimum_size.x > rb_icon.custom_minimum_size.y, "RB icon should preserve shoulder-button aspect")
-	assert_eq(prompt_row.get_theme_constant("separation"), 8, "Shoulder prompt spacing should be compact")
-	assert_eq(lb_icon.stretch_mode, TextureRect.STRETCH_KEEP_ASPECT_CENTERED, "LB icon should not be distorted")
-	assert_eq(rb_icon.stretch_mode, TextureRect.STRETCH_KEEP_ASPECT_CENTERED, "RB icon should not be distorted")
+	assert_eq(lb_hint.get_parent(), tab_bar, "LB hint should live inside the tab bar")
+	assert_eq(rb_hint.get_parent(), tab_bar, "RB hint should live inside the tab bar")
+	assert_eq(lb_hint.get_index(), 0, "LB hint should be the first child of the tab bar")
+	assert_eq(rb_hint.get_index(), tab_bar.get_child_count() - 1, "RB hint should be the last child of the tab bar")
 	panel.queue_free()
 
 func test_close_in_gameplay_overlay_closes_top_overlay():
@@ -206,30 +207,27 @@ func test_panel_shell_has_viewport_margin_and_close_inside_panel_chrome():
 	panel.queue_free()
 	U_UIThemeBuilder.active_config = null
 
-func test_shoulder_prompts_are_inline_with_tab_bar():
+func test_tab_bar_is_inside_panel_chrome():
 	var panel := await _create_panel()
 	var header := panel.find_child("PanelChrome", true, false) as Control
 	var tab_bar := panel.find_child("TabBar", true, false) as HBoxContainer
-	var prompt_row := panel.find_child("ShoulderPromptRow", true, false) as HBoxContainer
 
 	assert_not_null(header, "Settings panel should create a header chrome row")
 	assert_eq(tab_bar.get_parent(), header, "Tab bar should be inside header chrome")
-	assert_eq(prompt_row.get_parent(), header, "Shoulder prompts should be inline in header chrome")
-	assert_true(prompt_row.size_flags_horizontal == Control.SIZE_SHRINK_END, "Prompt row should stay compact at the right side")
 	panel.queue_free()
 
-func test_tab_header_spacer_is_in_panel_chrome_between_tabs_and_prompts():
+func test_tab_header_spacer_separates_tabs_from_close_button():
 	var panel := await _create_panel()
 	var chrome := panel.find_child("PanelChrome", true, false) as HBoxContainer
 	var spacer := panel.find_child("TabHeaderSpacer", true, false) as Control
 	var tab_bar := panel.find_child("TabBar", true, false) as HBoxContainer
-	var prompt_row := panel.find_child("ShoulderPromptRow", true, false) as HBoxContainer
+	var close_margin := panel.find_child("CloseButtonMargin", true, false) as MarginContainer
 
 	assert_not_null(spacer, "TabHeaderSpacer should exist in the scene tree")
 	assert_eq(spacer.get_parent(), chrome, "TabHeaderSpacer should be a direct child of PanelChrome")
-	assert_eq(spacer.size_flags_horizontal, Control.SIZE_EXPAND_FILL, "TabHeaderSpacer should fill remaining space to push prompts right")
+	assert_eq(spacer.size_flags_horizontal, Control.SIZE_EXPAND_FILL, "TabHeaderSpacer should fill remaining space to push close button right")
 	assert_true(tab_bar.get_index() < spacer.get_index(), "Spacer should come after the tab bar")
-	assert_true(spacer.get_index() < prompt_row.get_index(), "Spacer should come before the prompt row")
+	assert_true(spacer.get_index() < close_margin.get_index(), "Spacer should come before the close button")
 	panel.queue_free()
 
 func test_panel_surface_alpha_is_boosted_to_readable_floor():

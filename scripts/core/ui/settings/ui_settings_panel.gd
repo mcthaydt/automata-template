@@ -22,8 +22,6 @@ const CFG_MOTION_FADE_SLIDE := preload("res://resources/core/ui/motions/cfg_moti
 const U_UI_PALETTE_RESOLVER := preload("res://scripts/core/ui/utils/u_ui_palette_resolver.gd")
 const U_SETTINGS_SELECTORS := preload("res://scripts/core/state/selectors/u_settings_selectors.gd")
 const TEX_MENU_BACKGROUND := preload("res://assets/core/textures/tex_bg_menu_main.png")
-const TEX_BUTTON_LB := preload("res://assets/core/button_prompts/gamepad/button_lb.png")
-const TEX_BUTTON_RB := preload("res://assets/core/button_prompts/gamepad/button_rb.png")
 
 enum TabId {
 	DISPLAY,
@@ -80,6 +78,9 @@ var _menu_background: TextureRect = null
 var _panel_chrome: HBoxContainer = null
 var _tab_header_spacer: Control = null
 var _close_button_margin: MarginContainer = null
+var _content_scroll: ScrollContainer = null
+var _shoulder_hint_lb: PanelContainer = null
+var _shoulder_hint_rb: PanelContainer = null
 
 @onready var _tab_bar: HBoxContainer = $CenterContainer/Panel/VBox/TabBar
 @onready var _separator: HSeparator = $CenterContainer/Panel/VBox/HSeparator
@@ -94,6 +95,7 @@ func _ready() -> void:
 	_attach_close_button_to_chrome()
 	_build_tab_bar()
 	_create_shoulder_prompts()
+	_wrap_content_in_scroll()
 	_create_tab_contents()
 	_apply_layout_tokens()
 	_update_tab_visibility()
@@ -218,35 +220,47 @@ func _build_tab_bar() -> void:
 		}
 
 func _create_shoulder_prompts() -> void:
-	if _panel_chrome == null:
+	if _tab_bar == null:
 		return
-	var prompt_row := HBoxContainer.new()
-	prompt_row.name = "ShoulderPromptRow"
-	prompt_row.alignment = BoxContainer.ALIGNMENT_END
-	prompt_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	prompt_row.size_flags_horizontal = Control.SIZE_SHRINK_END
-	_panel_chrome.add_child(prompt_row)
-	if _close_button_margin != null and _close_button_margin.get_parent() == _panel_chrome:
-		_panel_chrome.move_child(_close_button_margin, _panel_chrome.get_child_count() - 1)
+	_shoulder_hint_lb = _create_shoulder_hint("ShoulderHintLB", "LB")
+	_shoulder_hint_rb = _create_shoulder_hint("ShoulderHintRB", "RB")
+	_tab_bar.add_child(_shoulder_hint_lb)
+	_tab_bar.move_child(_shoulder_hint_lb, 0)
+	_tab_bar.add_child(_shoulder_hint_rb)
 
-	var lb_icon := _create_prompt_icon("ShoulderPromptLBIcon", TEX_BUTTON_LB)
+func _create_shoulder_hint(node_name: String, label_text: String) -> PanelContainer:
+	var hint := PanelContainer.new()
+	hint.name = node_name
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint.custom_minimum_size = Vector2(48, 30)
+	hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var label := Label.new()
-	label.name = "ShoulderPromptLabel"
-	label.text = "Tabs"
-	var rb_icon := _create_prompt_icon("ShoulderPromptRBIcon", TEX_BUTTON_RB)
-	prompt_row.add_child(lb_icon)
-	prompt_row.add_child(label)
-	prompt_row.add_child(rb_icon)
+	label.name = "Label"
+	label.text = label_text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint.add_child(label)
+	return hint
 
-func _create_prompt_icon(node_name: String, texture: Texture2D) -> TextureRect:
-	var icon := TextureRect.new()
-	icon.name = node_name
-	icon.texture = texture
-	icon.custom_minimum_size = Vector2(44, 26)
-	icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return icon
+func _wrap_content_in_scroll() -> void:
+	if _content_container == null:
+		return
+	var vbox := _content_container.get_parent() as VBoxContainer
+	if vbox == null:
+		return
+	_content_scroll = ScrollContainer.new()
+	_content_scroll.name = "ContentScroll"
+	_content_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_content_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_content_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_content_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	var insertion_index := _content_container.get_index()
+	vbox.add_child(_content_scroll)
+	vbox.move_child(_content_scroll, insertion_index)
+	_content_container.reparent(_content_scroll)
+	_content_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_content_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 func _create_tab_contents() -> void:
 	var tab_classes := {
@@ -565,16 +579,21 @@ func _apply_layout_tokens() -> void:
 		_panel_chrome.add_theme_constant_override("separation", typed_config.separation_default)
 	if _content_container != null:
 		_content_container.add_theme_constant_override("separation", typed_config.separation_default)
-	var prompt_row := find_child("ShoulderPromptRow", true, false) as HBoxContainer
-	if prompt_row != null:
-		prompt_row.add_theme_constant_override("separation", typed_config.separation_compact)
-	var prompt_label := find_child("ShoulderPromptLabel", true, false) as Label
-	if prompt_label != null:
-		prompt_label.add_theme_font_size_override("font_size", typed_config.body_small)
-		prompt_label.add_theme_color_override("font_color", typed_config.text_secondary)
+	_style_shoulder_hint(_shoulder_hint_lb, typed_config)
+	_style_shoulder_hint(_shoulder_hint_rb, typed_config)
 	if _close_button_margin != null:
 		var margin := typed_config.margin_inner
 		_close_button_margin.add_theme_constant_override("margin_left", margin)
 		_close_button_margin.add_theme_constant_override("margin_top", margin)
 		_close_button_margin.add_theme_constant_override("margin_right", margin)
 		_close_button_margin.add_theme_constant_override("margin_bottom", margin)
+
+func _style_shoulder_hint(hint: PanelContainer, config: RS_UI_THEME_CONFIG) -> void:
+	if hint == null or config == null:
+		return
+	if config.panel_button_prompt != null:
+		hint.add_theme_stylebox_override("panel", config.panel_button_prompt.duplicate())
+	var label := hint.get_node_or_null("Label") as Label
+	if label != null:
+		label.add_theme_font_size_override("font_size", config.caption)
+		label.add_theme_color_override("font_color", config.text_primary)
