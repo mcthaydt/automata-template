@@ -284,8 +284,7 @@ func _create_panel() -> UI_SettingsPanel:
 	return panel
 
 func _get_tab_button(panel: UI_SettingsPanel, tab_id: int) -> Button:
-	var entry: Dictionary = panel._tab_buttons.get(tab_id, {})
-	return entry.get("button") as Button
+	return panel.find_child("TabButton_%d" % tab_id, true, false) as Button
 
 func _create_state_store() -> M_StateStore:
 	var store := M_StateStore.new()

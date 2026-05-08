@@ -22,6 +22,7 @@ const CFG_MOTION_FADE_SLIDE := preload("res://resources/core/ui/motions/cfg_moti
 const U_UI_PALETTE_RESOLVER := preload("res://scripts/core/ui/utils/u_ui_palette_resolver.gd")
 const U_SETTINGS_SELECTORS := preload("res://scripts/core/state/selectors/u_settings_selectors.gd")
 const TEX_MENU_BACKGROUND := preload("res://assets/core/textures/tex_bg_menu_main.png")
+const W_TAB_STRIP := preload("res://scripts/core/ui/widgets/w_tab_strip.gd")
 
 enum TabId {
 	DISPLAY,
@@ -67,13 +68,11 @@ const _MAIN_MENU_SCENE_ID := StringName("main_menu")
 @export var emulate_mobile_override: bool = false
 
 var _active_tab: int = -1
-var _tab_buttons: Dictionary = {}
 var _tab_contents: Dictionary = {}
 var _last_device_type: int = -1
 var _consume_next_nav: bool = false
 var _close_button: Button = null
 var _current_palette: Resource = null
-var _tab_button_group: ButtonGroup = ButtonGroup.new()
 var _menu_background: TextureRect = null
 var _panel_chrome: HBoxContainer = null
 var _tab_header_spacer: Control = null
@@ -82,6 +81,7 @@ var _content_scroll: ScrollContainer = null
 var _shoulder_hint_lb: PanelContainer = null
 var _shoulder_hint_rb: PanelContainer = null
 var _shoulder_hint_row: HBoxContainer = null
+var _tab_strip: W_TAB_STRIP = null
 
 @onready var _tab_bar: HBoxContainer = $CenterContainer/Panel/VBox/TabBar
 @onready var _separator: HSeparator = $CenterContainer/Panel/VBox/HSeparator
@@ -94,7 +94,7 @@ func _ready() -> void:
 	_create_close_button()
 	_create_panel_chrome()
 	_attach_close_button_to_chrome()
-	_build_tab_bar()
+	_create_tab_strip()
 	_create_shoulder_prompts()
 	_wrap_content_in_scroll()
 	_create_tab_contents()
@@ -115,7 +115,8 @@ func switch_to_tab(tab_id: TabId) -> void:
 		_hide_tab_content(_active_tab as TabId)
 	_active_tab = tab_id
 	_show_tab_content(tab_id)
-	_update_tab_button_states()
+	if _tab_strip != null:
+		_tab_strip.switch_to_tab(tab_id)
 	_configure_focus_neighbors()
 	call_deferred("_focus_active_tab_first_control")
 
@@ -174,6 +175,32 @@ func _attach_close_button_to_chrome() -> void:
 		_close_button.reparent(_close_button_margin)
 	_panel_chrome.move_child(_close_button_margin, _panel_chrome.get_child_count() - 1)
 
+func _create_tab_strip() -> void:
+	if _tab_bar == null:
+		return
+	if _panel_chrome != null and _tab_bar.get_parent() != _panel_chrome:
+		_tab_bar.reparent(_panel_chrome)
+		_panel_chrome.move_child(_tab_bar, 0)
+		if _tab_header_spacer != null and _tab_header_spacer.get_parent() == null:
+			_panel_chrome.add_child(_tab_header_spacer)
+		if _close_button_margin != null and _close_button_margin.get_parent() == _panel_chrome:
+			_panel_chrome.move_child(_close_button_margin, _panel_chrome.get_child_count() - 1)
+	_tab_strip = W_TAB_STRIP.new()
+	_tab_bar.add_child(_tab_strip)
+	for tab_id: TabId in _TAB_ORDER:
+		var label_info: Dictionary = _TAB_LABELS[tab_id]
+		var button := Button.new()
+		var localized_text: String = U_LOCALIZATION_UTILS.localize_with_fallback(label_info.key, label_info.fallback)
+		button.text = localized_text
+		button.name = "TabButton_%d" % tab_id
+		button.focus_mode = Control.FOCUS_ALL
+		_tab_strip.add_tab(tab_id, button, label_info.key, label_info.fallback, "TabActive", "TabInactive")
+	_tab_strip.tab_switched.connect(_on_tab_switched)
+
+func _on_tab_switched(tab_id: int) -> void:
+	U_UISoundPlayer.play_confirm()
+	switch_to_tab(tab_id as TabId)
+
 func _create_menu_background() -> void:
 	_menu_background = TextureRect.new()
 	_menu_background.name = "MenuBackground"
@@ -189,36 +216,6 @@ func _create_menu_background() -> void:
 	_menu_background.offset_top = 0.0
 	_menu_background.offset_right = 0.0
 	_menu_background.offset_bottom = 0.0
-
-func _build_tab_bar() -> void:
-	if _tab_bar == null:
-		return
-	if _panel_chrome != null and _tab_bar.get_parent() != _panel_chrome:
-		_tab_bar.reparent(_panel_chrome)
-		_panel_chrome.move_child(_tab_bar, 0)
-		if _tab_header_spacer != null and _tab_header_spacer.get_parent() == null:
-			_panel_chrome.add_child(_tab_header_spacer)
-		if _close_button_margin != null and _close_button_margin.get_parent() == _panel_chrome:
-			_panel_chrome.move_child(_close_button_margin, _panel_chrome.get_child_count() - 1)
-	_tab_buttons.clear()
-	_tab_button_group.allow_unpress = false
-	for tab_id: TabId in _TAB_ORDER:
-		var label_info: Dictionary = _TAB_LABELS[tab_id]
-		var button := Button.new()
-		var localized_text: String = U_LOCALIZATION_UTILS.localize_with_fallback(label_info.key, label_info.fallback)
-		button.text = localized_text
-		button.name = "TabButton_%d" % tab_id
-		button.focus_mode = Control.FOCUS_ALL
-		button.toggle_mode = true
-		button.button_group = _tab_button_group
-		button.pressed.connect(_on_tab_button_pressed.bind(tab_id))
-		button.focus_entered.connect(_on_tab_button_focused.bind(tab_id))
-		_tab_bar.add_child(button)
-		_tab_buttons[tab_id] = {
-			"button": button,
-			"key": label_info.key,
-			"fallback": label_info.fallback,
-		}
 
 func _create_shoulder_prompts() -> void:
 	if _panel_chrome == null:
@@ -310,13 +307,6 @@ func _on_close_pressed() -> void:
 	U_UISoundPlayer.play_cancel()
 	_close_settings_panel()
 
-func _on_tab_button_focused(tab_id: TabId) -> void:
-	switch_to_tab(tab_id)
-
-func _on_tab_button_pressed(tab_id: TabId) -> void:
-	U_UISoundPlayer.play_confirm()
-	switch_to_tab(tab_id)
-
 func _show_tab_content(tab_id: TabId) -> void:
 	var content: Control = _tab_contents.get(tab_id) as Control
 	if content == null:
@@ -332,20 +322,6 @@ func _hide_tab_content(tab_id: TabId) -> void:
 	content.visible = false
 	content.set_process(false)
 	content.set_process_input(false)
-
-func _update_tab_button_states() -> void:
-	for tab_key: int in _tab_buttons:
-		var tab_id: TabId = tab_key as TabId
-		var entry: Dictionary = _tab_buttons[tab_id]
-		var button: Button = entry.button as Button
-		if button == null:
-			continue
-		if tab_id == _active_tab:
-			button.button_pressed = true
-			button.theme_type_variation = "TabActive"
-		else:
-			button.button_pressed = false
-			button.theme_type_variation = "TabInactive"
 
 func _update_tab_visibility(state: Dictionary = {}) -> void:
 	if state.is_empty():
@@ -365,47 +341,48 @@ func _update_tab_visibility(state: Dictionary = {}) -> void:
 			reset_analog_navigation()
 			_consume_next_nav = true
 
-	_set_tab_visible(TabId.GAMEPAD, has_gamepad and device_type != M_InputDeviceManager.DeviceType.TOUCHSCREEN)
-	_set_tab_visible(TabId.TOUCHSCREEN, is_mobile_context and not is_gamepad_active)
-	_set_tab_visible(TabId.KEYBOARD_MOUSE, not is_mobile_context)
+	if _tab_strip != null:
+		_tab_strip.set_tab_visible(TabId.GAMEPAD, has_gamepad and device_type != M_InputDeviceManager.DeviceType.TOUCHSCREEN)
+		_tab_strip.set_tab_visible(TabId.TOUCHSCREEN, is_mobile_context and not is_gamepad_active)
+		_tab_strip.set_tab_visible(TabId.KEYBOARD_MOUSE, not is_mobile_context)
 
-	if _active_tab < 0 or _is_tab_hidden(_active_tab as TabId):
+	if _active_tab < 0 or _tab_strip == null or not _tab_strip.get_tab_button(_active_tab).visible:
 		_snap_to_first_visible_tab()
 	_configure_focus_neighbors()
 	_apply_context_background()
 
 func _bind_tab_bar_motion() -> void:
-	for tab_key: int in _tab_buttons:
-		var entry: Dictionary = _tab_buttons[tab_key]
-		var button: Button = entry.button as Button
-		if button != null:
-			U_UIMotion.bind_interactive(button, CFG_MOTION_BUTTON_DEFAULT)
+	if _tab_strip == null:
+		return
+	for tab_id: int in _tab_strip.get_visible_tab_ids():
+		var btn: Button = _tab_strip.get_tab_button(tab_id)
+		if btn != null:
+			U_UIMotion.bind_interactive(btn, CFG_MOTION_BUTTON_DEFAULT)
 
 func _configure_focus_neighbors() -> void:
+	if _tab_strip == null:
+		return
 	var visible_buttons: Array[Control] = []
-	for tab_key: int in _tab_buttons:
-		var entry: Dictionary = _tab_buttons[tab_key]
-		var button: Button = entry.button as Button
-		if button == null:
-			continue
-		if button.is_visible_in_tree():
-			visible_buttons.append(button)
+	for tab_id: int in _tab_strip.get_visible_tab_ids():
+		var btn: Button = _tab_strip.get_tab_button(tab_id)
+		if btn != null:
+			visible_buttons.append(btn)
 	if visible_buttons.is_empty():
 		return
 	U_FocusConfigurator.configure_horizontal_focus(visible_buttons)
 	_configure_tab_key_focus_paths()
 
 func _configure_tab_key_focus_paths() -> void:
-	if _active_tab < 0:
+	if _active_tab < 0 or _tab_strip == null:
 		return
-	var visible_tabs := _get_visible_tab_ids()
+	var visible_tabs := _tab_strip.get_visible_tab_ids()
 	var current_index := visible_tabs.find(_active_tab)
 	if current_index < 0:
 		return
 	var next_tab: TabId = visible_tabs[wrapi(current_index + 1, 0, visible_tabs.size())] as TabId
 	var previous_tab: TabId = visible_tabs[wrapi(current_index - 1, 0, visible_tabs.size())] as TabId
-	var next_button := _get_tab_button(next_tab)
-	var previous_button := _get_tab_button(previous_tab)
+	var next_button := _tab_strip.get_tab_button(next_tab)
+	var previous_button := _tab_strip.get_tab_button(previous_tab)
 	if next_button == null or previous_button == null:
 		return
 	var focusable := _get_focusable_descendants(_tab_contents.get(_active_tab) as Node)
@@ -413,29 +390,13 @@ func _configure_tab_key_focus_paths() -> void:
 		control.focus_next = control.get_path_to(next_button)
 		control.focus_previous = control.get_path_to(previous_button)
 
-func _get_tab_button(tab_id: TabId) -> Button:
-	var entry: Dictionary = _tab_buttons.get(tab_id, {})
-	return entry.get("button") as Button
-
-func _set_tab_visible(tab_id: TabId, visible: bool) -> void:
-	var entry: Dictionary = _tab_buttons.get(tab_id, {})
-	var button: Button = entry.get("button") as Button
-	if button != null:
-		button.visible = visible
-	var content: Control = _tab_contents.get(tab_id) as Control
-	if content != null:
-		content.visible = visible and tab_id == _active_tab
-
-func _is_tab_hidden(tab_id: TabId) -> bool:
-	var entry: Dictionary = _tab_buttons.get(tab_id, {})
-	var button: Button = entry.get("button") as Button
-	if button == null:
-		return true
-	return not button.visible
-
 func _snap_to_first_visible_tab() -> void:
+	if _tab_strip == null:
+		switch_to_tab(TabId.DISPLAY)
+		return
 	for tab_id: TabId in _TAB_ORDER:
-		if not _is_tab_hidden(tab_id):
+		var btn: Button = _tab_strip.get_tab_button(tab_id)
+		if btn != null and btn.visible:
 			switch_to_tab(tab_id)
 			return
 	switch_to_tab(TabId.DISPLAY)
@@ -455,32 +416,18 @@ func _navigate_focus(direction: StringName) -> void:
 	super._navigate_focus(direction)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _tab_strip == null:
+		super._unhandled_input(event)
+		return
 	if event.is_action_pressed("ui_focus_next"):
-		_switch_visible_tab(1)
+		_tab_strip.handle_shoulder_input(1)
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("ui_focus_prev"):
-		_switch_visible_tab(-1)
+		_tab_strip.handle_shoulder_input(-1)
 		get_viewport().set_input_as_handled()
 		return
 	super._unhandled_input(event)
-
-func _switch_visible_tab(step: int) -> void:
-	var visible_tabs := _get_visible_tab_ids()
-	if visible_tabs.is_empty():
-		return
-	var current_index := visible_tabs.find(_active_tab)
-	if current_index < 0:
-		current_index = 0
-	var next_index := wrapi(current_index + step, 0, visible_tabs.size())
-	switch_to_tab(visible_tabs[next_index] as TabId)
-
-func _get_visible_tab_ids() -> Array[int]:
-	var result: Array[int] = []
-	for tab_id: TabId in _TAB_ORDER:
-		if not _is_tab_hidden(tab_id):
-			result.append(tab_id)
-	return result
 
 func _find_first_focusable_in_tab(tab_id: TabId) -> Control:
 	var content: Control = _tab_contents.get(tab_id) as Control
@@ -541,15 +488,15 @@ func _on_locale_changed(_locale: StringName) -> void:
 	_localize_tab_buttons()
 
 func _localize_tab_buttons() -> void:
-	for tab_key: int in _tab_buttons:
-		var tab_id: TabId = tab_key as TabId
-		var entry: Dictionary = _tab_buttons[tab_id]
-		var button: Button = entry.button as Button
-		if button == null:
-			continue
-		var loc_key: StringName = entry.key
-		var fallback: String = entry.fallback
-		button.text = U_LOCALIZATION_UTILS.localize_with_fallback(loc_key, fallback)
+	if _tab_strip == null:
+		return
+	for tab_id: int in _TAB_ORDER:
+		var label_info: Dictionary = _TAB_LABELS.get(tab_id, {})
+		var loc_key: StringName = label_info.get("key", StringName())
+		var fallback: String = label_info.get("fallback", "")
+		var btn: Button = _tab_strip.get_tab_button(tab_id)
+		if btn != null and loc_key != StringName():
+			btn.text = U_LOCALIZATION_UTILS.localize_with_fallback(loc_key, fallback)
 
 func _on_back_pressed() -> void:
 	U_UISoundPlayer.play_cancel()
@@ -633,7 +580,7 @@ func _style_shoulder_hint(hint: PanelContainer, config: RS_UI_THEME_CONFIG) -> v
 	if hint == null or config == null:
 		return
 	if config.panel_button_prompt != null:
-		hint.add_theme_stylebox_override("panel", config.panel_button_prompt.duplicate())
+			hint.add_theme_stylebox_override("panel", config.panel_button_prompt.duplicate())
 	var label := hint.get_node_or_null("Label") as Label
 	if label != null:
 		label.add_theme_font_size_override("font_size", config.caption)
