@@ -6,47 +6,30 @@ class_name UI_PauseMenu
 ##
 ## Buttons dispatch navigation actions instead of calling Scene Manager directly.
 
-
 const U_LOCALIZATION_UTILS := preload("res://scripts/core/utils/localization/u_localization_utils.gd")
-const U_UI_MENU_BUILDER := preload("res://scripts/core/ui/helpers/u_ui_menu_builder.gd")
+const W_MENU_BUTTON_LIST := preload("res://scripts/core/ui/widgets/w_menu_button_list.gd")
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
+const RS_UI_THEME_CONFIG := preload("res://scripts/core/resources/ui/rs_ui_theme_config.gd")
 
 const OVERLAY_SETTINGS := StringName("settings_panel")
 const OVERLAY_SAVE_LOAD := StringName("save_load_menu_overlay")
+
+var _last_device_type: int = M_InputDeviceManager.DeviceType.KEYBOARD_MOUSE
+var _consume_next_nav: bool = false
+var _button_list: W_MENU_BUTTON_LIST = null
 
 @onready var _title_label: Label = %TitleLabel
 @onready var _main_panel: PanelContainer = %MainPanel
 @onready var _main_panel_padding: MarginContainer = %MainPanelPadding
 @onready var _main_panel_content: VBoxContainer = %MainPanelContent
-@onready var _resume_button: Button = %ResumeButton
-@onready var _settings_button: Button = %SettingsButton
-@onready var _save_button: Button = %SaveButton
-@onready var _load_button: Button = %LoadButton
-@onready var _quit_button: Button = %QuitButton
-
-var _last_device_type: int = M_InputDeviceManager.DeviceType.KEYBOARD_MOUSE
-var _consume_next_nav: bool = false
-var _menu_builder: RefCounted = null
 
 func _ready() -> void:
 	super._ready()
 	_configure_focus_neighbors()
 
 func _configure_focus_neighbors() -> void:
-	var buttons: Array[Control] = []
-	if _resume_button != null:
-		buttons.append(_resume_button)
-	if _settings_button != null:
-		buttons.append(_settings_button)
-	if _save_button != null:
-		buttons.append(_save_button)
-	if _load_button != null:
-		buttons.append(_load_button)
-	if _quit_button != null:
-		buttons.append(_quit_button)
-
-	if not buttons.is_empty():
-		U_FocusConfigurator.configure_vertical_focus(buttons, true)
+	if _button_list != null:
+		_button_list.configure_vertical_focus(true)
 
 func _on_store_ready(store_ref: M_StateStore) -> void:
 	if store_ref != null:
@@ -100,39 +83,39 @@ func _navigate_focus(direction: StringName) -> void:
 	super._navigate_focus(direction)
 
 func _focus_resume() -> void:
-	if _resume_button == null or not _resume_button.is_inside_tree() or not _resume_button.visible:
+	if _button_list == null or _button_list.get_buttons().is_empty():
 		_apply_initial_focus()
 		return
-	call_deferred("_deferred_focus_resume")
+	var resume_btn: Button = _button_list.get_buttons()[0]
+	if resume_btn != null and resume_btn.is_inside_tree() and resume_btn.visible:
+		call_deferred("_deferred_focus_resume")
+	else:
+		_apply_initial_focus()
 
 func _deferred_focus_resume() -> void:
-	if _resume_button != null and _resume_button.is_inside_tree() and _resume_button.visible:
-		_resume_button.grab_focus()
+	if _button_list != null and not _button_list.get_buttons().is_empty():
+		var resume_btn: Button = _button_list.get_buttons()[0]
+		if resume_btn != null and resume_btn.is_inside_tree() and resume_btn.visible:
+			resume_btn.grab_focus()
 
 func _on_panel_ready() -> void:
-	_setup_menu_builder()
-	_apply_theme_tokens()
+	# Remove old scene buttons so they do not compete with W_MenuButtonList
+	for child in _main_panel_content.get_children().duplicate():
+		if child is Button:
+			_main_panel_content.remove_child(child)
+			child.free()
+
+	_button_list = W_MENU_BUTTON_LIST.new()
+	_button_list.add_button(&"menu.pause.resume", "Resume", _on_resume_pressed)
+	_button_list.add_button(&"menu.pause.settings", "Settings", _on_settings_pressed)
+	_button_list.add_button(&"menu.pause.save", "Save", _on_save_pressed)
+	_button_list.add_button(&"menu.pause.load", "Load", _on_load_pressed)
+	_button_list.add_button(&"menu.pause.quit", "Quit", _on_quit_pressed)
+	_button_list.configure_vertical_focus(true)
+	_main_panel_content.add_child(_button_list)
 	_localize_labels()
+	_apply_theme_tokens()
 	play_enter_animation()
-
-func _setup_menu_builder() -> void:
-	_menu_builder = U_UI_MENU_BUILDER.new(self)
-	_menu_builder.bind_panel(_main_panel, _main_panel_padding, _main_panel_content)
-	_menu_builder.bind_title(_title_label, &"menu.pause.title", "Paused")
-	_menu_builder.bind_theme_role(self, &"overlay_dim", {"alpha": 0.7, "apply_menu_background": true})
-	_menu_builder.bind_theme_role(get_node_or_null("OverlayBackground") as ColorRect, &"overlay_dim", {"alpha": 0.7})
-	_menu_builder.bind_button_group([
-		{"button": _resume_button, "key": &"menu.pause.resume", "callback": _on_resume_pressed, "fallback": "Resume"},
-		{"button": _settings_button, "key": &"menu.pause.settings", "callback": _on_settings_pressed, "fallback": "Settings"},
-		{"button": _save_button, "key": &"menu.pause.save", "callback": _on_save_pressed, "fallback": "Save"},
-		{"button": _load_button, "key": &"menu.pause.load", "callback": _on_load_pressed, "fallback": "Load"},
-		{"button": _quit_button, "key": &"menu.pause.quit", "callback": _on_quit_pressed, "fallback": "Quit"},
-	])
-	_menu_builder.build()
-
-func _apply_theme_tokens() -> void:
-	if _menu_builder != null:
-		_menu_builder.apply_theme_tokens(U_UI_THEME_BUILDER.active_config)
 
 func _on_resume_pressed() -> void:
 	U_UISoundPlayer.play_confirm()
@@ -175,11 +158,43 @@ func _dispatch_navigation(action: Dictionary) -> void:
 	store.dispatch(action)
 
 func _localize_labels() -> void:
-	if _menu_builder != null:
-		_menu_builder.localize_labels()
-		return
 	if _title_label != null:
 		_title_label.text = U_LOCALIZATION_UTILS.localize(&"menu.pause.title")
+	if _button_list != null:
+		var buttons: Array[Button] = _button_list.get_buttons()
+		var labels: Array[StringName] = [
+			&"menu.pause.resume",
+			&"menu.pause.settings",
+			&"menu.pause.save",
+			&"menu.pause.load",
+			&"menu.pause.quit",
+		]
+		for i in range(buttons.size()):
+			var btn := buttons[i]
+			var loc_key: StringName = labels[i] if i < labels.size() else &""
+			if loc_key != StringName():
+				btn.text = U_LOCALIZATION_UTILS.localize_with_fallback(loc_key, btn.text)
+
+func _apply_theme_tokens() -> void:
+	var config: Resource = U_UI_THEME_BUILDER.active_config
+	var typed_config := config as RS_UI_THEME_CONFIG
+	if typed_config == null:
+		return
+	if _title_label != null:
+		_title_label.add_theme_font_size_override("font_size", typed_config.heading)
+	if _main_panel_content != null:
+		_main_panel_content.add_theme_constant_override("separation", typed_config.separation_default)
+	if _main_panel_padding != null:
+		var margin := typed_config.margin_section
+		_main_panel_padding.add_theme_constant_override("margin_left", margin)
+		_main_panel_padding.add_theme_constant_override("margin_top", margin)
+		_main_panel_padding.add_theme_constant_override("margin_right", margin)
+		_main_panel_padding.add_theme_constant_override("margin_bottom", margin)
+	var overlay_bg := get_node_or_null("OverlayBackground") as ColorRect
+	if overlay_bg != null:
+		var dim_color := typed_config.bg_base
+		dim_color.a = 0.7
+		overlay_bg.color = dim_color
 
 func _on_locale_changed(_locale: StringName) -> void:
 	_localize_labels()
