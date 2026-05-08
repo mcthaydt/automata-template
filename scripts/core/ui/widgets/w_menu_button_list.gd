@@ -17,6 +17,7 @@ func _apply_initial_focus() -> void:
 
 func add_button(key: StringName, fallback: String, callback: Callable) -> void:
 	var button := Button.new()
+	button.name = String(key).replace(".", "_")
 	button.text = fallback
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if callback.is_valid():

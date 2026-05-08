@@ -99,6 +99,8 @@ const U_UI_MENU_BUILDER_PATH := "res://scripts/core/ui/helpers/u_ui_menu_builder
 const U_UI_MENU_BUILDER_MAX_LINES := 200
 const U_UI_SETTINGS_CATALOG_PATH := "res://scripts/core/ui/helpers/u_ui_settings_catalog.gd"
 const U_UI_SETTINGS_CATALOG_MAX_LINES := 180
+const WIDGET_DIR := "res://scripts/core/ui/widgets"
+const WIDGET_MAX_LINES := 120
 const BT_GENERAL_FORBIDDEN_TOKENS := [
 	"U_AI",
 	"I_AIAction",
@@ -180,6 +182,7 @@ const SCRIPT_PREFIX_RULES := {
 	"res://scripts/core/ui/utils": ["u_"], # UI utilities
 	"res://scripts/core/ui": ["ui_", "u_"], # ui_ for controllers, u_ for utilities
 	"res://scripts/core/gameplay/helpers": ["u_"], # gameplay helper utilities
+	"res://scripts/core/ui/widgets": ["w_"], # w_* widget scripts
 	"res://scripts/core/gameplay": ["e_", "inter_", "base_", "triggered_", "s_", "l_"], # e_ for entities, inter_ for interactable controllers, base_ for base controllers, triggered_ for special controllers, s_ for gameplay-scoped ECS systems
 	"res://scripts/core/scene_structure": ["marker_"], # marker_*.gd organizational scripts
 	"res://scripts/core/scene_management/transitions": ["trans_", "base_"], # transition effects
@@ -742,6 +745,14 @@ func test_u_ui_settings_catalog_stays_under_one_hundred_eighty_lines() -> void:
 	var violations: Array[String] = []
 	_collect_gd_single_file_line_limit_violation(U_UI_SETTINGS_CATALOG_PATH, U_UI_SETTINGS_CATALOG_MAX_LINES, violations)
 	var message := "U_UISettingsCatalog must stay under 180 lines (static data utility — keep minimal)"
+	if violations.size() > 0:
+		message += ":\n" + "\n".join(violations)
+	assert_eq(violations.size(), 0, message)
+
+func test_widget_files_stay_under_one_hundred_twenty_lines() -> void:
+	var violations: Array[String] = []
+	_collect_gd_file_line_limit_violations(WIDGET_DIR, WIDGET_MAX_LINES, violations)
+	var message := "W_* widget files must stay under 120 lines (single-responsibility components)"
 	if violations.size() > 0:
 		message += ":\n" + "\n".join(violations)
 	assert_eq(violations.size(), 0, message)
