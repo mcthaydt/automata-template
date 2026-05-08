@@ -98,7 +98,7 @@ func test_resume_button_closes_pause_overlay() -> void:
 	_prepare_paused_state(store)
 	var pause_menu := await _instantiate_pause_menu()
 
-	var resume_button := pause_menu.find_child("menu_pause_resume", true, false) as Button
+	var resume_button: Button = pause_menu.get_node("%ResumeButton")
 	resume_button.emit_signal("pressed")
 	await wait_process_frames(2)
 
@@ -111,7 +111,7 @@ func test_settings_button_opens_settings_overlay() -> void:
 	_prepare_paused_state(store)
 	var pause_menu := await _instantiate_pause_menu()
 
-	var settings_button := pause_menu.find_child("menu_pause_settings", true, false) as Button
+	var settings_button: Button = pause_menu.get_node("%SettingsButton")
 	settings_button.emit_signal("pressed")
 	await wait_process_frames(2)
 
@@ -125,7 +125,7 @@ func test_quit_button_returns_to_main_menu() -> void:
 	_prepare_paused_state(store)
 	var pause_menu := await _instantiate_pause_menu()
 
-	var quit_button := pause_menu.find_child("menu_pause_quit", true, false) as Button
+	var quit_button: Button = pause_menu.get_node("%QuitButton")
 	quit_button.emit_signal("pressed")
 	await wait_process_frames(2)
 
@@ -176,7 +176,7 @@ func test_switching_to_gamepad_focuses_resume_button() -> void:
 	var viewport := pause_menu.get_viewport()
 	var focused := viewport.gui_get_focus_owner()
 	assert_not_null(focused, "Pause menu should have a focused control after switching to gamepad")
-	var resume_button := pause_menu.find_child("menu_pause_resume", true, false) as Button
+	var resume_button: Button = pause_menu.get_node("%ResumeButton")
 	assert_eq(focused, resume_button, "Resume button should be focused after switching to gamepad")
 
 func _create_state_store() -> M_StateStore:

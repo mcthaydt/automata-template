@@ -1,4 +1,4 @@
-extends RefCounted
+extends Node
 class_name W_OverlayChrome
 
 signal close_pressed
