@@ -23,6 +23,7 @@ const U_UI_PALETTE_RESOLVER := preload("res://scripts/core/ui/utils/u_ui_palette
 const U_SETTINGS_SELECTORS := preload("res://scripts/core/state/selectors/u_settings_selectors.gd")
 const TEX_MENU_BACKGROUND := preload("res://assets/core/textures/tex_bg_menu_main.png")
 const W_TAB_STRIP := preload("res://scripts/core/ui/widgets/w_tab_strip.gd")
+const W_OVERLAY_CHROME := preload("res://scripts/core/ui/widgets/w_overlay_chrome.gd")
 
 enum TabId {
 	DISPLAY,
@@ -71,12 +72,10 @@ var _active_tab: int = -1
 var _tab_contents: Dictionary = {}
 var _last_device_type: int = -1
 var _consume_next_nav: bool = false
-var _close_button: Button = null
+var _chrome: W_OverlayChrome = null
 var _current_palette: Resource = null
 var _menu_background: TextureRect = null
-var _panel_chrome: HBoxContainer = null
 var _tab_header_spacer: Control = null
-var _close_button_margin: MarginContainer = null
 var _content_scroll: ScrollContainer = null
 var _shoulder_hint_lb: PanelContainer = null
 var _shoulder_hint_rb: PanelContainer = null
@@ -91,9 +90,7 @@ func _ready() -> void:
 	super._ready()
 	_apply_base_theme()
 	_create_menu_background()
-	_create_close_button()
-	_create_panel_chrome()
-	_attach_close_button_to_chrome()
+	_create_chrome_widget()
 	_create_tab_strip()
 	_create_shoulder_prompts()
 	_wrap_content_in_scroll()
@@ -136,55 +133,35 @@ func _apply_base_theme() -> void:
 	self.theme = U_UI_THEME_BUILDER.build_theme(typed_config)
 	motion_set = CFG_MOTION_FADE_SLIDE
 
-func _create_close_button() -> void:
-	_close_button = Button.new()
-	_close_button.name = "CloseButton"
-	_close_button.text = "X"
-	_close_button.flat = true
-	_close_button.focus_mode = Control.FOCUS_NONE
-	_close_button.custom_minimum_size = Vector2(44, 44)
-	_close_button.pressed.connect(_on_close_pressed)
-	U_UIMotion.bind_interactive(_close_button, CFG_MOTION_BUTTON_DEFAULT)
-	add_child(_close_button)
-
-func _create_panel_chrome() -> void:
+func _create_chrome_widget() -> void:
+	_chrome = W_OVERLAY_CHROME.new()
+	_chrome.name = "OverlayChrome"
 	var vbox := get_node_or_null("CenterContainer/Panel/VBox") as VBoxContainer
-	if vbox == null:
-		return
-	_panel_chrome = HBoxContainer.new()
-	_panel_chrome.name = "PanelChrome"
-	_panel_chrome.alignment = BoxContainer.ALIGNMENT_BEGIN
-	_panel_chrome.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vbox.add_child(_panel_chrome)
-	vbox.move_child(_panel_chrome, 0)
+	if vbox != null:
+		vbox.add_child(_chrome)
+		vbox.move_child(_chrome, 0)
+	_chrome.close_pressed.connect(_on_chrome_close_pressed)
 
 	_tab_header_spacer = Control.new()
 	_tab_header_spacer.name = "TabHeaderSpacer"
 	_tab_header_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-func _attach_close_button_to_chrome() -> void:
-	if _panel_chrome == null or _close_button == null:
-		return
-	if _close_button_margin == null:
-		_close_button_margin = MarginContainer.new()
-		_close_button_margin.name = "CloseButtonMargin"
-		_close_button_margin.size_flags_horizontal = Control.SIZE_SHRINK_END
-	if _close_button_margin.get_parent() != _panel_chrome:
-		_panel_chrome.add_child(_close_button_margin)
-	if _close_button.get_parent() != _close_button_margin:
-		_close_button.reparent(_close_button_margin)
-	_panel_chrome.move_child(_close_button_margin, _panel_chrome.get_child_count() - 1)
+func _on_chrome_close_pressed() -> void:
+	_on_close_pressed()
 
 func _create_tab_strip() -> void:
 	if _tab_bar == null:
 		return
-	if _panel_chrome != null and _tab_bar.get_parent() != _panel_chrome:
-		_tab_bar.reparent(_panel_chrome)
-		_panel_chrome.move_child(_tab_bar, 0)
-		if _tab_header_spacer != null and _tab_header_spacer.get_parent() == null:
-			_panel_chrome.add_child(_tab_header_spacer)
-		if _close_button_margin != null and _close_button_margin.get_parent() == _panel_chrome:
-			_panel_chrome.move_child(_close_button_margin, _panel_chrome.get_child_count() - 1)
+	if _chrome != null:
+		var chrome_row := _chrome.get_chrome_row()
+		if chrome_row != null and _tab_bar.get_parent() != chrome_row:
+			_tab_bar.reparent(chrome_row)
+			chrome_row.move_child(_tab_bar, 0)
+			if _tab_header_spacer != null and _tab_header_spacer.get_parent() == null:
+				chrome_row.add_child(_tab_header_spacer)
+			var close_margin := _chrome.get_close_button_margin()
+			if close_margin != null and close_margin.get_parent() == chrome_row:
+				chrome_row.move_child(close_margin, chrome_row.get_child_count() - 1)
 	_tab_strip = W_TAB_STRIP.new()
 	_tab_bar.add_child(_tab_strip)
 	for tab_id: TabId in _TAB_ORDER:
@@ -218,7 +195,10 @@ func _create_menu_background() -> void:
 	_menu_background.offset_bottom = 0.0
 
 func _create_shoulder_prompts() -> void:
-	if _panel_chrome == null:
+	if _chrome == null:
+		return
+	var chrome_row := _chrome.get_chrome_row()
+	if chrome_row == null:
 		return
 	_shoulder_hint_row = HBoxContainer.new()
 	_shoulder_hint_row.name = "ShoulderHintRow"
@@ -236,9 +216,10 @@ func _create_shoulder_prompts() -> void:
 	label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_shoulder_hint_row.add_child(label)
 	_shoulder_hint_row.add_child(_shoulder_hint_rb)
-	var close_index := _close_button_margin.get_index() if _close_button_margin != null else _panel_chrome.get_child_count()
-	_panel_chrome.add_child(_shoulder_hint_row)
-	_panel_chrome.move_child(_shoulder_hint_row, close_index)
+	var close_margin := _chrome.get_close_button_margin()
+	var close_index := close_margin.get_index() if close_margin != null else chrome_row.get_child_count()
+	chrome_row.add_child(_shoulder_hint_row)
+	chrome_row.move_child(_shoulder_hint_row, close_index)
 
 func _create_shoulder_hint(node_name: String, label_text: String) -> PanelContainer:
 	var hint := PanelContainer.new()
@@ -560,8 +541,10 @@ func _apply_layout_tokens() -> void:
 		vbox.add_theme_constant_override("separation", typed_config.separation_default)
 	if _tab_bar != null:
 		_tab_bar.add_theme_constant_override("separation", typed_config.separation_compact)
-	if _panel_chrome != null:
-		_panel_chrome.add_theme_constant_override("separation", typed_config.separation_default)
+	if _chrome != null:
+		var chrome_row := _chrome.get_chrome_row()
+		if chrome_row != null:
+			chrome_row.add_theme_constant_override("separation", typed_config.separation_default)
 	if _shoulder_hint_row != null:
 		_shoulder_hint_row.add_theme_constant_override("separation", typed_config.separation_compact)
 	if _content_container != null:
@@ -569,12 +552,14 @@ func _apply_layout_tokens() -> void:
 	_style_shoulder_hint(_shoulder_hint_lb, typed_config)
 	_style_shoulder_hint(_shoulder_hint_rb, typed_config)
 	_style_shoulder_hint_label(typed_config)
-	if _close_button_margin != null:
-		var margin := typed_config.margin_inner
-		_close_button_margin.add_theme_constant_override("margin_left", margin)
-		_close_button_margin.add_theme_constant_override("margin_top", margin)
-		_close_button_margin.add_theme_constant_override("margin_right", margin)
-		_close_button_margin.add_theme_constant_override("margin_bottom", margin)
+	if _chrome != null:
+		var close_margin := _chrome.get_close_button_margin()
+		if close_margin != null:
+			var margin := typed_config.margin_inner
+			close_margin.add_theme_constant_override("margin_left", margin)
+			close_margin.add_theme_constant_override("margin_top", margin)
+			close_margin.add_theme_constant_override("margin_right", margin)
+			close_margin.add_theme_constant_override("margin_bottom", margin)
 
 func _style_shoulder_hint(hint: PanelContainer, config: RS_UI_THEME_CONFIG) -> void:
 	if hint == null or config == null:
