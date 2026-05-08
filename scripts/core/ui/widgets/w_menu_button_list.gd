@@ -24,6 +24,19 @@ func add_existing_button(button: Button, key: StringName, fallback: String, call
 	if callback.is_valid() and button.pressed.get_connections().is_empty():
 		button.pressed.connect(callback)
 
+func add_button(key: StringName, fallback: String, callback: Callable) -> void:
+	var button := Button.new()
+	button.name = String(key).replace(".", "_")
+	button.unique_name_in_owner = true
+	button.text = fallback
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if callback.is_valid():
+		button.pressed.connect(callback)
+	add_child(button)
+	_buttons.append(button)
+	_label_keys[button] = key
+	_label_fallbacks[button] = fallback
+
 func get_buttons() -> Array[Button]:
 	return _buttons.duplicate()
 
