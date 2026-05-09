@@ -13,6 +13,7 @@ class_name BaseMenuScreen
 
 const ANALOG_STICK_REPEATER_PATH := "res://scripts/core/ui/utils/u_analog_stick_repeater.gd"
 const MENU_FULLSCREEN_SHADER := preload("res://assets/core/shaders/sh_menu_fullscreen_shader.gdshader")
+const W_BACKGROUND_IMAGE := preload("res://scripts/core/ui/widgets/w_background_image.gd")
 
 const BACKGROUND_SHADER_PRESET_NONE := "none"
 const BACKGROUND_SHADER_PRESET_RETRO_GRID := "retro_grid"
@@ -27,12 +28,6 @@ const BACKGROUND_SHADER_PRESET_MODE_BY_ID := {
 	BACKGROUND_SHADER_PRESET_RETRO_GRID: 0,
 	BACKGROUND_SHADER_PRESET_SCANLINE_DRIFT: 1,
 	BACKGROUND_SHADER_PRESET_ARCADE_NOISE: 2,
-}
-
-const BACKGROUND_IMAGE_BY_PRESET := {
-	BACKGROUND_SHADER_PRESET_RETRO_GRID: "res://assets/core/textures/bg_menu_main.png",
-	BACKGROUND_SHADER_PRESET_SCANLINE_DRIFT: "res://assets/core/textures/bg_menu_pause.png",
-	BACKGROUND_SHADER_PRESET_ARCADE_NOISE: "res://assets/core/textures/bg_game_over.png",
 }
 
 const STICK_DEADZONE: float = 0.25 # Must match project.godot ui_* action deadzone
@@ -227,16 +222,9 @@ func _find_panel_descendant(root: Node) -> PanelContainer:
 	return null
 
 func _setup_background_image(preset: String) -> bool:
-	if not BACKGROUND_IMAGE_BY_PRESET.has(preset):
+	var bg_image := W_BACKGROUND_IMAGE.setup_from_preset(preset)
+	if bg_image == null:
 		return false
-	var texture_path: String = BACKGROUND_IMAGE_BY_PRESET[preset]
-	var texture := load(texture_path) as Texture2D
-	if texture == null:
-		return false
-	var bg_image := TextureRect.new()
-	bg_image.name = "BackgroundImage"
-	bg_image.texture = texture
-	_configure_background_image(bg_image)
 	add_child(bg_image)
 	move_child(bg_image, 0)
 	_background_image = bg_image
@@ -245,7 +233,7 @@ func _setup_background_image(preset: String) -> bool:
 func _setup_background_shader() -> void:
 	var existing := get_node_or_null("BackgroundImage") as TextureRect
 	if existing != null:
-		_configure_background_image(existing)
+		W_BACKGROUND_IMAGE.configure_existing(existing)
 		_background_image = existing
 		_background_rect = null
 		return
@@ -310,11 +298,3 @@ func _get_background_shader_mode(preset: String) -> int:
 	if BACKGROUND_SHADER_PRESET_MODE_BY_ID.has(preset):
 		return int(BACKGROUND_SHADER_PRESET_MODE_BY_ID[preset])
 	return -1
-
-func _configure_background_image(bg_image: TextureRect) -> void:
-	bg_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	bg_image.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg_image.z_index = -1
-	bg_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bg_image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
