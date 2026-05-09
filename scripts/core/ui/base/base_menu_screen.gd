@@ -16,6 +16,7 @@ const MENU_FULLSCREEN_SHADER := preload("res://assets/core/shaders/sh_menu_fulls
 const W_BACKGROUND_IMAGE := preload("res://scripts/core/ui/widgets/w_background_image.gd")
 const W_ANALOG_STICK_ADAPTER := preload("res://scripts/core/ui/widgets/w_analog_stick_adapter.gd")
 const W_MOTION_TARGET_RESOLVER := preload("res://scripts/core/ui/widgets/w_motion_target_resolver.gd")
+const W_BACKGROUND_SHADER := preload("res://scripts/core/ui/widgets/w_background_shader.gd")
 
 const BACKGROUND_SHADER_PRESET_NONE := "none"
 const BACKGROUND_SHADER_PRESET_RETRO_GRID := "retro_grid"
@@ -149,55 +150,23 @@ func _setup_background_shader() -> void:
 			return
 
 	_background_rect = _resolve_background() as ColorRect
-
 	if _background_rect == null:
 		return
 
-	if background_shader_preset == BACKGROUND_SHADER_PRESET_NONE:
-		return
-
-	var preset_mode := _get_background_shader_mode(background_shader_preset)
-	if preset_mode < 0:
-		return
-
-	var shader_material := _background_rect.material as ShaderMaterial
-	if shader_material == null or shader_material.shader != MENU_FULLSCREEN_SHADER:
-		shader_material = ShaderMaterial.new()
-		shader_material.shader = MENU_FULLSCREEN_SHADER
-		_background_rect.material = shader_material
-
-	_background_shader_material = shader_material
-	_apply_background_shader_uniforms(preset_mode)
+	_background_shader_material = W_BACKGROUND_SHADER.setup_material(
+		_background_rect, background_shader_preset, background_shader_intensity, background_shader_speed
+	)
 
 func _update_background_shader_state() -> void:
 	if _background_image != null:
 		return
-
 	if background_shader_preset == BACKGROUND_SHADER_PRESET_NONE:
 		return
-
 	if _background_rect == null or not is_instance_valid(_background_rect):
 		_setup_background_shader()
-
-	if _background_shader_material == null:
 		return
-
-	var preset_mode := _get_background_shader_mode(background_shader_preset)
-	if preset_mode < 0:
-		return
-	_apply_background_shader_uniforms(preset_mode)
-
-func _apply_background_shader_uniforms(preset_mode: int) -> void:
-	if _background_shader_material == null:
-		return
-	_background_shader_material.set_shader_parameter(SHADER_PARAM_PRESET_MODE, preset_mode)
-	_background_shader_material.set_shader_parameter(
-		SHADER_PARAM_EFFECT_INTENSITY,
-		clampf(background_shader_intensity, 0.0, 1.0)
-	)
-	_background_shader_material.set_shader_parameter(
-		SHADER_PARAM_EFFECT_SPEED,
-		clampf(background_shader_speed, 0.0, 5.0)
+	W_BACKGROUND_SHADER.update_uniforms(
+		_background_shader_material, background_shader_preset, background_shader_intensity, background_shader_speed
 	)
 
 func _get_background_shader_mode(preset: String) -> int:
