@@ -9,11 +9,12 @@ Replace `@onready` chrome node declarations and inline node creation in remainin
 
 ## Current Status — 2026-05-09 Gap Patch
 
-- Phase 9 is intentionally on the helper-utility path for focus navigation. The existing `U_RebindFocusNavigation` now owns focus sync and row highlight logic; `W_RebindFocusNavigator` is no longer the planned destination unless a future pass explicitly converts the helper into a stateful widget.
-- Phase 10 now uses `U_UIMenuBuilder` for overlay chrome/theme binding. `W_ProfileBindingPreview` is still pending, so the line-count target remains unmet.
+- Phase 9 is intentionally on the helper-utility path for focus navigation. The existing `U_RebindFocusNavigation` now owns focus sync, row highlight logic, and custom key navigation; `W_RebindFocusNavigator` is no longer the planned destination unless a future pass explicitly converts the helper into a stateful widget.
+- Phase 10 now uses `U_UIMenuBuilder` for overlay chrome/theme binding and delegates profile binding preview rows to `W_ProfileBindingPreview`.
 - Phase 11 remains functionally extracted. `W_SaveSlotRowFactory` was added to keep `W_SaveSlotGrid` under the widget line cap while preserving its ownership/focus role.
 - The builder `bind_panel` argument order is standardized as `(panel, padding, content)` across `U_UIMenuBuilder` and `U_SettingsTabBuilder`.
 - Fixed bugs from the audit: save-slot external container orphaning, freed thumbnail pending-key cleanup, `res://` image fallback in exported builds, malformed `set_tooltip` indentation, duplicated binding-label formatting, right-stick deadzone drift, and the no-op save/load event subscription stub.
+- Added a style guard for the Phase 9/10 overlay line caps.
 
 ## Approach
 
@@ -272,8 +273,8 @@ Per screen:
 
 ## Success Criteria
 
-- [ ] `UI_InputRebindingOverlay` ≤ 500 lines — pending (helper path chosen; current file still above cap)
-- [ ] `UI_InputProfileSelector` ≤ 420 lines — pending (`W_ProfileBindingPreview` still not extracted)
+- [x] `UI_InputRebindingOverlay` ≤ 500 lines
+- [x] `UI_InputProfileSelector` ≤ 420 lines
 - [x] `UI_SaveLoadMenu` ≤ 480 lines
 - [x] All new widgets ≤ 120 lines
 - [x] Targeted gap-patch tests pass

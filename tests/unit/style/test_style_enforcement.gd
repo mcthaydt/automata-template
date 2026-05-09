@@ -97,6 +97,10 @@ const U_SETTINGS_TAB_BUILDER_PATH := "res://scripts/core/ui/helpers/u_settings_t
 const U_SETTINGS_TAB_BUILDER_MAX_LINES := 300
 const U_UI_MENU_BUILDER_PATH := "res://scripts/core/ui/helpers/u_ui_menu_builder.gd"
 const U_UI_MENU_BUILDER_MAX_LINES := 200
+const UI_INPUT_REBINDING_OVERLAY_PATH := "res://scripts/core/ui/overlays/ui_input_rebinding_overlay.gd"
+const UI_INPUT_REBINDING_OVERLAY_MAX_LINES := 500
+const UI_INPUT_PROFILE_SELECTOR_PATH := "res://scripts/core/ui/overlays/ui_input_profile_selector.gd"
+const UI_INPUT_PROFILE_SELECTOR_MAX_LINES := 420
 const U_UI_SETTINGS_CATALOG_PATH := "res://scripts/core/ui/helpers/u_ui_settings_catalog.gd"
 const U_UI_SETTINGS_CATALOG_MAX_LINES := 180
 const WIDGET_DIR := "res://scripts/core/ui/widgets"
@@ -737,6 +741,23 @@ func test_u_ui_menu_builder_stays_under_two_hundred_lines() -> void:
 	var violations: Array[String] = []
 	_collect_gd_single_file_line_limit_violation(U_UI_MENU_BUILDER_PATH, U_UI_MENU_BUILDER_MAX_LINES, violations)
 	var message := "U_UIMenuBuilder must stay under 200 lines (fluent builder — keep focused)"
+	if violations.size() > 0:
+		message += ":\n" + "\n".join(violations)
+	assert_eq(violations.size(), 0, message)
+
+func test_input_builder_migration_overlays_stay_under_line_caps() -> void:
+	var violations: Array[String] = []
+	_collect_gd_single_file_line_limit_violation(
+		UI_INPUT_REBINDING_OVERLAY_PATH,
+		UI_INPUT_REBINDING_OVERLAY_MAX_LINES,
+		violations
+	)
+	_collect_gd_single_file_line_limit_violation(
+		UI_INPUT_PROFILE_SELECTOR_PATH,
+		UI_INPUT_PROFILE_SELECTOR_MAX_LINES,
+		violations
+	)
+	var message := "Input builder migration overlays must stay under their Phase 9/10 line caps"
 	if violations.size() > 0:
 		message += ":\n" + "\n".join(violations)
 	assert_eq(violations.size(), 0, message)

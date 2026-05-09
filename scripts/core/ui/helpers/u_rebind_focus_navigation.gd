@@ -266,6 +266,46 @@ static func refresh_action_row_highlight(overlay: Node) -> void:
 		else:
 			row_container.modulate = Color(1, 1, 1, 0.7)
 
+static func handle_unhandled_key_input(overlay: Node, event: InputEvent, search_box: LineEdit) -> void:
+	if overlay._is_capturing or event == null:
+		return
+	var direction := get_navigation_direction(event)
+	if direction.is_empty():
+		return
+	var viewport := overlay.get_viewport()
+	if viewport == null:
+		return
+	var focused := viewport.gui_get_focus_owner() as Control
+	if focused == null or not overlay.is_ancestor_of(focused) or focused == search_box:
+		return
+	if not is_rebind_action_or_bottom_focus(overlay, focused):
+		return
+	navigate(overlay, direction)
+	viewport.set_input_as_handled()
+
+static func get_navigation_direction(event: InputEvent) -> StringName:
+	if event.is_action_pressed(StringName("ui_left")):
+		return StringName("ui_left")
+	if event.is_action_pressed(StringName("ui_right")):
+		return StringName("ui_right")
+	if event.is_action_pressed(StringName("ui_up")):
+		return StringName("ui_up")
+	if event.is_action_pressed(StringName("ui_down")):
+		return StringName("ui_down")
+	return StringName()
+
+static func is_rebind_action_or_bottom_focus(overlay: Node, focused: Control) -> bool:
+	if focused == overlay._reset_button or focused == overlay._close_button:
+		return true
+	for action in overlay._focusable_actions:
+		if not overlay._action_rows.has(action):
+			continue
+		var row_data: Dictionary = overlay._action_rows[action]
+		var row_container := row_data.get("container") as Control
+		if row_container != null and row_container.is_ancestor_of(focused):
+			return true
+	return false
+
 static func cycle_bottom_button(overlay: Node, direction: int) -> void:
 	var buttons: Array[Button] = []
 	if overlay._reset_button != null and not overlay._reset_button.disabled:

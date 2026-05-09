@@ -82,6 +82,17 @@ grid.slot_pressed.connect(_on_slot_pressed)
 **Consumers:** `UI_SaveLoadMenu`
 **Tests:** `tests/unit/ui/widgets/test_w_save_slot_grid.gd` (9 tests)
 
+#### W_ProfileBindingPreview
+**File:** `res://scripts/core/ui/widgets/w_profile_binding_preview.gd`
+**Contract:** Renders grouped and single-action binding preview rows from an `RS_InputProfile`.
+**Key API:**
+```gdscript
+W_ProfileBindingPreview.render(_bindings_container, profile, _theme_config)
+W_ProfileBindingPreview.clear(_bindings_container)
+```
+**Consumers:** `UI_InputProfileSelector`
+**Tests:** `tests/unit/ui/widgets/test_w_profile_binding_preview.gd` (3 tests)
+
 ---
 
 ### Static Helpers (Stateless Utilities)
@@ -182,6 +193,7 @@ scripts/core/ui/widgets/
 ├── w_motion_target_resolver.gd
 ├── w_settings_focus_configurator.gd
 ├── w_right_stick_scroller.gd
+├── w_profile_binding_preview.gd
 ├── w_save_slot_grid.gd
 ├── w_save_slot_row_factory.gd
 ├── w_save_slot_thumbnail_loader.gd
