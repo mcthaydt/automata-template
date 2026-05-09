@@ -14,7 +14,6 @@ class_name BaseMenuScreen
 const ANALOG_STICK_REPEATER_PATH := "res://scripts/core/ui/utils/u_analog_stick_repeater.gd"
 const MENU_FULLSCREEN_SHADER := preload("res://assets/core/shaders/sh_menu_fullscreen_shader.gdshader")
 const W_BACKGROUND_IMAGE := preload("res://scripts/core/ui/widgets/w_background_image.gd")
-const W_FOCUS_NAVIGATOR := preload("res://scripts/core/ui/widgets/w_focus_navigator.gd")
 
 const BACKGROUND_SHADER_PRESET_NONE := "none"
 const BACKGROUND_SHADER_PRESET_RETRO_GRID := "retro_grid"
@@ -124,11 +123,29 @@ func _is_stick_pressed_right() -> bool:
 func _navigate_focus(direction: StringName) -> void:
 	var viewport := get_viewport()
 	var focused := viewport.gui_get_focus_owner() if viewport != null else null
-	var next: Control = W_FOCUS_NAVIGATOR.find_next_focus(self, direction)
-	if next != null and next.is_visible_in_tree():
-		if focused != null:
-			_arm_focus_sound(focused)
-		next.grab_focus()
+	if focused == null:
+		return
+	if not is_ancestor_of(focused):
+		return
+
+	var next_control: Control = null
+	match direction:
+		"ui_up":
+			if focused.focus_neighbor_top != NodePath():
+				next_control = focused.get_node_or_null(focused.focus_neighbor_top) as Control
+		"ui_down":
+			if focused.focus_neighbor_bottom != NodePath():
+				next_control = focused.get_node_or_null(focused.focus_neighbor_bottom) as Control
+		"ui_left":
+			if focused.focus_neighbor_left != NodePath():
+				next_control = focused.get_node_or_null(focused.focus_neighbor_left) as Control
+		"ui_right":
+			if focused.focus_neighbor_right != NodePath():
+				next_control = focused.get_node_or_null(focused.focus_neighbor_right) as Control
+
+	if next_control != null and next_control.is_visible_in_tree():
+		_arm_focus_sound(focused)
+		next_control.grab_focus()
 
 func reset_analog_navigation() -> void:
 	if _stick_repeater:
