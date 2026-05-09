@@ -14,6 +14,7 @@ class_name BaseMenuScreen
 const ANALOG_STICK_REPEATER_PATH := "res://scripts/core/ui/utils/u_analog_stick_repeater.gd"
 const MENU_FULLSCREEN_SHADER := preload("res://assets/core/shaders/sh_menu_fullscreen_shader.gdshader")
 const W_BACKGROUND_IMAGE := preload("res://scripts/core/ui/widgets/w_background_image.gd")
+const W_ANALOG_STICK_ADAPTER := preload("res://scripts/core/ui/widgets/w_analog_stick_adapter.gd")
 
 const BACKGROUND_SHADER_PRESET_NONE := "none"
 const BACKGROUND_SHADER_PRESET_RETRO_GRID := "retro_grid"
@@ -60,65 +61,35 @@ func _process(delta: float) -> void:
 	# Update analog stick repeater ONLY for analog input (not keyboard/D-pad)
 	# This prevents double-firing since keyboard/D-pad have built-in repeat
 	if _stick_repeater:
-		_stick_repeater.update("ui_up", _is_stick_pressed_up(), delta)
-		_stick_repeater.update("ui_down", _is_stick_pressed_down(), delta)
-		_stick_repeater.update("ui_left", _is_stick_pressed_left(), delta)
-		_stick_repeater.update("ui_right", _is_stick_pressed_right(), delta)
+		_stick_repeater.update("ui_up",    W_ANALOG_STICK_ADAPTER.is_pressed("ui_up"),    delta)
+		_stick_repeater.update("ui_down",  W_ANALOG_STICK_ADAPTER.is_pressed("ui_down"),  delta)
+		_stick_repeater.update("ui_left",  W_ANALOG_STICK_ADAPTER.is_pressed("ui_left"),  delta)
+		_stick_repeater.update("ui_right", W_ANALOG_STICK_ADAPTER.is_pressed("ui_right"), delta)
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Swallow analog stick motion events used for navigation so Godot's built-in
 	# ui_up/down/left/right handling does not also move focus. This ensures the
 	# U_AnalogStickRepeater is the single source of analog navigation and prevents
 	# double-skips when changing direction after a held repeat.
-	if event is InputEventJoypadMotion:
-		var motion: InputEventJoypadMotion = event as InputEventJoypadMotion
-		if motion.axis == JOY_AXIS_LEFT_Y and abs(motion.axis_value) > STICK_DEADZONE:
-			var viewport: Viewport = get_viewport()
-			if viewport != null:
-				viewport.set_input_as_handled()
-		elif motion.axis == JOY_AXIS_LEFT_X and abs(motion.axis_value) > STICK_DEADZONE:
-			var viewport_x: Viewport = get_viewport()
-			if viewport_x != null:
-				viewport_x.set_input_as_handled()
-	elif event is InputEventJoypadButton:
-		var button: InputEventJoypadButton = event as InputEventJoypadButton
-		if (
-			button.is_action_pressed("ui_up")
-			or button.is_action_pressed("ui_down")
-			or button.is_action_pressed("ui_left")
-			or button.is_action_pressed("ui_right")
-		):
-			var viewport_button: Viewport = get_viewport()
-			if viewport_button != null:
-				viewport_button.set_input_as_handled()
+	if W_ANALOG_STICK_ADAPTER.should_swallow(event):
+		var viewport: Viewport = get_viewport()
+		if viewport != null:
+			viewport.set_input_as_handled()
 	super._unhandled_input(event)
-
 
 ## Check if ONLY the analog stick (not D-pad/keyboard) is pressed in each direction
 ## Checks all connected joypads, not just device 0
 func _is_stick_pressed_up() -> bool:
-	for device in Input.get_connected_joypads():
-		if Input.get_joy_axis(device, JOY_AXIS_LEFT_Y) < -STICK_DEADZONE:
-			return true
-	return false
+	return W_ANALOG_STICK_ADAPTER.is_pressed("ui_up")
 
 func _is_stick_pressed_down() -> bool:
-	for device in Input.get_connected_joypads():
-		if Input.get_joy_axis(device, JOY_AXIS_LEFT_Y) > STICK_DEADZONE:
-			return true
-	return false
+	return W_ANALOG_STICK_ADAPTER.is_pressed("ui_down")
 
 func _is_stick_pressed_left() -> bool:
-	for device in Input.get_connected_joypads():
-		if Input.get_joy_axis(device, JOY_AXIS_LEFT_X) < -STICK_DEADZONE:
-			return true
-	return false
+	return W_ANALOG_STICK_ADAPTER.is_pressed("ui_left")
 
 func _is_stick_pressed_right() -> bool:
-	for device in Input.get_connected_joypads():
-		if Input.get_joy_axis(device, JOY_AXIS_LEFT_X) > STICK_DEADZONE:
-			return true
-	return false
+	return W_ANALOG_STICK_ADAPTER.is_pressed("ui_right")
 
 func _navigate_focus(direction: StringName) -> void:
 	var viewport := get_viewport()
