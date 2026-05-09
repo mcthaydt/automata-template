@@ -14,36 +14,18 @@ const PLACEHOLDER_TEXTURE_PATH: String = "res://resources/core/ui/tex_save_slot_
 const U_LOCALIZATION_UTILS := preload("res://scripts/core/utils/localization/u_localization_utils.gd")
 const U_UI_MENU_BUILDER := preload("res://scripts/core/ui/helpers/u_ui_menu_builder.gd")
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
-const RS_UI_THEME_CONFIG := preload("res://scripts/core/resources/ui/rs_ui_theme_config.gd")
 const U_SAVE_ACTIONS := preload("res://scripts/core/state/actions/u_save_actions.gd")
-const MONTH_KEYS: Array[StringName] = [
-	&"date.month.jan",
-	&"date.month.feb",
-	&"date.month.mar",
-	&"date.month.apr",
-	&"date.month.may",
-	&"date.month.jun",
-	&"date.month.jul",
-	&"date.month.aug",
-	&"date.month.sep",
-	&"date.month.oct",
-	&"date.month.nov",
-	&"date.month.dec"
-]
-const AM_KEY := &"date.am"
-const PM_KEY := &"date.pm"
+const W_SAVE_SLOT_GRID := preload("res://scripts/core/ui/widgets/w_save_slot_grid.gd")
 const OPERATION_SAVE := &"save"
 const OPERATION_LOAD := &"load"
 const OPERATION_DELETE := &"delete"
 
 const LOADING_LABEL_KEY := &"overlay.save_load.loading"
-const AUTOSAVE_LABEL_KEY := &"overlay.save_load.autosave"
 const DIALOG_CONFIRM_TITLE_KEY := &"overlay.save_load.dialog.confirm_title"
 const ERROR_UNKNOWN_KEY := &"overlay.save_load.error.unknown"
 const ERROR_SAVE_FAILED_KEY := &"overlay.save_load.error.save_failed"
 const ERROR_LOAD_FAILED_KEY := &"overlay.save_load.error.load_failed"
 const ERROR_DELETE_FAILED_KEY := &"overlay.save_load.error.delete_failed"
-const UNKNOWN_AREA_KEY := &"overlay.save_load.unknown_area"
 
 ## Current mode: "save" or "load"
 var _mode: StringName = StringName("")
@@ -54,9 +36,8 @@ var _save_manager: Node = null # M_SaveManager
 ## Cached slot metadata
 var _cached_metadata: Array[Dictionary] = []
 
-## Thumbnail async loading
-var _pending_thumbnail_loads: Dictionary = {} # TextureRect -> String (path)
 var _placeholder_texture: Texture2D = null
+var _slot_grid: Control = null
 
 
 ## Confirmation dialog state
@@ -79,6 +60,7 @@ var _builder: RefCounted = null
 func _ready() -> void:
 	_ensure_placeholder_texture_loaded()
 	super._ready()
+	_setup_slot_grid()
 	_discover_save_manager()
 	_subscribe_to_events()
 	_refresh_ui()
@@ -103,6 +85,16 @@ func _ensure_placeholder_texture_loaded() -> void:
 func _get_placeholder_texture() -> Texture2D:
 	return _placeholder_texture
 
+func _setup_slot_grid() -> void:
+	_slot_grid = W_SAVE_SLOT_GRID.new()
+	_slot_grid.name = "SaveSlotGrid"
+	_slot_grid.visible = false
+	add_child(_slot_grid)
+	_slot_grid.bind_slot_container(_slot_list_container)
+	_slot_grid.set_placeholder_texture(_get_placeholder_texture())
+	_slot_grid.slot_pressed.connect(_on_slot_item_pressed)
+	_slot_grid.delete_pressed.connect(_on_delete_button_pressed)
+
 func _discover_save_manager() -> void:
 	_save_manager = U_ServiceLocator.try_get_service(StringName("save_manager"))
 	if _save_manager == null:
@@ -125,8 +117,8 @@ func _exit_tree() -> void:
 	if store != null and store.slice_updated.is_connected(_on_slice_updated):
 		store.slice_updated.disconnect(_on_slice_updated)
 
-	_pending_thumbnail_loads.clear()
-	set_process(false)
+	if _slot_grid != null:
+		_slot_grid.clear()
 
 func _on_store_ready(store_ref: M_StateStore) -> void:
 	if store_ref != null:
@@ -178,354 +170,24 @@ func _refresh_slot_list() -> void:
 		return
 
 	# Store which slot index had focus before refresh
-	var focused_slot_index: int = _get_focused_slot_index()
+	var focused_slot_index: int = _slot_grid.get_focused_slot_index() if _slot_grid != null else -1
 
 	# Get all slot metadata from M_SaveManager
 	_cached_metadata = _save_manager.get_all_slot_metadata()
 
-	# Clear existing slot items
-	_clear_slot_list()
-
-	# Create slot items
-	for slot_meta in _cached_metadata:
-		_create_slot_item(slot_meta)
+	if _slot_grid != null:
+		_slot_grid.set_slots(_cached_metadata, _mode, U_UI_THEME_BUILDER.active_config)
 
 	# Configure focus chain
 	_configure_slot_focus()
 
 	# Restore focus to the same slot (or first available if previous was deleted)
-	_restore_focus_to_slot(focused_slot_index)
-
-func _clear_slot_list() -> void:
-	if _slot_list_container == null:
-		return
-
-	_pending_thumbnail_loads.clear()
-	set_process(false)
-
-	for child in _slot_list_container.get_children():
-		child.queue_free()
-
-func _create_slot_item(slot_meta: Dictionary) -> void:
-	var slot_id: StringName = slot_meta.get("slot_id", StringName(""))
-	var exists: bool = slot_meta.get("exists", false)
-	var is_autosave: bool = (slot_id == M_SaveManager.SLOT_AUTOSAVE)
-	var thumbnail_path: String = slot_meta.get("thumbnail_path", "")
-
-	# Create container for slot (main button + delete button)
-	var slot_container := HBoxContainer.new()
-	slot_container.name = "Slot_" + str(slot_id)
-
-	# Thumbnail preview
-	var thumbnail_rect := TextureRect.new()
-	thumbnail_rect.name = "Thumbnail"
-	thumbnail_rect.custom_minimum_size = Vector2(80, 45)
-	thumbnail_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	thumbnail_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	thumbnail_rect.texture = _get_placeholder_texture()
-
-	# Create main save/load button (takes most of the space)
-	var main_button := Button.new()
-	main_button.name = "MainButton"
-	main_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	main_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-
-	if exists:
-		# Populated slot - show metadata
-		var timestamp: String = slot_meta.get("timestamp", "")
-		var area_name: String = slot_meta.get(
-			"area_name",
-			U_LOCALIZATION_UTILS.localize_with_fallback(UNKNOWN_AREA_KEY, "Unknown")
-		)
-		var playtime: int = slot_meta.get("playtime_seconds", 0)
-
-		# Format display text with timestamp, area, and playtime
-		var formatted_time: String = _format_timestamp(timestamp)
-		var formatted_playtime: String = _format_playtime(playtime)
-
-		# Multi-line text: Line 1 = slot name, Line 2 = metadata
-		var slot_display_name: String = _get_slot_display_name(slot_id, is_autosave)
-		main_button.text = "%s\n%s | %s | %s" % [
-			slot_display_name,
-			formatted_time,
-			area_name,
-			formatted_playtime
-		]
-	else:
-		# Empty slot
-		var slot_display_name: String = _get_slot_display_name(slot_id, is_autosave)
-		if _mode == StringName("save"):
-			main_button.text = "%s\n%s" % [
-				slot_display_name,
-				U_LOCALIZATION_UTILS.localize_with_fallback(&"overlay.save_load.new_save", "[New Save]")
-			]
-		else:
-			main_button.text = "%s\n%s" % [
-				slot_display_name,
-				U_LOCALIZATION_UTILS.localize_with_fallback(&"overlay.save_load.empty_slot", "[Empty]")
-			]
-			main_button.disabled = true # Can't load empty slots
-
-	# Connect main button press (save/load action)
-	main_button.pressed.connect(_on_slot_item_pressed.bind(slot_id, exists))
-
-	# Create delete button (only for populated slots, hidden for autosave)
-	var delete_button := Button.new()
-	delete_button.name = "DeleteButton"
-	delete_button.text = U_LOCALIZATION_UTILS.localize_with_fallback(&"common.delete", "Delete")
-	delete_button.custom_minimum_size = Vector2(80, 0)
-
-	# Show delete button only if slot is populated AND not autosave
-	delete_button.visible = exists and not is_autosave
-	delete_button.disabled = not exists or is_autosave
-
-	# Connect delete button press
-	if exists and not is_autosave:
-		delete_button.pressed.connect(_on_delete_button_pressed.bind(slot_id))
-
-	# Add nodes to container
-	slot_container.add_child(thumbnail_rect)
-	slot_container.add_child(main_button)
-	slot_container.add_child(delete_button)
-	_apply_slot_item_theme(slot_container, main_button, delete_button, thumbnail_rect)
-
-	_slot_list_container.add_child(slot_container)
-
-	_load_thumbnail_async(thumbnail_rect, thumbnail_path)
-
-func _get_slot_display_name(slot_id: StringName, is_autosave: bool) -> String:
-	if is_autosave:
-		return U_LOCALIZATION_UTILS.localize_with_fallback(AUTOSAVE_LABEL_KEY, "AUTOSAVE")
-	return slot_id.to_upper()
-
-func _format_playtime(seconds: int) -> String:
-	var hours: int = int(seconds / 3600.0)
-	var minutes: int = int((seconds % 3600) / 60.0)
-	var secs: int = seconds % 60
-	return "%02d:%02d:%02d" % [hours, minutes, secs]
-
-func _format_timestamp(iso_timestamp: String) -> String:
-	# Convert ISO 8601 timestamp to human-readable format
-	# Input: "2025-12-26T14:30:00Z"
-	# Output: "Dec 26, 2025 2:30 PM"
-	if iso_timestamp.is_empty():
-		return U_LOCALIZATION_UTILS.localize(&"overlay.save_load.unknown_date")
-
-	# Parse ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ
-	var parts: PackedStringArray = iso_timestamp.split("T")
-	if parts.size() < 2:
-		return iso_timestamp # Fallback to raw string if parsing fails
-
-	var date_part: String = parts[0]
-	var time_part: String = parts[1].replace("Z", "")
-
-	# Parse date: YYYY-MM-DD
-	var date_components: PackedStringArray = date_part.split("-")
-	if date_components.size() < 3:
-		return iso_timestamp
-
-	var year: String = date_components[0]
-	var month_num: int = date_components[1].to_int()
-	var day: String = date_components[2]
-
-	# Parse time: HH:MM:SS
-	var time_components: PackedStringArray = time_part.split(":")
-	if time_components.size() < 2:
-		return iso_timestamp
-
-	var hour: int = time_components[0].to_int()
-	var minute: String = time_components[1]
-
-	# Convert to 12-hour format
-	var am_pm_key: StringName = AM_KEY
-	var hour_12: int = hour
-	if hour >= 12:
-		am_pm_key = PM_KEY
-		if hour > 12:
-			hour_12 = hour - 12
-	elif hour == 0:
-		hour_12 = 12
-
-	var month_name: String = _get_localized_month_name(month_num)
-	var am_pm: String = _get_localized_am_pm(am_pm_key)
-
-	return "%s %s, %s %d:%s %s" % [month_name, day, year, hour_12, minute, am_pm]
-
-func _get_localized_month_name(month_num: int) -> String:
-	if month_num < 1 or month_num > 12:
-		return "???"
-	var key: StringName = MONTH_KEYS[month_num - 1]
-	var localized := U_LOCALIZATION_UTILS.localize(key)
-	if localized == String(key):
-		return "???"
-	return localized
-
-func _get_localized_am_pm(key: StringName) -> String:
-	var localized := U_LOCALIZATION_UTILS.localize(key)
-	if localized == String(key):
-		return "AM" if key == AM_KEY else "PM"
-	return localized
-
-func _load_thumbnail_async(texture_rect: TextureRect, path: String) -> void:
-	if texture_rect == null:
-		return
-
-	if path.is_empty() or not FileAccess.file_exists(path):
-		texture_rect.texture = _get_placeholder_texture()
-		_pending_thumbnail_loads.erase(texture_rect)
-		return
-
-	if path.begins_with("user://"):
-		var fallback_texture := _load_texture_from_image(path)
-		if fallback_texture != null:
-			texture_rect.texture = fallback_texture
-		else:
-			texture_rect.texture = _get_placeholder_texture()
-		_pending_thumbnail_loads.erase(texture_rect)
-		return
-
-	texture_rect.texture = _get_placeholder_texture()
-	var request_error: Error = ResourceLoader.load_threaded_request(path)
-	if request_error != OK:
-		var fallback_texture := _load_texture_from_image(path)
-		if fallback_texture != null:
-			texture_rect.texture = fallback_texture
-		else:
-			texture_rect.texture = _get_placeholder_texture()
-		return
-
-	_pending_thumbnail_loads[texture_rect] = path
-	set_process(true)
-
-func _process(__delta: float) -> void:
-	if _pending_thumbnail_loads.is_empty():
-		set_process(false)
-		return
-
-	var completed: Array[TextureRect] = []
-	var pending_keys: Array = _pending_thumbnail_loads.keys()
-	for key in pending_keys:
-		var texture_rect := key as TextureRect
-		if texture_rect == null or not is_instance_valid(texture_rect):
-			completed.append(texture_rect)
-			continue
-
-		var path: String = _pending_thumbnail_loads.get(texture_rect, "")
-		if path.is_empty():
-			completed.append(texture_rect)
-			continue
-
-		var status: int = ResourceLoader.load_threaded_get_status(path)
-		if status == ResourceLoader.THREAD_LOAD_LOADED:
-			var resource: Resource = ResourceLoader.load_threaded_get(path)
-			if resource is Texture2D:
-				texture_rect.texture = resource
-			else:
-				texture_rect.texture = _get_placeholder_texture()
-			completed.append(texture_rect)
-		elif status == ResourceLoader.THREAD_LOAD_FAILED or status == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
-			var fallback_texture := _load_texture_from_image(path)
-			if fallback_texture != null:
-				texture_rect.texture = fallback_texture
-			else:
-				texture_rect.texture = _get_placeholder_texture()
-			completed.append(texture_rect)
-
-	for texture_rect in completed:
-		_pending_thumbnail_loads.erase(texture_rect)
-
-	if _pending_thumbnail_loads.is_empty():
-		set_process(false)
-
-func _load_texture_from_image(path: String) -> Texture2D:
-	var image := Image.new()
-	var load_error: Error = image.load(path)
-	if load_error != OK:
-		return null
-	return ImageTexture.create_from_image(image)
+	if _slot_grid != null:
+		_slot_grid.restore_focus(focused_slot_index)
 
 func _configure_slot_focus() -> void:
-	if _slot_list_container == null or _back_button == null:
-		return
-
-	var focusable_controls: Array[Control] = []
-
-	# Collect all focusable buttons from slot containers
-	for container in _slot_list_container.get_children():
-		if container.is_queued_for_deletion():
-			continue
-
-		if container is HBoxContainer:
-			# Get main button from slot container
-			var main_button: Button = container.get_node_or_null("MainButton") as Button
-			if main_button != null and not main_button.disabled:
-				focusable_controls.append(main_button)
-
-	# Add back button at the end
-	if not focusable_controls.is_empty():
-		focusable_controls.append(_back_button)
-		U_FocusConfigurator.configure_vertical_focus(focusable_controls, true)
-
-func _get_focused_slot_index() -> int:
-	# Returns the index of the currently focused slot container, or -1 if none
-	var viewport := get_viewport()
-	if viewport == null:
-		return -1
-
-	var focused_control := viewport.gui_get_focus_owner()
-	if focused_control == null:
-		return -1
-
-	# Check if focused control is a main button inside a slot container
-	var parent := focused_control.get_parent()
-	if parent is HBoxContainer and parent.get_parent() == _slot_list_container:
-		return parent.get_index()
-
-	return -1
-
-func _restore_focus_to_slot(slot_index: int) -> void:
-	# Restore focus to the slot at the given index, or first available slot
-	if _slot_list_container == null:
-		return
-	if not is_inside_tree():
-		return
-
-	var tree := get_tree()
-	if tree == null:
-		return
-	await tree.process_frame # Wait for UI to settle
-	if not is_inside_tree() or _slot_list_container == null:
-		return
-
-	# Collect valid containers first (ignoring those queued for deletion)
-	var valid_containers: Array[Control] = []
-	for child in _slot_list_container.get_children():
-		if not child.is_queued_for_deletion() and child is HBoxContainer:
-			valid_containers.append(child as Control)
-
-	var target_index: int = slot_index
-	var slot_count: int = valid_containers.size()
-
-	# Clamp to valid range
-	if target_index >= slot_count:
-		target_index = slot_count - 1
-	if target_index < 0:
-		target_index = 0
-
-	# Find the main button in the target slot
-	if target_index < slot_count:
-		var slot_container := valid_containers[target_index]
-		var main_button: Button = slot_container.get_node_or_null("MainButton") as Button
-		if main_button != null and not main_button.disabled and main_button.is_inside_tree():
-			main_button.grab_focus()
-			return
-
-	# Fallback: focus first available button in valid containers
-	for container in valid_containers:
-		var main_button: Button = container.get_node_or_null("MainButton") as Button
-		if main_button != null and not main_button.disabled and main_button.is_inside_tree():
-			main_button.grab_focus()
-			return
+	if _slot_grid != null:
+		_slot_grid.configure_focus(_back_button)
 
 func _on_slot_item_pressed(slot_id: StringName, exists: bool) -> void:
 	U_UISoundPlayer.play_confirm()
@@ -699,16 +361,8 @@ func _set_buttons_enabled(enabled: bool) -> void:
 		_back_button.disabled = not enabled
 
 	# Disable/enable all slot buttons
-	if _slot_list_container != null:
-		for container in _slot_list_container.get_children():
-			if container is HBoxContainer:
-				var main_button := container.get_node_or_null("MainButton") as Button
-				if main_button != null:
-					main_button.disabled = not enabled
-
-				var delete_button := container.get_node_or_null("DeleteButton") as Button
-				if delete_button != null:
-					delete_button.disabled = not enabled
+	if _slot_grid != null:
+		_slot_grid.set_buttons_enabled(enabled)
 
 func _on_panel_ready() -> void:
 	_setup_builder()
@@ -771,21 +425,3 @@ func _localize_static_ui() -> void:
 func _apply_theme_tokens() -> void:
 	if _builder != null:
 		_builder.apply_theme_tokens(U_UI_THEME_BUILDER.active_config)
-
-func _apply_slot_item_theme(slot_container: HBoxContainer, main_button: Button, delete_button: Button, thumbnail_rect: TextureRect) -> void:
-	if slot_container == null:
-		return
-
-	var config_resource: Resource = U_UI_THEME_BUILDER.active_config
-	if not (config_resource is RS_UI_THEME_CONFIG):
-		return
-	var config := config_resource as RS_UI_THEME_CONFIG
-
-	slot_container.add_theme_constant_override(&"separation", config.separation_compact)
-	if main_button != null:
-		main_button.custom_minimum_size = Vector2(0, 76)
-		main_button.add_theme_font_size_override(&"font_size", config.section_header)
-	if delete_button != null:
-		delete_button.add_theme_font_size_override(&"font_size", config.section_header)
-	if thumbnail_rect != null:
-		thumbnail_rect.custom_minimum_size = Vector2(96, 54)
