@@ -57,6 +57,18 @@ add_child(list)
 **Consumers:** `UI_PauseMenu`, `UI_MainMenu`
 **Tests:** `tests/unit/ui/widgets/test_w_menu_button_list.gd` (9 tests)
 
+#### W_RightStickScroller
+**File:** `res://scripts/core/ui/widgets/w_right_stick_scroller.gd`
+**Contract:** Polls `JOY_AXIS_RIGHT_X/Y` and drives `ScrollContainer` scroll offsets.
+**Key API:**
+```gdscript
+var scroller := W_RightStickScroller.new()
+scroller.bind_scroll_container(_scroll_container, 800.0, 0.3)
+add_child(scroller)
+```
+**Consumers:** `UI_InputRebindingOverlay`
+**Tests:** `tests/unit/ui/widgets/test_w_right_stick_scroller.gd` (2 tests)
+
 #### W_SaveSlotGrid
 **File:** `res://scripts/core/ui/widgets/w_save_slot_grid.gd`
 **Contract:** Manages save-slot list UI with thumbnails, main buttons, optional delete buttons, focus chaining, and slot press signals.
@@ -163,6 +175,7 @@ scripts/core/ui/widgets/
 ├── w_analog_stick_adapter.gd
 ├── w_motion_target_resolver.gd
 ├── w_settings_focus_configurator.gd
+├── w_right_stick_scroller.gd
 ├── w_save_slot_grid.gd
 ├── w_save_slot_thumbnail_loader.gd
 └── w_save_slot_formatter.gd
@@ -176,6 +189,7 @@ tests/unit/ui/widgets/
 ├── test_w_analog_stick_adapter.gd
 ├── test_w_motion_target_resolver.gd
 ├── test_w_settings_focus_configurator.gd
+├── test_w_right_stick_scroller.gd
 ├── test_w_save_slot_grid.gd
 ├── test_w_save_slot_thumbnail_loader.gd
 └── test_w_save_slot_formatter.gd
@@ -213,6 +227,18 @@ From `tests/unit/style/test_style_enforcement.gd`:
 2. For vertical button lists, instantiate `W_MenuButtonList` instead of manually creating `Button` nodes.
 3. For tabbed panels, instantiate `W_TabStrip` instead of inline `HButtonArray` or `TabContainer`.
 
+### When migrating an existing overlay
+
+1. List all `@onready` nodes. Keep native popup nodes such as `ConfirmationDialog` and `AcceptDialog`, plus business-logic dependencies that are not UI chrome.
+2. Prefer builder-bound or widget-owned chrome over new `@onready` chrome declarations. `BaseOverlay` has no `@onready` chrome baseline and should stay thin.
+3. Extract large inline UI logic blocks to widgets:
+   ```gdscript
+   var grid := W_SaveSlotGrid.new()
+   grid.bind_slot_container(_slot_list_container)
+   grid.set_slots(metadata, mode, theme_config)
+   ```
+4. Keep overlay scripts focused on business actions, store dispatch, modal dialog behavior, and builder setup.
+
 ## Testing Patterns
 
 Every widget test follows this structure:
@@ -240,7 +266,7 @@ func test_my_behavior() -> void:
 
 ## Remaining Monolithic Areas
 
-Not yet widgetized (Phase 9 assessment):
+Not yet widgetized:
 
 - **Settings tab form rows** — `U_SETTINGS_TAB_BUILDER` already handles row creation; extracting further would create builder-to-widget coupling. Keep as-is.
 - **Dialog overlays** — Native `ConfirmationDialog`/`AcceptDialog` are Godot builtins with platform-specific windowing. Wrapping them adds abstraction with no testability gain.
@@ -248,6 +274,7 @@ Not yet widgetized (Phase 9 assessment):
 
 ## Changelog
 
+- **2026-05-09** — Phase 12 complete. Documented the BaseOverlay migration rule: prefer builder/widget chrome over additional `@onready` chrome declarations.
 - **2026-05-09** — Phase 11 complete. Added `W_SaveSlotGrid`, `W_SaveSlotThumbnailLoader`, and `W_SaveSlotFormatter`; integrated into `UI_SaveLoadMenu`.
 - **2025-05-07** — Phase 8 complete. Added `W_BackgroundShader`.
 - **2025-05-07** — Phase 7 complete. Added `W_MotionTargetResolver`.
