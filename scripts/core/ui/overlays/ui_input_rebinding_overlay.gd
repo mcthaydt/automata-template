@@ -7,6 +7,7 @@ const DEFAULT_REBIND_SETTINGS: Resource = preload("res://resources/core/input/re
 const U_LOCALIZATION_UTILS := preload("res://scripts/core/utils/localization/u_localization_utils.gd")
 const U_UI_MENU_BUILDER := preload("res://scripts/core/ui/helpers/u_ui_menu_builder.gd")
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
+const W_RIGHT_STICK_SCROLLER := preload("res://scripts/core/ui/widgets/w_right_stick_scroller.gd")
 
 const TITLE_KEY := &"menu.settings.rebind"
 const STATUS_DEFAULT_KEY := &"overlay.input_rebinding.status.default"
@@ -35,6 +36,8 @@ const ERROR_RESET_ACTION_UNAVAILABLE_KEY := &"overlay.input_rebinding.error.rese
 @onready var _close_button: Button = %CloseButton
 @onready var _reset_button: Button = %ResetButton
 @onready var _scroll: ScrollContainer = %Scroll
+
+# Dialogs: keep as @onready — native popups need scene-tree existence
 @onready var _conflict_dialog: ConfirmationDialog = %ConflictDialog
 @onready var _reset_confirm_dialog: ConfirmationDialog = %ResetConfirmDialog
 @onready var _error_dialog: AcceptDialog = %ErrorDialog
@@ -64,6 +67,7 @@ var _bottom_button_index: int = 0
 @warning_ignore("unused_private_class_variable")
 var _row_button_index: int = 0
 var _builder: RefCounted = null
+var _right_stick_scroller: W_RIGHT_STICK_SCROLLER = null
 
 func _on_panel_ready() -> void:
 	_setup_builder()
@@ -91,6 +95,10 @@ func _on_panel_ready() -> void:
 	# Connect search box
 	if _search_box != null:
 		_search_box.text_changed.connect(_on_search_changed)
+
+	_right_stick_scroller = W_RIGHT_STICK_SCROLLER.new()
+	_right_stick_scroller.bind_scroll_container(_scroll, 800.0, BaseMenuScreen.STICK_DEADZONE)
+	add_child(_right_stick_scroller)
 
 	_connect_profile_signals()
 	_localize_static_labels()
@@ -301,36 +309,6 @@ func _transition_back_to_settings_scene() -> void:
 	if store == null:
 		return
 	store.dispatch(U_NavigationActions.navigate_to_ui_screen(StringName("settings_panel"), "fade", 2))
-
-func _process(delta: float) -> void:
-	super._process(delta)
-	_update_right_stick_scroll(delta)
-
-func _update_right_stick_scroll(delta: float) -> void:
-	if _scroll == null:
-		return
-
-	var axis_x: float = 0.0
-	var axis_y: float = 0.0
-	var found_device: bool = false
-
-	for device in Input.get_connected_joypads():
-		axis_x = Input.get_joy_axis(device, JOY_AXIS_RIGHT_X)
-		axis_y = Input.get_joy_axis(device, JOY_AXIS_RIGHT_Y)
-		if abs(axis_x) > BaseMenuScreen.STICK_DEADZONE or abs(axis_y) > BaseMenuScreen.STICK_DEADZONE:
-			found_device = true
-			break
-
-	if not found_device:
-		return
-
-	# Horizontal: axis_x > 0 scrolls right, < 0 scrolls left.
-	# Vertical: axis_y > 0 scrolls down, < 0 scrolls up.
-	var scroll_speed: float = 800.0
-	var new_h: float = float(_scroll.scroll_horizontal) + axis_x * scroll_speed * delta
-	var new_v: float = float(_scroll.scroll_vertical) + axis_y * scroll_speed * delta
-	_scroll.scroll_horizontal = int(new_h)
-	_scroll.scroll_vertical = int(new_v)
 
 func _on_reset_pressed() -> void:
 	U_UISoundPlayer.play_confirm()
