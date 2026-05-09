@@ -15,6 +15,7 @@ const ANALOG_STICK_REPEATER_PATH := "res://scripts/core/ui/utils/u_analog_stick_
 const MENU_FULLSCREEN_SHADER := preload("res://assets/core/shaders/sh_menu_fullscreen_shader.gdshader")
 const W_BACKGROUND_IMAGE := preload("res://scripts/core/ui/widgets/w_background_image.gd")
 const W_ANALOG_STICK_ADAPTER := preload("res://scripts/core/ui/widgets/w_analog_stick_adapter.gd")
+const W_MOTION_TARGET_RESOLVER := preload("res://scripts/core/ui/widgets/w_motion_target_resolver.gd")
 
 const BACKGROUND_SHADER_PRESET_NONE := "none"
 const BACKGROUND_SHADER_PRESET_RETRO_GRID := "retro_grid"
@@ -77,20 +78,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			viewport.set_input_as_handled()
 	super._unhandled_input(event)
 
-## Check if ONLY the analog stick (not D-pad/keyboard) is pressed in each direction
-## Checks all connected joypads, not just device 0
-func _is_stick_pressed_up() -> bool:
-	return W_ANALOG_STICK_ADAPTER.is_pressed("ui_up")
-
-func _is_stick_pressed_down() -> bool:
-	return W_ANALOG_STICK_ADAPTER.is_pressed("ui_down")
-
-func _is_stick_pressed_left() -> bool:
-	return W_ANALOG_STICK_ADAPTER.is_pressed("ui_left")
-
-func _is_stick_pressed_right() -> bool:
-	return W_ANALOG_STICK_ADAPTER.is_pressed("ui_right")
-
 func _navigate_focus(direction: StringName) -> void:
 	var viewport := get_viewport()
 	var focused := viewport.gui_get_focus_owner() if viewport != null else null
@@ -123,36 +110,10 @@ func reset_analog_navigation() -> void:
 		_stick_repeater.reset()
 
 func play_enter_animation() -> Tween:
-	return U_UI_MOTION.play_enter(_resolve_motion_target(), motion_set)
+	return U_UI_MOTION.play_enter(W_MOTION_TARGET_RESOLVER.resolve(self, motion_target_path), motion_set)
 
 func play_exit_animation() -> Tween:
-	return U_UI_MOTION.play_exit(_resolve_motion_target(), motion_set)
-
-func _resolve_motion_target() -> Node:
-	var explicit_target := _resolve_explicit_motion_target()
-	if explicit_target != null:
-		return explicit_target
-
-	var center_target := _resolve_center_panel_motion_target()
-	if center_target != null:
-		return center_target
-	return self
-
-func _resolve_explicit_motion_target() -> Node:
-	if motion_target_path == NodePath():
-		return null
-	return get_node_or_null(motion_target_path)
-
-func _resolve_center_panel_motion_target() -> Control:
-	if not _has_backdrop_layer():
-		return null
-	var center := _find_center_container_with_panel(self)
-	if center == null:
-		return null
-	return center
-
-func _has_backdrop_layer() -> bool:
-	return _resolve_background() != null
+	return U_UI_MOTION.play_exit(W_MOTION_TARGET_RESOLVER.resolve(self, motion_target_path), motion_set)
 
 func _resolve_background() -> Control:
 	var bg_image := get_node_or_null("BackgroundImage") as TextureRect
@@ -165,32 +126,6 @@ func _resolve_background() -> Control:
 	if overlay_background != null:
 		return overlay_background
 	return get_node_or_null("ColorRect") as ColorRect
-
-func _find_center_container_with_panel(root: Node) -> Control:
-	for child in root.get_children():
-		if not (child is Node):
-			continue
-		var child_node := child as Node
-		if child_node is CenterContainer:
-			var center := child_node as CenterContainer
-			if _find_panel_descendant(center) != null:
-				return center
-		var nested := _find_center_container_with_panel(child_node)
-		if nested != null:
-			return nested
-	return null
-
-func _find_panel_descendant(root: Node) -> PanelContainer:
-	if root is PanelContainer:
-		return root as PanelContainer
-	for child in root.get_children():
-		if not (child is Node):
-			continue
-		var child_node := child as Node
-		var panel := _find_panel_descendant(child_node)
-		if panel != null:
-			return panel
-	return null
 
 func _setup_background_image(preset: String) -> bool:
 	var bg_image := W_BACKGROUND_IMAGE.setup_from_preset(preset)
