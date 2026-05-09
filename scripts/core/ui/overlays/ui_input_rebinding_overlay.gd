@@ -355,12 +355,6 @@ func _format_binding_text(events: Array) -> String:
 				labels.append(U_InputRebindUtils.format_event_label(reconstructed as InputEvent))
 	return ", ".join(labels)
 
-func _format_binding_label(binding_text: String) -> String:
-	var trimmed := binding_text.strip_edges()
-	if trimmed.begins_with("Key "):
-		trimmed = trimmed.substr(4, trimmed.length() - 4)
-	return trimmed
-
 func _reset_single_action(action: StringName) -> void:
 	if _is_reserved(action):
 		_show_error(U_LOCALIZATION_UTILS.localize_with_fallback(ERROR_RESET_RESERVED_KEY, "Cannot reset reserved action."))
@@ -443,54 +437,10 @@ func _on_close_button_focus_entered() -> void:
 	_sync_focus_tracking_from_control(_close_button)
 
 func _sync_focus_tracking_from_control(control: Control) -> void:
-	if control == null:
-		return
-
-	if control == _reset_button or control == _close_button:
-		_is_on_bottom_row = true
-		_bottom_button_index = 0 if control == _reset_button else 1
-		_refresh_action_row_highlight()
-		return
-
-	for index in range(_focusable_actions.size()):
-		var action: StringName = _focusable_actions[index]
-		var row_data: Dictionary = _action_rows.get(action, {}) as Dictionary
-		var row_container := row_data.get("container") as Control
-		var add_button := row_data.get("add_button") as Button
-		var replace_button := row_data.get("replace_button") as Button
-		var reset_button := row_data.get("reset_button") as Button
-
-		if control != row_container and control != add_button and control != replace_button and control != reset_button:
-			continue
-
-		_is_on_bottom_row = false
-		_focused_action_index = index
-
-		var row_buttons: Array[Button] = []
-		if add_button != null and not add_button.disabled:
-			row_buttons.append(add_button)
-		if replace_button != null and not replace_button.disabled:
-			row_buttons.append(replace_button)
-		if reset_button != null and not reset_button.disabled:
-			row_buttons.append(reset_button)
-		_row_button_index = row_buttons.find(control) if (control is Button and row_buttons.has(control)) else 0
-		_refresh_action_row_highlight()
-		return
+	U_RebindFocusNavigation.sync_focus_tracking_from_control(self, control)
 
 func _refresh_action_row_highlight() -> void:
-	for action_key in _action_rows.keys():
-		var data: Dictionary = _action_rows[action_key]
-		var row_container := data.get("container") as Control
-		if row_container == null:
-			continue
-		if _is_on_bottom_row:
-			row_container.modulate = Color(1, 1, 1, 0.7)
-		elif _focused_action_index >= 0 \
-				and _focused_action_index < _focusable_actions.size() \
-				and action_key == _focusable_actions[_focused_action_index]:
-			row_container.modulate = Color(1, 1, 1, 1)
-		else:
-			row_container.modulate = Color(1, 1, 1, 0.7)
+	U_RebindFocusNavigation.refresh_action_row_highlight(self)
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if _is_capturing:
@@ -573,12 +523,6 @@ func _get_first_focusable() -> Control:
 	return super._get_first_focusable()
 
 func _unhandled_input(event: InputEvent) -> void:
-	# Handle gamepad navigation separately so keyboard continues to use
-	# the existing _unhandled_key_input path.
-	if _is_capturing:
-		super._unhandled_input(event)
-		return
-
 	# Let default UI navigation (neighbors) handle D-pad and keyboard,
 	# so behavior matches other menus.
 	super._unhandled_input(event)

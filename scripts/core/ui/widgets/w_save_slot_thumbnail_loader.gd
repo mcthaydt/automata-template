@@ -29,9 +29,12 @@ static func configured_rect(path: String, placeholder: Texture2D, pending: Dicti
 static func poll_pending(pending: Dictionary, placeholder: Texture2D) -> Array[TextureRect]:
 	var completed: Array[TextureRect] = []
 	for key in pending.keys():
+		if not is_instance_valid(key):
+			pending.erase(key)
+			continue
 		var texture_rect := key as TextureRect
-		if texture_rect == null or not is_instance_valid(texture_rect):
-			completed.append(texture_rect)
+		if texture_rect == null:
+			pending.erase(key)
 			continue
 		var path: String = pending.get(texture_rect, "")
 		if path.is_empty():
@@ -50,9 +53,10 @@ static func poll_pending(pending: Dictionary, placeholder: Texture2D) -> Array[T
 	return completed
 
 static func _load_texture_from_image(path: String, placeholder: Texture2D) -> Texture2D:
-	var image := Image.new()
-	var load_error: Error = image.load(path)
-	if load_error != OK:
+	if path.begins_with("res://"):
+		return placeholder
+	var image := Image.load_from_file(path)
+	if image == null:
 		return placeholder
 	var texture := ImageTexture.create_from_image(image)
 	return texture

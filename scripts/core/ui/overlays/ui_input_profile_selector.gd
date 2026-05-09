@@ -4,7 +4,7 @@ class_name UI_InputProfileSelector
 
 const I_INPUT_PROFILE_MANAGER := preload("res://scripts/core/interfaces/i_input_profile_manager.gd")
 const U_LOCALIZATION_UTILS := preload("res://scripts/core/utils/localization/u_localization_utils.gd")
-const U_SETTINGS_TAB_BUILDER := preload("res://scripts/core/ui/helpers/u_settings_tab_builder.gd")
+const U_UI_MENU_BUILDER := preload("res://scripts/core/ui/helpers/u_ui_menu_builder.gd")
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
 const RS_UI_THEME_CONFIG := preload("res://scripts/core/resources/ui/rs_ui_theme_config.gd")
 
@@ -36,8 +36,6 @@ const OVERLAY_PROFILE_LABEL_FALLBACK := "Profile"
 @onready var _description_label: Label = %DescriptionLabel
 @onready var _bindings_container: VBoxContainer = %BindingsContainer
 
-@export var debug_nav_logs: bool = false
-
 @export var input_profile_manager: Node = null
 
 const INPUT_PROFILE_MANAGER_SERVICE := StringName("input_profile_manager")
@@ -48,16 +46,6 @@ var _current_index: int = 0
 var _theme_config: Resource = null
 var _builder: RefCounted = null
 
-func _nav_log(message: String) -> void:
-	if not debug_nav_logs:
-		return
-	print("[UI_InputProfileSelector] %s" % message)
-
-func _describe_node(node: Node) -> String:
-	if node == null:
-		return "<null>"
-	return "%s(%s)" % [node.name, node.get_class()]
-
 func _on_panel_ready() -> void:
 	_setup_builder()
 	_apply_theme_tokens()
@@ -67,7 +55,6 @@ func _on_panel_ready() -> void:
 	_manager = _resolve_input_profile_manager()
 	_localize_static_labels()
 	if _manager == null:
-		_nav_log("InputProfileSelector: M_InputProfileManager not found")
 		_update_preview()
 		play_enter_animation()
 		return
@@ -75,32 +62,29 @@ func _on_panel_ready() -> void:
 		_manager.profile_switched.connect(_on_manager_profile_switched)
 	_populate_profiles()
 	_configure_focus_neighbors()
-	_nav_log("ready manager=%s profiles=%d current_index=%d focused=%s" % [
-		_describe_node(_manager),
-		_available_profiles.size(),
-		_current_index,
-		_describe_node(get_viewport().gui_get_focus_owner() if get_viewport() != null else null)
-	])
 	_update_preview()
 	play_enter_animation()
 
 func _setup_builder() -> void:
-	_builder = U_SETTINGS_TAB_BUILDER.new(self)
-	_builder.bind_overlay_background(0.5, get_node_or_null("OverlayBackground") as ColorRect)
-	_builder.bind_panel(_main_panel, _main_panel_content, _main_panel_padding)
-	_builder.bind_heading(_heading_label, OVERLAY_TITLE_KEY)
-	_builder.bind_row(_profile_row)
-	_builder.bind_row(_preview_container, true)
-	_builder.bind_row(_bindings_container, true)
-	_builder.bind_row(_button_row, true)
-	_builder.bind_field_label(_profile_label, OVERLAY_PROFILE_LABEL_KEY)
-	_builder.bind_value_label(_header_label, &"")
-	_builder.bind_value_label(_description_label, &"")
+	_builder = U_UI_MENU_BUILDER.new(self)
+	_builder.bind_theme_role(self, &"overlay_dim", {"alpha": 0.5, "apply_menu_background": true})
+	_builder.bind_theme_role(get_node_or_null("OverlayBackground") as ColorRect, &"overlay_dim", {"alpha": 0.5})
+	_builder.bind_panel(_main_panel, _main_panel_padding, _main_panel_content)
+	_builder.bind_title(_heading_label, OVERLAY_TITLE_KEY)
+	_builder.bind_theme_role(_profile_row, &"separation_default")
+	_builder.bind_theme_role(_preview_container, &"separation_compact")
+	_builder.bind_theme_role(_bindings_container, &"separation_compact")
+	_builder.bind_theme_role(_button_row, &"separation_compact")
+	_builder.bind_theme_role(_profile_label, &"body_small")
+	_builder.bind_theme_role(_profile_label, &"text_secondary")
+	_builder.bind_theme_role(_header_label, &"body_small")
+	_builder.bind_theme_role(_description_label, &"body_small")
+	_builder.bind_theme_role(_description_label, &"text_secondary")
 	_builder.bind_theme_role(_header_label, &"subheading")
-	_builder.bind_field_control(_profile_button)
-	_builder.bind_action_button(_cancel_button, &"common.cancel", _on_cancel_pressed, "Cancel")
-	_builder.bind_action_button(_reset_button, OVERLAY_RESET_BUTTON_KEY, _on_reset_pressed, "Reset to Defaults")
-	_builder.bind_action_button(_apply_button, &"common.apply", _on_apply_pressed, "Apply")
+	_builder.bind_button(_profile_button, OVERLAY_PROFILE_LABEL_KEY, Callable(), OVERLAY_PROFILE_LABEL_FALLBACK)
+	_builder.bind_button(_cancel_button, &"common.cancel", _on_cancel_pressed, "Cancel")
+	_builder.bind_button(_reset_button, OVERLAY_RESET_BUTTON_KEY, _on_reset_pressed, "Reset to Defaults")
+	_builder.bind_button(_apply_button, &"common.apply", _on_apply_pressed, "Apply")
 	_builder.build()
 
 func _resolve_input_profile_manager() -> Node:
@@ -125,11 +109,8 @@ func _on_manager_profile_switched(profile_id: String) -> void:
 		_populate_profiles()
 
 func _navigate_focus(direction: StringName) -> void:
-	# Override to handle navigation within this overlay
 	var focused := get_viewport().gui_get_focus_owner()
-	_nav_log("_navigate_focus(%s) focused=%s" % [direction, _describe_node(focused)])
 
-	# Handle left/right on ProfileButton: cycle profiles (matches slider UX pattern)
 	if focused == _profile_button and (direction == "ui_left" or direction == "ui_right"):
 		if direction == "ui_left":
 			_cycle_profile(-1)
@@ -137,7 +118,6 @@ func _navigate_focus(direction: StringName) -> void:
 			_cycle_profile(1)
 		return
 
-	# For any other navigation, use default behavior (focus neighbors handle button navigation)
 	super._navigate_focus(direction)
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -168,25 +148,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			if viewport != null:
 				viewport.set_input_as_handled()
 			return
-
-	var action := ""
-	if event.is_action_pressed("ui_up"):
-		action = "ui_up"
-	elif event.is_action_pressed("ui_down"):
-		action = "ui_down"
-	elif event.is_action_pressed("ui_left"):
-		action = "ui_left"
-	elif event.is_action_pressed("ui_right"):
-		action = "ui_right"
-	elif event.is_action_pressed("ui_accept"):
-		action = "ui_accept"
-
-	if not action.is_empty():
-		_nav_log("_unhandled_input action=%s event=%s focused=%s" % [
-			action,
-			event.get_class(),
-			_describe_node(focused)
-		])
 
 	super._unhandled_input(event)
 
@@ -277,11 +238,6 @@ func _cycle_profile(direction: int) -> void:
 	_current_index = (_current_index + direction) % _available_profiles.size()
 	if _current_index < 0:
 		_current_index = _available_profiles.size() - 1
-	_nav_log("_cycle_profile(%d) -> current_index=%d selected=%s" % [
-		direction,
-		_current_index,
-		_available_profiles[_current_index] if not _available_profiles.is_empty() else ""
-	])
 	_update_button_text()
 
 func _on_profile_button_pressed() -> void:
@@ -553,7 +509,7 @@ func _add_binding_icons_for_action(container: HBoxContainer, action: StringName,
 		else:
 			# Fallback to text label
 			var event_label := Label.new()
-			event_label.text = _format_binding_label(U_InputRebindUtils.format_event_label(event))
+			event_label.text = U_InputRebindUtils.format_binding_label(U_InputRebindUtils.format_event_label(event))
 			event_label.add_theme_color_override(&"font_color", event_text_color)
 			if event_font_size > 0:
 				event_label.add_theme_font_size_override(&"font_size", event_font_size)
@@ -580,12 +536,6 @@ func _apply_preview_row_theme_tokens(row: HBoxContainer, label: Label, icons_con
 	if label != null:
 		label.add_theme_font_size_override(&"font_size", config.body_small)
 		label.add_theme_color_override(&"font_color", config.text_secondary)
-
-func _format_binding_label(binding_text: String) -> String:
-	var trimmed := binding_text.strip_edges()
-	if trimmed.begins_with("Key "):
-		trimmed = trimmed.substr(4, trimmed.length() - 4)
-	return trimmed
 
 func _localize_profile_text(raw_text: String) -> String:
 	if raw_text.is_empty():

@@ -1,6 +1,7 @@
 extends GutTest
 
 const W_SaveSlotGrid := preload("res://scripts/core/ui/widgets/w_save_slot_grid.gd")
+const W_SaveSlotThumbnailLoader := preload("res://scripts/core/ui/widgets/w_save_slot_thumbnail_loader.gd")
 const RS_UI_THEME_CONFIG := preload("res://scripts/core/resources/ui/rs_ui_theme_config.gd")
 
 func test_set_slots_creates_slot_rows() -> void:
@@ -51,6 +52,33 @@ func test_theme_tokens_apply_to_slot_row() -> void:
 	var button := row.get_node("MainButton") as Button
 	assert_eq(row.get_theme_constant(&"separation"), 11)
 	assert_eq(button.get_theme_font_size(&"font_size"), 17)
+
+func test_bind_slot_container_removes_auto_created_container() -> void:
+	var grid := W_SaveSlotGrid.new()
+	var external := VBoxContainer.new()
+	add_child_autofree(grid)
+	add_child_autofree(external)
+	grid.bind_slot_container(external)
+
+	assert_null(grid.get_node_or_null("SlotListContainer"), "Auto-created slot list should not remain orphaned after binding external container")
+
+func test_thumbnail_loader_erases_freed_pending_key() -> void:
+	var rect := TextureRect.new()
+	var pending := {rect: "res://missing_thumbnail_for_test.png"}
+	rect.free()
+
+	W_SaveSlotThumbnailLoader.poll_pending(pending, null)
+
+	assert_true(pending.is_empty(), "Freed TextureRect keys should be removed from pending loads")
+
+func test_thumbnail_loader_uses_placeholder_for_res_path_image_fallback() -> void:
+	var image := Image.create(1, 1, false, Image.FORMAT_RGBA8)
+	image.fill(Color.WHITE)
+	var placeholder := ImageTexture.create_from_image(image)
+
+	var texture := W_SaveSlotThumbnailLoader._load_texture_from_image("res://resources/core/ui/tex_save_slot_placeholder.png", placeholder)
+
+	assert_eq(texture, placeholder, "res:// threaded-load failures should not fall back to filesystem image loading")
 
 func _slot(slot_id: StringName, exists: bool) -> Dictionary:
 	return {

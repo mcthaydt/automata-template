@@ -5,11 +5,13 @@
 extends Node
 class_name W_RightStickScroller
 
+const W_ANALOG_STICK_ADAPTER := preload("res://scripts/core/ui/widgets/w_analog_stick_adapter.gd")
+
 var _scroll_target: ScrollContainer = null
 var _speed: float = 800.0
-var _deadzone: float = 0.3
+var _deadzone: float = W_ANALOG_STICK_ADAPTER.STICK_DEADZONE
 
-func bind_scroll_container(scroll: ScrollContainer, speed: float = 800.0, deadzone: float = 0.3) -> void:
+func bind_scroll_container(scroll: ScrollContainer, speed: float = 800.0, deadzone: float = W_ANALOG_STICK_ADAPTER.STICK_DEADZONE) -> void:
 	_scroll_target = scroll
 	_speed = speed
 	_deadzone = deadzone

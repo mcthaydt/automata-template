@@ -7,6 +7,14 @@
 
 Replace `@onready` chrome node declarations and inline node creation in remaining overlay screens with builder-driven or widget-driven construction. Target 20-40% line-count reduction.
 
+## Current Status — 2026-05-09 Gap Patch
+
+- Phase 9 is intentionally on the helper-utility path for focus navigation. The existing `U_RebindFocusNavigation` now owns focus sync and row highlight logic; `W_RebindFocusNavigator` is no longer the planned destination unless a future pass explicitly converts the helper into a stateful widget.
+- Phase 10 now uses `U_UIMenuBuilder` for overlay chrome/theme binding. `W_ProfileBindingPreview` is still pending, so the line-count target remains unmet.
+- Phase 11 remains functionally extracted. `W_SaveSlotRowFactory` was added to keep `W_SaveSlotGrid` under the widget line cap while preserving its ownership/focus role.
+- The builder `bind_panel` argument order is standardized as `(panel, padding, content)` across `U_UIMenuBuilder` and `U_SettingsTabBuilder`.
+- Fixed bugs from the audit: save-slot external container orphaning, freed thumbnail pending-key cleanup, `res://` image fallback in exported builds, malformed `set_tooltip` indentation, duplicated binding-label formatting, right-stick deadzone drift, and the no-op save/load event subscription stub.
+
 ## Approach
 
 **Aggressive (Option B)** — Extract reusable widgets for the large logic blocks, not just chrome nodes.
@@ -37,9 +45,9 @@ class_name W_RightStickScroller extends Control
 
 var _scroll_target: ScrollContainer = null
 var _speed: float = 800.0
-var _deadzone: float = 0.3
+var _deadzone: float = W_AnalogStickAdapter.STICK_DEADZONE
 
-func bind_scroll_container(target: ScrollContainer, speed: float = 800.0, deadzone: float = 0.3) -> void:
+func bind_scroll_container(target: ScrollContainer, speed: float = 800.0, deadzone: float = W_AnalogStickAdapter.STICK_DEADZONE) -> void:
     _scroll_target = target
     _speed = speed
     _deadzone = deadzone
@@ -50,14 +58,14 @@ func _process(delta: float) -> void:
 
 **Tests:** `tests/unit/ui/widgets/test_w_right_stick_scroller.gd` (3 tests)
 
-### New Widget: `W_RebindFocusNavigator`
+### Focus Helper: `U_RebindFocusNavigation`
 
-**File:** `scripts/core/ui/widgets/w_rebind_focus_navigator.gd`
-**Contract:** Encapsulates all focus-navigation logic specific to the rebind overlay (row highlight dimming, bottom-row tracking, row-button cycling, etc.).
+**File:** `scripts/core/ui/helpers/u_rebind_focus_navigation.gd`
+**Contract:** Encapsulates focus-navigation logic specific to the rebind overlay (row highlight dimming, bottom-row tracking, row-button cycling, etc.). This replaces the original widget extraction plan for now.
 
 **API:**
 ```gdscript
-class_name W_RebindFocusNavigator extends Control
+class_name U_RebindFocusNavigation extends RefCounted
 
 func setup(action_rows: Dictionary, focusable_actions: Array[StringName], reset_button: Button, close_button: Button) -> void
 func sync_focus_from(control: Control) -> void
@@ -72,7 +80,7 @@ func connect_row_focus_handlers(row: Control, add_button: Button, replace_button
 func refresh_highlight(is_on_bottom_row: bool, focused_action_index: int) -> void
 ```
 
-**Tests:** `tests/unit/ui/widgets/test_w_rebind_focus_navigator.gd` (5 tests)
+**Tests:** `tests/unit/ui/test_input_rebinding_overlay.gd`
 
 ### Builder extension
 
@@ -146,6 +154,13 @@ func set_buttons_enabled(enabled: bool) -> void
 
 **Tests:** `tests/unit/ui/widgets/test_w_save_slot_grid.gd` (6 tests)
 
+### New Static Helper: `W_SaveSlotRowFactory`
+
+**File:** `scripts/core/ui/widgets/w_save_slot_row_factory.gd`
+**Contract:** Builds save-slot row controls for `W_SaveSlotGrid` so the grid stays focused on container ownership, focus, and thumbnail polling.
+
+**Tests:** Covered through `tests/unit/ui/widgets/test_w_save_slot_grid.gd`
+
 ### New Static Helper: `W_SaveSlotThumbnailLoader`
 
 **File:** `scripts/core/ui/widgets/w_save_slot_thumbnail_loader.gd`
@@ -198,9 +213,10 @@ Style suite enforces **120-line cap** on `scripts/core/ui/widgets/w_*.gd`.
 | Widget | Estimated Lines | Risk |
 |---|---|---|
 | `W_RightStickScroller` | ~35 | Low |
-| `W_RebindFocusNavigator` | ~90 | Low |
+| `U_RebindFocusNavigation` | ~330 | Existing helper — not subject to widget cap |
 | `W_ProfileBindingPreview` | ~85 | Low |
 | `W_SaveSlotGrid` | ~110 | Medium — if thumbnail loading inlined, split to helper |
+| `W_SaveSlotRowFactory` | ~65 | Low |
 | `W_SaveSlotThumbnailLoader` | ~50 | Low |
 | `W_SaveSlotFormatter` | ~40 | Low |
 
@@ -214,8 +230,8 @@ If `W_SaveSlotGrid` exceeds 120 lines, keep thumbnail loading in `W_SaveSlotThum
 **Contract:** Polls right analog stick axes and drives `ScrollContainer` scroll offsets.  
 **Consumers:** `UI_InputRebindingOverlay`  
 
-### W_RebindFocusNavigator
-**File:** `res://scripts/core/ui/widgets/w_rebind_focus_navigator.gd`  
+### U_RebindFocusNavigation
+**File:** `res://scripts/core/ui/helpers/u_rebind_focus_navigation.gd`  
 **Contract:** Focus tracking, row highlight dimming, and directional navigation for rebind action rows.  
 **Consumers:** `UI_InputRebindingOverlay`  
 
@@ -228,6 +244,11 @@ If `W_SaveSlotGrid` exceeds 120 lines, keep thumbnail loading in `W_SaveSlotThum
 **File:** `res://scripts/core/ui/widgets/w_save_slot_grid.gd`  
 **Contract:** Manages save-slot list UI with thumbnails, main buttons, and optional delete buttons.  
 **Consumers:** `UI_SaveLoadMenu`  
+
+### W_SaveSlotRowFactory
+**File:** `res://scripts/core/ui/widgets/w_save_slot_row_factory.gd`  
+**Contract:** Builds save-slot row controls and wires slot/delete callbacks.  
+**Consumers:** `W_SaveSlotGrid`  
 
 ### W_SaveSlotThumbnailLoader
 **File:** `res://scripts/core/ui/widgets/w_save_slot_thumbnail_loader.gd`  
@@ -251,10 +272,10 @@ Per screen:
 
 ## Success Criteria
 
-- [ ] `UI_InputRebindingOverlay` ≤ 500 lines
-- [ ] `UI_InputProfileSelector` ≤ 420 lines
-- [ ] `UI_SaveLoadMenu` ≤ 480 lines
-- [ ] All new widgets ≤ 120 lines
-- [ ] All tests pass
-- [ ] `ui-widget-taxonomy.md` updated
-- [ ] Style suite passes
+- [ ] `UI_InputRebindingOverlay` ≤ 500 lines — pending (helper path chosen; current file still above cap)
+- [ ] `UI_InputProfileSelector` ≤ 420 lines — pending (`W_ProfileBindingPreview` still not extracted)
+- [x] `UI_SaveLoadMenu` ≤ 480 lines
+- [x] All new widgets ≤ 120 lines
+- [x] Targeted gap-patch tests pass
+- [x] `ui-widget-taxonomy.md` updated
+- [x] Style suite passes

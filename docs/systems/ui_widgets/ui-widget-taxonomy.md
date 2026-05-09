@@ -63,11 +63,11 @@ add_child(list)
 **Key API:**
 ```gdscript
 var scroller := W_RightStickScroller.new()
-scroller.bind_scroll_container(_scroll_container, 800.0, 0.3)
+scroller.bind_scroll_container(_scroll_container, 800.0, W_AnalogStickAdapter.STICK_DEADZONE)
 add_child(scroller)
 ```
 **Consumers:** `UI_InputRebindingOverlay`
-**Tests:** `tests/unit/ui/widgets/test_w_right_stick_scroller.gd` (2 tests)
+**Tests:** `tests/unit/ui/widgets/test_w_right_stick_scroller.gd` (3 tests)
 
 #### W_SaveSlotGrid
 **File:** `res://scripts/core/ui/widgets/w_save_slot_grid.gd`
@@ -80,7 +80,7 @@ grid.set_slots(metadata, &"save", U_UIThemeBuilder.active_config)
 grid.slot_pressed.connect(_on_slot_pressed)
 ```
 **Consumers:** `UI_SaveLoadMenu`
-**Tests:** `tests/unit/ui/widgets/test_w_save_slot_grid.gd` (6 tests)
+**Tests:** `tests/unit/ui/widgets/test_w_save_slot_grid.gd` (9 tests)
 
 ---
 
@@ -151,9 +151,15 @@ W_SettingsFocusConfigurator.configure_inline_pairs(self, [
 
 #### W_SaveSlotThumbnailLoader
 **File:** `res://scripts/core/ui/widgets/w_save_slot_thumbnail_loader.gd`
-**Contract:** Async threaded texture loading with `Image.load()` fallback for save slot thumbnails.
+**Contract:** Async threaded texture loading with filesystem fallback for `user://` save slot thumbnails; `res://` threaded-load failures fall back to the placeholder for export safety.
 **Consumers:** `W_SaveSlotGrid`
 **Tests:** `tests/unit/ui/widgets/test_w_save_slot_thumbnail_loader.gd` (3 tests)
+
+#### W_SaveSlotRowFactory
+**File:** `res://scripts/core/ui/widgets/w_save_slot_row_factory.gd`
+**Contract:** Builds save-slot row controls and wires slot/delete callbacks for `W_SaveSlotGrid`.
+**Consumers:** `W_SaveSlotGrid`
+**Tests:** Covered by `tests/unit/ui/widgets/test_w_save_slot_grid.gd`
 
 #### W_SaveSlotFormatter
 **File:** `res://scripts/core/ui/widgets/w_save_slot_formatter.gd`
@@ -177,6 +183,7 @@ scripts/core/ui/widgets/
 ├── w_settings_focus_configurator.gd
 ├── w_right_stick_scroller.gd
 ├── w_save_slot_grid.gd
+├── w_save_slot_row_factory.gd
 ├── w_save_slot_thumbnail_loader.gd
 └── w_save_slot_formatter.gd
 

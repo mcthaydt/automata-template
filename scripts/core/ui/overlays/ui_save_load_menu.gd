@@ -62,7 +62,6 @@ func _ready() -> void:
 	super._ready()
 	_setup_slot_grid()
 	_discover_save_manager()
-	_subscribe_to_events()
 	_refresh_ui()
 
 func _ensure_placeholder_texture_loaded() -> void:
@@ -100,12 +99,6 @@ func _discover_save_manager() -> void:
 	if _save_manager == null:
 		push_error("UI_SaveLoadMenu: M_SaveManager not found in ServiceLocator")
 
-func _subscribe_to_events() -> void:
-	# Channel taxonomy: save/load actions arrive via Redux dispatch (managers dispatch to Redux).
-	# Connection is deferred to _on_store_ready() because the base panel resolves _store
-	# via call_deferred("_deferred_panel_ready"), so the store isn't available yet in _ready().
-	pass
-
 func _exit_tree() -> void:
 	# Disconnect from Redux action_dispatched
 	var store := get_store()
@@ -122,6 +115,8 @@ func _exit_tree() -> void:
 
 func _on_store_ready(store_ref: M_StateStore) -> void:
 	if store_ref != null:
+		# Save/load actions arrive via Redux dispatch; store wiring waits for
+		# BasePanel's deferred store resolution.
 		store_ref.slice_updated.connect(_on_slice_updated)
 		if store_ref.has_signal("action_dispatched") and not store_ref.action_dispatched.is_connected(_on_action_dispatched):
 			store_ref.action_dispatched.connect(_on_action_dispatched)

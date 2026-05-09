@@ -33,7 +33,7 @@ const BACKGROUND_SHADER_PRESET_MODE_BY_ID := {
 	BACKGROUND_SHADER_PRESET_ARCADE_NOISE: 2,
 }
 
-const STICK_DEADZONE: float = 0.25 # Must match project.godot ui_* action deadzone
+const STICK_DEADZONE: float = W_ANALOG_STICK_ADAPTER.STICK_DEADZONE # Must match project.godot ui_* action deadzone
 
 var _stick_repeater: RefCounted = null
 var _background_image: TextureRect = null

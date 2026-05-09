@@ -128,7 +128,7 @@ static func handle_captured_event(overlay: Node, event: InputEvent) -> void:
 		var conflict_name: String = U_RebindActionListHelper.get_action_display_name(validation.conflict_action)
 		var binding_text: String = overlay._format_binding_text([event_copy])
 		overlay._conflict_dialog.dialog_text = get_conflict_dialog_text(
-			overlay._format_binding_label(binding_text),
+			U_InputRebindUtils.format_binding_label(binding_text),
 			conflict_name
 		)
 		overlay._conflict_dialog.popup_centered()
@@ -173,7 +173,7 @@ static func apply_binding(overlay: Node, event: InputEvent, conflict_action: Str
 	var binding_text: String = overlay._format_binding_text(final_target)
 	cancel_capture(overlay, get_rebind_success_status(
 		action,
-		overlay._format_binding_label(binding_text)
+		U_InputRebindUtils.format_binding_label(binding_text)
 	))
 
 static func get_action_events(_overlay: Node, action: StringName) -> Array[InputEvent]:

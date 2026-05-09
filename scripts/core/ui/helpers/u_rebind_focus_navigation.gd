@@ -216,6 +216,56 @@ static func connect_row_focus_handlers(
 				overlay.call("_sync_focus_tracking_from_control", reset_button)
 		)
 
+static func sync_focus_tracking_from_control(overlay: Node, control: Control) -> void:
+	if control == null:
+		return
+
+	if control == overlay._reset_button or control == overlay._close_button:
+		overlay._is_on_bottom_row = true
+		overlay._bottom_button_index = 0 if control == overlay._reset_button else 1
+		refresh_action_row_highlight(overlay)
+		return
+
+	for index in range(overlay._focusable_actions.size()):
+		var action: StringName = overlay._focusable_actions[index]
+		var row_data: Dictionary = overlay._action_rows.get(action, {}) as Dictionary
+		var row_container := row_data.get("container") as Control
+		var add_button := row_data.get("add_button") as Button
+		var replace_button := row_data.get("replace_button") as Button
+		var reset_button := row_data.get("reset_button") as Button
+
+		if control != row_container and control != add_button and control != replace_button and control != reset_button:
+			continue
+
+		overlay._is_on_bottom_row = false
+		overlay._focused_action_index = index
+
+		var row_buttons: Array[Button] = []
+		if add_button != null and not add_button.disabled:
+			row_buttons.append(add_button)
+		if replace_button != null and not replace_button.disabled:
+			row_buttons.append(replace_button)
+		if reset_button != null and not reset_button.disabled:
+			row_buttons.append(reset_button)
+		overlay._row_button_index = row_buttons.find(control) if (control is Button and row_buttons.has(control)) else 0
+		refresh_action_row_highlight(overlay)
+		return
+
+static func refresh_action_row_highlight(overlay: Node) -> void:
+	for action_key in overlay._action_rows.keys():
+		var data: Dictionary = overlay._action_rows[action_key]
+		var row_container := data.get("container") as Control
+		if row_container == null:
+			continue
+		if overlay._is_on_bottom_row:
+			row_container.modulate = Color(1, 1, 1, 0.7)
+		elif overlay._focused_action_index >= 0 \
+				and overlay._focused_action_index < overlay._focusable_actions.size() \
+				and action_key == overlay._focusable_actions[overlay._focused_action_index]:
+			row_container.modulate = Color(1, 1, 1, 1)
+		else:
+			row_container.modulate = Color(1, 1, 1, 0.7)
+
 static func cycle_bottom_button(overlay: Node, direction: int) -> void:
 	var buttons: Array[Button] = []
 	if overlay._reset_button != null and not overlay._reset_button.disabled:
