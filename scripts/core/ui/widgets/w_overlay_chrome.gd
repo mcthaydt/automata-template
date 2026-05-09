@@ -16,9 +16,13 @@ var _close_button: Button = null
 var _close_button_margin: MarginContainer = null
 
 func _init() -> void:
+	size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
 	_panel_chrome = HBoxContainer.new()
 	_panel_chrome.name = "PanelChrome"
 	_panel_chrome.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_panel_chrome.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(_panel_chrome)
 
 	_close_button_margin = MarginContainer.new()
@@ -43,3 +47,8 @@ func get_close_button() -> Button:
 
 func get_close_button_margin() -> MarginContainer:
 	return _close_button_margin
+
+func _get_minimum_size() -> Vector2:
+	if _panel_chrome == null:
+		return Vector2.ZERO
+	return _panel_chrome.get_combined_minimum_size()

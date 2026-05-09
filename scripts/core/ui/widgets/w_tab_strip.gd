@@ -1,4 +1,4 @@
-extends Control
+extends HBoxContainer
 class_name W_TabStrip
 
 signal tab_switched(tab_id: int)
@@ -7,6 +7,10 @@ var _tab_buttons: Dictionary = {}
 var _tab_order: Array[int] = []
 var _active_tab: int = -1
 var _button_group: ButtonGroup = ButtonGroup.new()
+
+func _init() -> void:
+	size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 func add_tab(tab_id: int, button: Button, label_key: StringName, fallback: String, active_variation: String = "", inactive_variation: String = "") -> void:
 	button.toggle_mode = true

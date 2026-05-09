@@ -40,3 +40,17 @@ func test_tab_switch_emits_signal() -> void:
 	strip.tab_switched.connect(_on_tab_switched)
 	strip.switch_to_tab(0)
 	assert_eq(_received_tab_id, 0)
+
+func test_tab_buttons_layout_horizontally_without_overlap() -> void:
+	var strip := W_TabStrip.new()
+	var btn_a := Button.new()
+	var btn_b := Button.new()
+	btn_a.text = "Display"
+	btn_b.text = "Keyboard & Mouse"
+	strip.add_tab(0, btn_a, &"a", "Display")
+	strip.add_tab(1, btn_b, &"b", "Keyboard & Mouse")
+	add_child_autofree(strip)
+
+	await wait_process_frames(1)
+
+	assert_true(btn_b.global_position.x >= btn_a.global_position.x + btn_a.size.x, "Second tab button should be laid out after first tab button")
