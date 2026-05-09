@@ -350,7 +350,7 @@ func _configure_focus_neighbors() -> void:
 			visible_buttons.append(btn)
 	if visible_buttons.is_empty():
 		return
-	U_FocusConfigurator.configure_horizontal_focus(visible_buttons)
+	U_FOCUS_CONFIGURATOR.configure_horizontal_focus(visible_buttons)
 	_configure_tab_key_focus_paths()
 
 func _configure_tab_key_focus_paths() -> void:

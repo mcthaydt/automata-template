@@ -9,7 +9,7 @@ const RS_UI_THEME_CONFIG := preload("res://scripts/core/resources/ui/rs_ui_theme
 const U_INPUT_ACTIONS := preload("res://scripts/core/state/actions/u_input_actions.gd")
 const U_INPUT_SELECTORS := preload("res://scripts/core/state/selectors/u_input_selectors.gd")
 const RS_TOUCHSCREEN_SETTINGS := preload("res://scripts/core/resources/input/rs_touchscreen_settings.gd")
-const U_FOCUS_CONFIGURATOR := preload("res://scripts/core/ui/helpers/u_focus_configurator.gd")
+const W_SETTINGS_FOCUS_CONFIGURATOR := preload("res://scripts/core/ui/widgets/w_settings_focus_configurator.gd")
 const U_NAVIGATION_ACTIONS := preload("res://scripts/core/state/actions/u_navigation_actions.gd")
 const I_INPUT_PROFILE_MANAGER := preload("res://scripts/core/interfaces/i_input_profile_manager.gd")
 const U_TOUCHSCREEN_PREVIEW_HELPER := preload("res://scripts/core/ui/helpers/u_touchscreen_preview_helper.gd")
@@ -197,25 +197,21 @@ func _build_preview() -> void:
 	_configure_sub_overlay_focus()
 
 func _configure_focus_neighbors() -> void:
-	var vertical_controls: Array[Control] = []
-	if _joystick_size_slider != null:
-		vertical_controls.append(_joystick_size_slider)
-	if _button_size_slider != null:
-		vertical_controls.append(_button_size_slider)
-	if _joystick_opacity_slider != null:
-		vertical_controls.append(_joystick_opacity_slider)
-	if _button_opacity_slider != null:
-		vertical_controls.append(_button_opacity_slider)
-	if _joystick_deadzone_slider != null:
-		vertical_controls.append(_joystick_deadzone_slider)
-	if _look_sensitivity_slider != null:
-		vertical_controls.append(_look_sensitivity_slider)
+	W_SETTINGS_FOCUS_CONFIGURATOR.configure_vertical(self, [
+		func() -> Control: return _joystick_size_slider,
+		func() -> Control: return _button_size_slider,
+		func() -> Control: return _joystick_opacity_slider,
+		func() -> Control: return _button_opacity_slider,
+		func() -> Control: return _joystick_deadzone_slider,
+		func() -> Control: return _look_sensitivity_slider,
+	])
 
-	if not vertical_controls.is_empty():
-		U_FOCUS_CONFIGURATOR.configure_vertical_focus(vertical_controls, true)
-
-	if _reset_button != null and not vertical_controls.is_empty():
-		var last_control := vertical_controls[vertical_controls.size() - 1]
+	# Connect last vertical control to reset button
+	var last_control: Control = null
+	for ctrl in [_joystick_size_slider, _button_size_slider, _joystick_opacity_slider, _button_opacity_slider, _joystick_deadzone_slider, _look_sensitivity_slider]:
+		if ctrl != null and ctrl.focus_mode != Control.FOCUS_NONE and ctrl.visible:
+			last_control = ctrl
+	if last_control != null and _reset_button != null:
 		last_control.focus_neighbor_bottom = last_control.get_path_to(_reset_button)
 		_reset_button.focus_neighbor_top = _reset_button.get_path_to(last_control)
 		_reset_button.focus_neighbor_bottom = _reset_button.get_path_to(last_control)

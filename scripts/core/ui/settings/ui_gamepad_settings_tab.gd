@@ -9,7 +9,7 @@ const RS_UI_THEME_CONFIG := preload("res://scripts/core/resources/ui/rs_ui_theme
 const U_INPUT_ACTIONS := preload("res://scripts/core/state/actions/u_input_actions.gd")
 const U_INPUT_SELECTORS := preload("res://scripts/core/state/selectors/u_input_selectors.gd")
 const RS_GAMEPAD_SETTINGS := preload("res://scripts/core/resources/input/rs_gamepad_settings.gd")
-const U_FOCUS_CONFIGURATOR := preload("res://scripts/core/ui/helpers/u_focus_configurator.gd")
+const W_SETTINGS_FOCUS_CONFIGURATOR := preload("res://scripts/core/ui/widgets/w_settings_focus_configurator.gd")
 const U_NAVIGATION_ACTIONS := preload("res://scripts/core/state/actions/u_navigation_actions.gd")
 const U_NAVIGATION_SELECTORS := preload("res://scripts/core/state/selectors/u_navigation_selectors.gd")
 
@@ -162,25 +162,21 @@ func _on_visibility_changed() -> void:
 		set_process(true)
 
 func _configure_focus_neighbors() -> void:
-	var vertical_controls: Array[Control] = []
-	if _left_deadzone_slider != null:
-		vertical_controls.append(_left_deadzone_slider)
-	if _right_deadzone_slider != null:
-		vertical_controls.append(_right_deadzone_slider)
-	if _sensitivity_slider != null:
-		vertical_controls.append(_sensitivity_slider)
-	if _vibration_toggle != null:
-		vertical_controls.append(_vibration_toggle)
-	if _vibration_slider != null:
-		vertical_controls.append(_vibration_slider)
-	if _stick_preview != null:
-		vertical_controls.append(_stick_preview)
+	W_SETTINGS_FOCUS_CONFIGURATOR.configure_vertical(self, [
+		func() -> Control: return _left_deadzone_slider,
+		func() -> Control: return _right_deadzone_slider,
+		func() -> Control: return _sensitivity_slider,
+		func() -> Control: return _vibration_toggle,
+		func() -> Control: return _vibration_slider,
+		func() -> Control: return _stick_preview,
+	], false)
 
-	if not vertical_controls.is_empty():
-		U_FOCUS_CONFIGURATOR.configure_vertical_focus(vertical_controls, false)
-
-	if _reset_button != null and not vertical_controls.is_empty():
-		var last_control := vertical_controls[vertical_controls.size() - 1]
+	# Connect last vertical control to reset button
+	var last_control: Control = null
+	for ctrl in [_left_deadzone_slider, _right_deadzone_slider, _sensitivity_slider, _vibration_toggle, _vibration_slider, _stick_preview]:
+		if ctrl != null and ctrl.focus_mode != Control.FOCUS_NONE and ctrl.visible:
+			last_control = ctrl
+	if last_control != null and _reset_button != null:
 		last_control.focus_neighbor_bottom = last_control.get_path_to(_reset_button)
 		_reset_button.focus_neighbor_top = _reset_button.get_path_to(last_control)
 		_reset_button.focus_neighbor_bottom = _reset_button.get_path_to(last_control)
@@ -192,8 +188,10 @@ func _configure_sub_overlay_focus() -> void:
 	if _rebind_controls_button != null:
 		sub_buttons.append(_rebind_controls_button)
 
-	if not sub_buttons.is_empty():
-		U_FOCUS_CONFIGURATOR.configure_vertical_focus(sub_buttons, false)
+	W_SETTINGS_FOCUS_CONFIGURATOR.configure_vertical(self, [
+		func() -> Control: return _input_profiles_button,
+		func() -> Control: return _rebind_controls_button,
+	], false)
 
 	if _reset_button != null and _input_profiles_button != null:
 		_reset_button.focus_neighbor_bottom = _reset_button.get_path_to(_input_profiles_button)

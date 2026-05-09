@@ -7,7 +7,7 @@ const U_LOCALIZATION_SELECTORS := preload("res://scripts/core/state/selectors/u_
 const U_LOCALIZATION_UTILS := preload("res://scripts/core/utils/localization/u_localization_utils.gd")
 const U_NAVIGATION_ACTIONS := preload("res://scripts/core/state/actions/u_navigation_actions.gd")
 const U_NAVIGATION_SELECTORS := preload("res://scripts/core/state/selectors/u_navigation_selectors.gd")
-const U_FOCUS_CONFIGURATOR := preload("res://scripts/core/ui/helpers/u_focus_configurator.gd")
+const W_SETTINGS_FOCUS_CONFIGURATOR := preload("res://scripts/core/ui/widgets/w_settings_focus_configurator.gd")
 const U_SETTINGS_TAB_BUILDER := preload("res://scripts/core/ui/helpers/u_settings_tab_builder.gd")
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
 const U_UI_SETTINGS_CATALOG := preload("res://scripts/core/ui/helpers/u_ui_settings_catalog.gd")
@@ -171,14 +171,19 @@ func _configure_focus_neighbors() -> void:
 	if _get_apply_button() != null:
 		buttons.append(_get_apply_button())
 
+	# Combine all focusables for vertical wrapping
 	for button: Control in buttons:
 		focusables.append(button)
 
-	if not focusables.is_empty():
-		U_FOCUS_CONFIGURATOR.configure_vertical_focus(focusables, true)
+	W_SETTINGS_FOCUS_CONFIGURATOR.configure_vertical(self, [
+		func() -> Control: return _get_language_option(),
+		func() -> Control: return _get_dyslexia_toggle(),
+		func() -> Control: return _get_cancel_button(),
+		func() -> Control: return _get_reset_button(),
+		func() -> Control: return _get_apply_button(),
+	])
 
-	if not buttons.is_empty():
-		U_FOCUS_CONFIGURATOR.configure_horizontal_focus(buttons, true)
+	W_SETTINGS_FOCUS_CONFIGURATOR.configure_horizontal(self, buttons, true)
 
 func _on_state_changed(action: Dictionary, state: Dictionary) -> void:
 	if state == null:

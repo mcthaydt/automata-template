@@ -10,7 +10,7 @@ const U_INPUT_ACTIONS := preload("res://scripts/core/state/actions/u_input_actio
 const U_INPUT_SELECTORS := preload("res://scripts/core/state/selectors/u_input_selectors.gd")
 const U_NAVIGATION_ACTIONS := preload("res://scripts/core/state/actions/u_navigation_actions.gd")
 const U_NAVIGATION_SELECTORS := preload("res://scripts/core/state/selectors/u_navigation_selectors.gd")
-const U_FOCUS_CONFIGURATOR := preload("res://scripts/core/ui/helpers/u_focus_configurator.gd")
+const W_SETTINGS_FOCUS_CONFIGURATOR := preload("res://scripts/core/ui/widgets/w_settings_focus_configurator.gd")
 
 const TITLE_KEY := &"settings.keyboard_mouse.title"
 const LABEL_MOUSE_SENSITIVITY_KEY := &"settings.keyboard_mouse.label.mouse_sensitivity"
@@ -115,28 +115,17 @@ func _enter_tree() -> void:
 	_on_state_changed({}, _state_store.get_state())
 
 func _configure_focus_neighbors() -> void:
-	var vertical_controls: Array[Control] = []
-	if _mouse_sensitivity_slider != null:
-		vertical_controls.append(_mouse_sensitivity_slider)
-	if _keyboard_look_enabled_check != null:
-		vertical_controls.append(_keyboard_look_enabled_check)
-	if _keyboard_look_speed_slider != null:
-		vertical_controls.append(_keyboard_look_speed_slider)
-	if _reset_button != null:
-		vertical_controls.append(_reset_button)
-	if _rebind_button != null:
-		vertical_controls.append(_rebind_button)
-
-	var visible_controls: Array[Control] = []
-	for control: Control in vertical_controls:
-		if control != null and control.focus_mode != Control.FOCUS_NONE and control.visible:
-			visible_controls.append(control)
-
-	if not visible_controls.is_empty():
-		U_FOCUS_CONFIGURATOR.configure_vertical_focus(visible_controls)
+	W_SETTINGS_FOCUS_CONFIGURATOR.configure_vertical(self, [
+		func() -> Control: return _mouse_sensitivity_slider,
+		func() -> Control: return _keyboard_look_enabled_check,
+		func() -> Control: return _keyboard_look_speed_slider,
+		func() -> Control: return _reset_button,
+		func() -> Control: return _rebind_button,
+	])
 
 	if _reset_button != null and _rebind_button != null:
 		_reset_button.focus_neighbor_right = _reset_button.get_path_to(_rebind_button)
+		_rebind_button.focus_neighbor_left = _rebind_button.get_path_to(_reset_button)
 		_rebind_button.focus_neighbor_left = _rebind_button.get_path_to(_reset_button)
 
 func _configure_tooltips() -> void:

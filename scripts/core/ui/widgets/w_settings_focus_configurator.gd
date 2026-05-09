@@ -8,14 +8,22 @@ class_name W_SettingsFocusConfigurator
 
 const U_FOCUS_CONFIGURATOR := preload("res://scripts/core/ui/helpers/u_focus_configurator.gd")
 
-static func configure_vertical(tab: Control, control_getters: Array[Callable]) -> void:
+static func configure_vertical(tab: Control, control_getters: Array[Callable], wrap: bool = true) -> void:
 	var visible: Array[Control] = []
 	for getter in control_getters:
 		var ctrl := getter.call() as Control
 		if ctrl != null and ctrl.focus_mode != Control.FOCUS_NONE and ctrl.visible:
 			visible.append(ctrl)
 	if not visible.is_empty():
-		U_FOCUS_CONFIGURATOR.configure_vertical_focus(visible, true)
+		U_FOCUS_CONFIGURATOR.configure_vertical_focus(visible, wrap)
+
+static func configure_horizontal(tab: Control, controls: Array[Control], wrap: bool = true) -> void:
+	var visible: Array[Control] = []
+	for ctrl in controls:
+		if ctrl != null and ctrl.focus_mode != Control.FOCUS_NONE and ctrl.visible:
+			visible.append(ctrl)
+	if not visible.is_empty():
+		U_FOCUS_CONFIGURATOR.configure_horizontal_focus(visible, wrap)
 
 static func configure_inline_pairs(tab: Control, pairs: Array[Array]) -> void:
 	for pair in pairs:
