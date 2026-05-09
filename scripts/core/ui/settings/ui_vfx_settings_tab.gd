@@ -9,7 +9,7 @@ const RS_UI_THEME_CONFIG := preload("res://scripts/core/resources/ui/rs_ui_theme
 const U_VFX_ACTIONS := preload("res://scripts/core/state/actions/u_vfx_actions.gd")
 const U_VFX_SELECTORS := preload("res://scripts/core/state/selectors/u_vfx_selectors.gd")
 const RS_VFX_INITIAL_STATE := preload("res://scripts/core/resources/state/rs_vfx_initial_state.gd")
-const U_FOCUS_CONFIGURATOR := preload("res://scripts/core/ui/helpers/u_focus_configurator.gd")
+const W_SETTINGS_FOCUS_CONFIGURATOR := preload("res://scripts/core/ui/widgets/w_settings_focus_configurator.gd")
 
 const TITLE_KEY := &"settings.vfx.title"
 const LABEL_SCREEN_SHAKE_KEY := &"settings.vfx.label.screen_shake"
@@ -99,21 +99,19 @@ func _enter_tree() -> void:
 	_on_state_changed({}, _state_store.get_state())
 
 func _configure_focus_neighbors() -> void:
-	var vertical_controls: Array[Control] = []
-	if _shake_enabled_toggle != null:
-		vertical_controls.append(_shake_enabled_toggle)
-	if _intensity_slider != null:
-		vertical_controls.append(_intensity_slider)
-	if _flash_enabled_toggle != null:
-		vertical_controls.append(_flash_enabled_toggle)
-	if _particles_enabled_toggle != null:
-		vertical_controls.append(_particles_enabled_toggle)
+	W_SETTINGS_FOCUS_CONFIGURATOR.configure_vertical(self, [
+		func() -> Control: return _shake_enabled_toggle,
+		func() -> Control: return _intensity_slider,
+		func() -> Control: return _flash_enabled_toggle,
+		func() -> Control: return _particles_enabled_toggle,
+	])
 
-	if not vertical_controls.is_empty():
-		U_FOCUS_CONFIGURATOR.configure_vertical_focus(vertical_controls, true)
-
-	if _reset_button != null and not vertical_controls.is_empty():
-		var last_control := vertical_controls[vertical_controls.size() - 1]
+	# Connect last vertical control to reset button
+	var last_control: Control = null
+	for ctrl in [_shake_enabled_toggle, _intensity_slider, _flash_enabled_toggle, _particles_enabled_toggle]:
+		if ctrl != null and ctrl.focus_mode != Control.FOCUS_NONE and ctrl.visible:
+			last_control = ctrl
+	if last_control != null and _reset_button != null:
 		last_control.focus_neighbor_bottom = last_control.get_path_to(_reset_button)
 		_reset_button.focus_neighbor_top = _reset_button.get_path_to(last_control)
 		_reset_button.focus_neighbor_bottom = _reset_button.get_path_to(last_control)

@@ -9,6 +9,7 @@ const U_UI_SETTINGS_CATALOG := preload("res://scripts/core/ui/helpers/u_ui_setti
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
 const RS_UI_THEME_CONFIG := preload("res://scripts/core/resources/ui/rs_ui_theme_config.gd")
 const U_FOCUS_CONFIGURATOR := preload("res://scripts/core/ui/helpers/u_focus_configurator.gd")
+const W_SETTINGS_FOCUS_CONFIGURATOR := preload("res://scripts/core/ui/widgets/w_settings_focus_configurator.gd")
 
 const TITLE_KEY := &"settings.display.title"
 const SECTION_GRAPHICS_KEY := &"settings.display.section.graphics"
@@ -792,35 +793,23 @@ func _on_option_button_popup_about_to_show(popup: PopupMenu) -> void:
 	popup.grab_focus()
 
 func _configure_focus_neighbors() -> void:
-	var vertical_controls: Array[Control] = [
-		_get_window_size_option(),
-		_get_window_mode_option(),
-		_get_vsync_toggle(),
-		_get_quality_preset_option(),
-		_get_post_processing_toggle(),
-		_get_post_processing_preset_option(),
-		_get_ui_scale_slider(),
-		_get_color_blind_mode_option(),
-		_get_high_contrast_toggle(),
-		_get_cancel_button(),
-		_get_apply_button(),
-		_get_reset_button(),
-	]
-	var visible_controls: Array[Control] = []
-	for control: Control in vertical_controls:
-		if control != null and control.focus_mode != Control.FOCUS_NONE and control.visible:
-			visible_controls.append(control)
-	if not visible_controls.is_empty():
-		U_FOCUS_CONFIGURATOR.configure_vertical_focus(visible_controls)
+	W_SETTINGS_FOCUS_CONFIGURATOR.configure_vertical(self, [
+		func() -> Control: return _get_window_size_option(),
+		func() -> Control: return _get_window_mode_option(),
+		func() -> Control: return _get_vsync_toggle(),
+		func() -> Control: return _get_quality_preset_option(),
+		func() -> Control: return _get_post_processing_toggle(),
+		func() -> Control: return _get_post_processing_preset_option(),
+		func() -> Control: return _get_ui_scale_slider(),
+		func() -> Control: return _get_color_blind_mode_option(),
+		func() -> Control: return _get_high_contrast_toggle(),
+		func() -> Control: return _get_cancel_button(),
+		func() -> Control: return _get_apply_button(),
+		func() -> Control: return _get_reset_button(),
+	])
 
-	var pairs: Array = [
+	W_SETTINGS_FOCUS_CONFIGURATOR.configure_inline_pairs(self, [
 		[_get_window_size_option(), _get_window_mode_option()],
 		[_get_vsync_toggle(), _get_quality_preset_option()],
 		[_get_post_processing_toggle(), _get_post_processing_preset_option()],
-	]
-	for pair in pairs:
-		var left: Control = pair[0]
-		var right: Control = pair[1]
-		if left != null and right != null:
-			left.focus_neighbor_right = left.get_path_to(right)
-			right.focus_neighbor_left = right.get_path_to(left)
+	])
