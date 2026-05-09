@@ -8,6 +8,7 @@ class_name UI_MainMenu
 ## and dispatches navigation actions for play/settings flows.
 
 
+const W_MENU_BUTTON_LIST := preload("res://scripts/core/ui/widgets/w_menu_button_list.gd")
 const U_LOCALIZATION_UTILS := preload("res://scripts/core/utils/localization/u_localization_utils.gd")
 const U_UI_MENU_BUILDER := preload("res://scripts/core/ui/helpers/u_ui_menu_builder.gd")
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
@@ -34,19 +35,20 @@ const OVERLAY_SAVE_LOAD := StringName("save_load_menu_overlay")
 var _save_manager: Node = null  # M_SaveManager
 var _new_game_confirmation_pending: bool = false
 var _menu_builder: RefCounted = null
+var _button_list: W_MENU_BUTTON_LIST = null
 
 var _store_unsubscribe: Callable = Callable()
 var _active_panel: StringName = StringName()
 
 func _on_panel_ready() -> void:
 	_setup_menu_builder()
+	_setup_widget_focus()
 	_apply_theme_tokens()
 	call_deferred("_debug_log_theme_snapshot")
 	_discover_save_manager()
 	_update_button_visibility()
 	if _try_debug_skip_main_menu():
 		return
-	_configure_focus_neighbors()
 	_localize_labels()
 	var store := get_store()
 	if store == null:
@@ -60,13 +62,6 @@ func _setup_menu_builder() -> void:
 	_menu_builder = U_UI_MENU_BUILDER.new(self)
 	_menu_builder.bind_title(_title_label, &"menu.main.title", "Main Menu")
 	_menu_builder.bind_theme_role(_title_label, &"title")
-	_menu_builder.bind_button_group([
-		{"button": _continue_button, "key": &"menu.main.continue", "callback": _on_continue_pressed, "fallback": "Continue"},
-		{"button": _new_game_button, "key": &"menu.main.new_game", "callback": _on_new_game_pressed, "fallback": "New Game"},
-		{"button": _load_game_button, "key": &"menu.main.load_game", "callback": _on_load_game_pressed, "fallback": "Load Game"},
-		{"button": _settings_button, "key": &"menu.main.settings", "callback": _on_settings_pressed, "fallback": "Settings"},
-		{"button": _quit_button, "key": &"menu.main.quit", "callback": _on_quit_pressed, "fallback": "Quit"},
-	])
 	_menu_builder.build()
 	if _new_game_confirm_dialog != null:
 		if not _new_game_confirm_dialog.confirmed.is_connected(_on_new_game_confirmed):
@@ -74,9 +69,20 @@ func _setup_menu_builder() -> void:
 		if not _new_game_confirm_dialog.canceled.is_connected(_on_new_game_canceled):
 			_new_game_confirm_dialog.canceled.connect(_on_new_game_canceled)
 
+func _setup_widget_focus() -> void:
+	_button_list = W_MENU_BUTTON_LIST.new()
+	_button_list.name = "MenuButtonList"
+	_button_list.add_existing_button(_continue_button, &"menu.main.continue", "Continue", _on_continue_pressed)
+	_button_list.add_existing_button(_new_game_button,   &"menu.main.new_game",   "New Game",   _on_new_game_pressed)
+	_button_list.add_existing_button(_load_game_button,  &"menu.main.load_game",  "Load Game",  _on_load_game_pressed)
+	_button_list.add_existing_button(_settings_button,   &"menu.main.settings",   "Settings",   _on_settings_pressed)
+	_button_list.add_existing_button(_quit_button,       &"menu.main.quit",       "Quit",       _on_quit_pressed)
+	_button_list.configure_vertical_focus(true)
+
 func _apply_theme_tokens() -> void:
 	if _menu_builder != null:
 		_menu_builder.apply_theme_tokens(U_UI_THEME_BUILDER.active_config)
+	_button_list.apply_theme_tokens(U_UI_THEME_BUILDER.active_config)
 
 func _discover_save_manager() -> void:
 	_save_manager = U_ServiceLocator.try_get_service(StringName("save_manager"))
@@ -90,33 +96,20 @@ func _update_button_visibility() -> void:
 
 	if _continue_button != null:
 		_continue_button.visible = has_saves
+		if not has_saves:
+			_continue_button.focus_mode = Control.FOCUS_NONE
 
 	# Hide Quit button on mobile (mobile apps should use OS close mechanisms)
 	if _quit_button != null:
 		_quit_button.visible = not OS.has_feature("mobile")
+		if not _quit_button.visible:
+			_quit_button.focus_mode = Control.FOCUS_NONE
 
 func _process(delta: float) -> void:
 	# Only run analog stick navigation from the main panel.
 	if _active_panel != PANEL_MAIN:
 		return
 	super._process(delta)
-
-func _configure_focus_neighbors() -> void:
-	# Configure main panel button focus (vertical navigation with wrapping)
-	var main_buttons: Array[Control] = []
-	if _continue_button != null and _continue_button.visible:
-		main_buttons.append(_continue_button)
-	if _new_game_button != null:
-		main_buttons.append(_new_game_button)
-	if _load_game_button != null:
-		main_buttons.append(_load_game_button)
-	if _settings_button != null:
-		main_buttons.append(_settings_button)
-	if _quit_button != null and _quit_button.visible:
-		main_buttons.append(_quit_button)
-
-	if not main_buttons.is_empty():
-		U_FocusConfigurator.configure_vertical_focus(main_buttons, true)
 
 func _exit_tree() -> void:
 	if _store_unsubscribe != Callable() and _store_unsubscribe.is_valid():
@@ -174,6 +167,13 @@ func _apply_focus_after_layout() -> void:
 	var focus_target: Control = _get_first_focusable()
 	if focus_target != null and focus_target.is_inside_tree():
 		focus_target.grab_focus()
+
+func _get_first_focusable() -> Control:
+	if _button_list != null:
+		for btn in _button_list.get_buttons():
+			if btn != null and btn.visible and btn.focus_mode != Control.FOCUS_NONE:
+				return btn
+	return null
 
 func _on_continue_pressed() -> void:
 	U_UISoundPlayer.play_confirm()
@@ -313,11 +313,10 @@ func _on_back_pressed() -> void:
 			store.dispatch(U_NavigationActions.set_menu_panel(PANEL_MAIN))
 
 func _localize_labels() -> void:
-	if _menu_builder != null:
-		_menu_builder.localize_labels()
-	else:
-		if _title_label != null:
-			_title_label.text = U_LOCALIZATION_UTILS.localize(&"menu.main.title")
+	if _button_list != null:
+		_button_list.localize_labels()
+	if _title_label != null:
+		_title_label.text = U_LOCALIZATION_UTILS.localize(&"menu.main.title")
 	if _new_game_confirm_dialog != null:
 		_new_game_confirm_dialog.dialog_text = U_LOCALIZATION_UTILS.localize(&"menu.main.new_game_confirm")
 
