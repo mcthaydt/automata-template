@@ -1,11 +1,10 @@
 [gd_scene format=3 uid="uid://blko7rgs3d4bo"]
 
 [ext_resource type="Script" uid="uid://cirhysmbv3w6o" path="res://scripts/core/ui/menus/ui_main_menu.gd" id="1_main_menu_script"]
-
 [ext_resource type="Resource" uid="uid://b72010a71rlh7" path="res://resources/core/ui/motions/cfg_motion_fade_slide.tres" id="3_motion_set"]
+[ext_resource type="Texture2D" uid="uid://ca61o1l8i8twh" path="res://assets/core/textures/tex_bg_menu_main.png" id="bg_menu_main"]
 [ext_resource type="Script" uid="uid://cvi7rh32jhp6d" path="res://scripts/core/ui/helpers/u_localization_root.gd" id="localization_root"]
 [ext_resource type="Script" uid="uid://dfg7i5kfpjwg1" path="res://scripts/core/ui/helpers/u_ui_scale_root.gd" id="ui_scale_root"]
-[ext_resource type="Texture2D" uid="uid://ca61o1l8i8twh" path="res://assets/core/textures/tex_bg_menu_main.png" id="bg_menu_main"]
 
 [node name="MainMenu" type="Control" unique_id=982096630]
 layout_mode = 3
@@ -17,19 +16,18 @@ grow_vertical = 2
 script = ExtResource("1_main_menu_script")
 motion_set = ExtResource("3_motion_set")
 
-[node name="BackgroundImage" type="TextureRect" parent="."]
+[node name="BackgroundImage" type="TextureRect" parent="." unique_id=589404133]
+z_index = -1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 texture = ExtResource("bg_menu_main")
 expand_mode = 2
 stretch_mode = 6
-z_index = -1
-texture_filter = 0
-mouse_filter = 2
 
 [node name="UIScaleRoot" type="Node" parent="." unique_id=1019629989]
 script = ExtResource("ui_scale_root")
@@ -87,8 +85,6 @@ text = "Settings"
 unique_name_in_owner = true
 layout_mode = 2
 text = "Quit"
-
-
 
 [node name="NewGameConfirmDialog" type="ConfirmationDialog" parent="." unique_id=1399752651]
 unique_name_in_owner = true

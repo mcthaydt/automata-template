@@ -96,7 +96,7 @@ func _rebuild_gameplay_demo_room() -> void:
 	builder.build_environment()
 	builder.build_systems()
 	builder.build_managers()
-	var demo_directive: Resource = preload("res://scripts/core/utils/scene_director/br_demo_intro_directive.gd").new().build()
+	var demo_directive: Resource = preload("res://scripts/demo/helpers/br_demo_intro_directive.gd").new().build()
 	builder.add_scene_director_directive(demo_directive)
 	builder.build_entities()
 
@@ -256,7 +256,7 @@ func _set_owner_recursive(node: Node, owner: Node) -> void:
 
 func _rebuild_resources() -> void:
 	print("Rebuilding scene director resources...")
-	var br := preload("res://scripts/core/utils/scene_director/br_demo_intro_directive.gd").new()
+	var br := preload("res://scripts/demo/helpers/br_demo_intro_directive.gd").new()
 	var directive := br.build()
 	var save_path := "res://resources/core/scene_director/directives/cfg_directive_demo_intro.tres"
 	var save_result := ResourceSaver.save(directive, save_path)

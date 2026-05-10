@@ -1,7 +1,7 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bdkuxxos8o3t2"]
 
-[ext_resource type="Texture2D" path="res://assets/core/textures/characters/tex_player_sprite_sheet.png" id="1_agckp"]
-[ext_resource type="Texture2D" path="res://assets/core/textures/tex_shadow_blob.png" id="2_a5ktg"]
+[ext_resource type="Texture2D" uid="uid://ihcbdpa35c1a" path="res://assets/core/textures/characters/tex_player_sprite_sheet.png" id="1_agckp"]
+[ext_resource type="Texture2D" uid="uid://dm23qd3lalkrv" path="res://assets/core/textures/tex_shadow_blob.png" id="2_a5ktg"]
 
 [node name="PlayerBodyVisualRoot" type="Node3D" unique_id=596978946]
 

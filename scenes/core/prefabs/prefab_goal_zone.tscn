@@ -1,11 +1,11 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://ditnf05618mtl"]
 
-[ext_resource type="Script" path="res://scripts/core/gameplay/inter_victory_zone.gd" id="1_qstqo"]
-[ext_resource type="Resource" path="res://resources/core/interactions/victory/cfg_victory_default.tres" id="2_6xr0m"]
-[ext_resource type="Script" path="res://scripts/core/resources/ecs/rs_scene_trigger_settings.gd" id="3_hadmh"]
-[ext_resource type="Material" path="res://assets/core/materials/mat_fade_goal.tres" id="4_cbfex"]
-[ext_resource type="Script" path="res://scripts/core/gameplay/helpers/u_sparkle_animator.gd" id="5_stqnw"]
-[ext_resource type="Texture2D" path="res://assets/core/textures/tex_dust_puff.png" id="6_i6vc5"]
+[ext_resource type="Script" uid="uid://bsni7mmk1pdiq" path="res://scripts/core/gameplay/inter_victory_zone.gd" id="1_qstqo"]
+[ext_resource type="Resource" uid="uid://bj5s8vx63yumt" path="res://resources/core/interactions/victory/cfg_victory_default.tres" id="2_6xr0m"]
+[ext_resource type="Script" uid="uid://dne23xgb30j2k" path="res://scripts/core/resources/ecs/rs_scene_trigger_settings.gd" id="3_hadmh"]
+[ext_resource type="Material" uid="uid://bhnn3psvefgpq" path="res://assets/core/materials/mat_fade_goal.tres" id="4_cbfex"]
+[ext_resource type="Script" uid="uid://dit7pqdcj1av4" path="res://scripts/core/gameplay/helpers/u_sparkle_animator.gd" id="5_stqnw"]
+[ext_resource type="Texture2D" uid="uid://cfnrkt867glgn" path="res://assets/core/textures/tex_dust_puff.png" id="6_i6vc5"]
 
 [sub_resource type="Resource" id="Resource_hdm4o"]
 resource_local_to_scene = true

@@ -47,6 +47,6 @@ shadow_mesh = SubResource("ArrayMesh_fyhdm")
 
 [node name="Character" unique_id=269059755 instance=ExtResource("1_glpr6")]
 
-[node name="part_0000" parent="." index="0" unique_id=1536215419]
+[node name="part_0000" parent="." index="0" unique_id=1299367019]
 transform = Transform3D(-1.3113416e-07, -3, -1.3113416e-07, 0, -1.3113416e-07, 3, -3, 1.3113416e-07, 5.7320566e-15, -0.0071066334, 1.9636567, 0.04684797)
 mesh = SubResource("ArrayMesh_ua8td")

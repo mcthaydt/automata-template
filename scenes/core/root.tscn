@@ -136,7 +136,6 @@ game_config = ExtResource("44_game_config")
 
 [node name="M_SceneDirectorManager" type="Node" parent="Managers" unique_id=1509652505]
 script = ExtResource("39_scene_director")
-directives = Array[Resource]([])
 
 [node name="GameViewportContainer" type="SubViewportContainer" parent="." unique_id=1316095608]
 anchors_preset = 15

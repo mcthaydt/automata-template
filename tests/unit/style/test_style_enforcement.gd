@@ -143,6 +143,7 @@ const SCRIPT_PREFIX_RULES := {
 	"res://scripts/core/interfaces": ["i_"],
 	"res://scripts/core/managers": ["m_"],
 	"res://scripts/demo/gameplay": ["inter_", "s_"],
+	"res://scripts/demo/helpers": ["br_", "u_"], # br_ for demo directive builders, u_ for demo utilities
 	"res://scripts/core/utils": ["u_"],
 	"res://scripts/core/input": ["u_", "i_"],
 	"res://scripts/core/input/sources": [""], # Wildcard: validated by suffix rule (see test_input_source_scripts_follow_suffix_rule)
@@ -172,7 +173,7 @@ const SCRIPT_PREFIX_RULES := {
 	"res://scripts/core/resources/qb/conditions": ["rs_"], # QB condition resources
 	"res://scripts/core/resources/qb/effects": ["rs_"], # QB effect resources
 	"res://scripts/core/qb/rules": ["br_"], # QB rule builder scripts
-	"res://scripts/core/utils/scene_director": ["br_", "u_"], # br_ for directive builders, u_ for SD utilities
+	"res://scripts/core/utils/scene_director": ["u_"], # SD utilities only — directive builders belong in scripts/demo/helpers
 	"res://scripts/core/resources/scene_director": ["rs_"], # Scene director beat/objective/directive resources
 	"res://scripts/core/resources/ecs": ["rs_"], # ECS component settings resources
 	"res://scripts/core/resources/display": ["rs_"], # Display preset resources
@@ -786,6 +787,16 @@ func test_ecs_system_filenames_do_not_include_demo_marker() -> void:
 	var message := "ECS system scripts under scripts/core/ecs/systems must not include '_demo_' in filename"
 	if violations.size() > 0:
 		message += ":\n" + "\n".join(violations)
+	assert_eq(violations.size(), 0, message)
+
+func test_core_scripts_have_no_demo_content() -> void:
+	var violations: Array[String] = []
+	_collect_gd_filename_substring_violations("res://scripts/core", "demo", violations)
+
+	var message := "Demo-specific scripts must not live under scripts/core — move them to scripts/demo"
+	if violations.size() > 0:
+		message += ":\n" + "\n".join(violations)
+		message += "\nSee STYLE_GUIDE.md: scripts/demo is the home for all demo-scoped content."
 	assert_eq(violations.size(), 0, message)
 
 func test_save_manager_has_no_bare_print_calls() -> void:

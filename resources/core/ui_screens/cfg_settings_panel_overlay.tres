@@ -10,4 +10,3 @@ scene_id = &"settings_panel"
 allowed_shells = Array[StringName]([&"gameplay"])
 allowed_parents = Array[StringName]([&"pause_menu"])
 close_mode = 0
-hides_previous_overlays = false

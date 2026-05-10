@@ -2,9 +2,9 @@
 
 [ext_resource type="Script" uid="uid://bv2v4prnn500s" path="res://scripts/core/ui/overlays/ui_edit_touch_controls_overlay.gd" id="1"]
 [ext_resource type="Resource" uid="uid://b72010a71rlh7" path="res://resources/core/ui/motions/cfg_motion_fade_slide.tres" id="2_motion_set"]
+[ext_resource type="Texture2D" uid="uid://vww8tq24tmfu" path="res://assets/core/textures/tex_bg_menu_pause.png" id="bg_menu_pause"]
 [ext_resource type="Script" uid="uid://cvi7rh32jhp6d" path="res://scripts/core/ui/helpers/u_localization_root.gd" id="localization_root"]
 [ext_resource type="Script" uid="uid://dfg7i5kfpjwg1" path="res://scripts/core/ui/helpers/u_ui_scale_root.gd" id="ui_scale_root"]
-[ext_resource type="Texture2D" uid="uid://vww8tq24tmfu" path="res://assets/core/textures/tex_bg_menu_pause.png" id="bg_menu_pause"]
 
 [node name="EditTouchControlsOverlay" type="Control" unique_id=889243733]
 process_mode = 3
@@ -18,19 +18,18 @@ script = ExtResource("1")
 background_color = Color(0.114, 0.114, 0.129, 0.05)
 motion_set = ExtResource("2_motion_set")
 
-[node name="BackgroundImage" type="TextureRect" parent="."]
+[node name="BackgroundImage" type="TextureRect" parent="." unique_id=99368644]
+z_index = -1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 texture = ExtResource("bg_menu_pause")
 expand_mode = 2
 stretch_mode = 6
-z_index = -1
-texture_filter = 0
-mouse_filter = 2
 
 [node name="UIScaleRoot" type="Node" parent="." unique_id=465406458]
 script = ExtResource("ui_scale_root")
