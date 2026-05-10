@@ -1,21 +1,21 @@
-[gd_resource type="Resource" script_class="RS_SceneDirective" format=3 uid="uid://d2gupe7j15r78"]
+[gd_resource type="Resource" script_class="RS_SceneDirective" format=3]
 
-[ext_resource type="Script" uid="uid://ddki6ynkpsyds" path="res://scripts/core/resources/scene_director/rs_scene_directive.gd" id="1_7m0t8"]
-[ext_resource type="Script" uid="uid://ic2ouvl1md7q" path="res://scripts/core/resources/scene_director/rs_beat_definition.gd" id="2_vf4lq"]
-[ext_resource type="Script" uid="uid://cgk1j4fpq4c8" path="res://scripts/core/resources/qb/effects/rs_effect_publish_event.gd" id="3_5n2ac"]
-[ext_resource type="Script" uid="uid://c3bnu5ue4okdf" path="res://scripts/core/interfaces/i_condition.gd" id="4_0fy8e"]
-[ext_resource type="Script" uid="uid://dhp1tdn8axoos" path="res://scripts/core/interfaces/i_effect.gd" id="4_ieffect"]
+[ext_resource type="Script" path="res://scripts/core/resources/scene_director/rs_beat_definition.gd" id="1_urwug"]
+[ext_resource type="Script" path="res://scripts/core/interfaces/i_effect.gd" id="2_ip57u"]
+[ext_resource type="Script" path="res://scripts/core/resources/qb/effects/rs_effect_publish_event.gd" id="3_tgyuu"]
+[ext_resource type="Script" path="res://scripts/core/interfaces/i_condition.gd" id="4_p7pct"]
+[ext_resource type="Script" path="res://scripts/core/resources/scene_director/rs_scene_directive.gd" id="5_sljv4"]
 
-[sub_resource type="Resource" id="Resource_x7u2p"]
-script = ExtResource("3_5n2ac")
+[sub_resource type="Resource" id="Resource_clphj"]
+script = ExtResource("3_tgyuu")
 event_name = &"scene_director_intro_beat_1"
 payload = {
 "beat_id": &"intro_beat_1"
 }
 inject_entity_id = false
 
-[sub_resource type="Resource" id="Resource_b4n8v"]
-script = ExtResource("3_5n2ac")
+[sub_resource type="Resource" id="Resource_82cp5"]
+script = ExtResource("3_tgyuu")
 event_name = &"signpost_message"
 payload = {
 "message": "hud.scene_director_intro_beat_1",
@@ -23,22 +23,22 @@ payload = {
 }
 inject_entity_id = false
 
-[sub_resource type="Resource" id="Resource_n2h5g"]
-script = ExtResource("2_vf4lq")
+[sub_resource type="Resource" id="Resource_5p8ja"]
+script = ExtResource("1_urwug")
 beat_id = &"intro_beat_1"
 description = "Publishes the initial gameplay intro event."
-effects = Array[ExtResource("4_ieffect")]([SubResource("Resource_x7u2p"), SubResource("Resource_b4n8v")])
+effects = Array[ExtResource("2_ip57u")]([SubResource("Resource_clphj"), SubResource("Resource_82cp5")])
 
-[sub_resource type="Resource" id="Resource_ae8m3"]
-script = ExtResource("3_5n2ac")
+[sub_resource type="Resource" id="Resource_ldn4u"]
+script = ExtResource("3_tgyuu")
 event_name = &"scene_director_intro_beat_2"
 payload = {
 "beat_id": &"intro_beat_2"
 }
 inject_entity_id = false
 
-[sub_resource type="Resource" id="Resource_q9t2l"]
-script = ExtResource("3_5n2ac")
+[sub_resource type="Resource" id="Resource_p4h3a"]
+script = ExtResource("3_tgyuu")
 event_name = &"signpost_message"
 payload = {
 "message": "hud.scene_director_intro_beat_2",
@@ -46,17 +46,17 @@ payload = {
 }
 inject_entity_id = false
 
-[sub_resource type="Resource" id="Resource_l1k9z"]
-script = ExtResource("2_vf4lq")
+[sub_resource type="Resource" id="Resource_loue5"]
+script = ExtResource("1_urwug")
 beat_id = &"intro_beat_2"
 description = "Publishes a follow-up intro event after a short delay."
-effects = Array[ExtResource("4_ieffect")]([SubResource("Resource_ae8m3"), SubResource("Resource_q9t2l")])
+effects = Array[ExtResource("2_ip57u")]([SubResource("Resource_ldn4u"), SubResource("Resource_p4h3a")])
 wait_mode = 1
 duration = 0.05
 
 [resource]
-script = ExtResource("1_7m0t8")
+script = ExtResource("5_sljv4")
 directive_id = &"gameplay_base_intro"
 description = "Default introductory directive for demo_room."
 target_scene_id = &"demo_room"
-beats = Array[ExtResource("2_vf4lq")]([SubResource("Resource_n2h5g"), SubResource("Resource_l1k9z")])
+beats = Array[ExtResource("1_urwug")]([SubResource("Resource_5p8ja"), SubResource("Resource_loue5")])
