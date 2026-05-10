@@ -18,6 +18,7 @@ Completed phases:
 
 - Phase 1: Scene Convention Auto-Registration.
 - Phase 2: Mobile Presentation Baseline.
+- Phase 3: Touch Gameplay Polish.
 
 Recent commits:
 
@@ -34,10 +35,12 @@ Latest verified gates:
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_display_manager.gd` -> `28/28 passed`, 51 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/managers/helpers/test_u_display_window_applier.gd` -> `4/4 passed`, 7 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_mobile_platform_detector.gd` -> `16/16 passed`, 18 asserts.
-- `tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_input_flow.gd` -> `6/6 passed`, 55 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_input_flow.gd` -> `9/9 passed`, 85 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_m_input_device_manager.gd` -> `16/16 passed`, 85 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_settings_migration.gd` -> `4/4 passed`, 48 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd` -> `93/93 passed`, 154 asserts.
 
-Next task: Phase 3 Task 8, expand touch reliability tests for reset/device handoff and mobile/web emulated mouse handling.
+Next task: Phase 4 Task 8, add app slice tests for lifecycle Redux state.
 
 ---
 
@@ -276,11 +279,17 @@ Completed in `3eef7ab8`. Only `scripts/core/ui/hud/ui_mobile_controls.gd` and `t
 - Modify: `tests/unit/managers/test_m_input_device_manager.gd`
 - Modify if needed: `tests/unit/integration/test_touchscreen_settings_migration.gd`
 
-- [ ] Test reset-after-victory or reset-progress keeps `active_device`, `touchscreen_enabled`, and gamepad state fields.
-- [ ] Test mobile/web emulated mouse events do not switch active device away from touchscreen.
-- [ ] Test gamepad input can take over on mobile and hide touch controls.
-- [ ] Test touch controls reappear when a real touch event switches active device back to touchscreen.
-- [ ] Run the targeted tests and verify new assertions fail only where implementation is missing.
+- [x] Test reset-after-victory or reset-progress keeps `active_device`, `touchscreen_enabled`, and gamepad state fields.
+- [x] Test mobile/web emulated mouse events do not switch active device away from touchscreen.
+- [x] Test gamepad input can take over on mobile and hide touch controls.
+- [x] Test touch controls reappear when a real touch event switches active device back to touchscreen.
+- [x] Run the targeted tests and verify new assertions fail only where implementation is missing.
+
+Completion notes:
+- Added reset-progress preservation coverage for touchscreen and gamepad state fields.
+- Added mobile/web emulated mouse button and motion coverage with a dedicated pointer-emulation test hook.
+- Added gamepad takeover and real-touch return coverage through `M_InputDeviceManager` plus `UI_MobileControls` visibility.
+- Added touchscreen ECS dispatch gating coverage for pause overlays, non-gameplay shells, and scene transitions. Existing guards already satisfied the new navigation-blocking test before production changes were needed.
 
 ### Task 9: Implement Touch Reliability Fixes
 
@@ -290,10 +299,10 @@ Completed in `3eef7ab8`. Only `scripts/core/ui/hud/ui_mobile_controls.gd` and `t
 - Modify as tests require: `scripts/core/managers/m_input_device_manager.gd`
 - Modify as tests require: `scripts/core/state/reducers/u_gameplay_reducer.gd`
 
-- [ ] Preserve existing ownership: `M_InputDeviceManager` detects devices, `UI_MobileControls` owns virtual control state, `S_TouchscreenSystem` dispatches gameplay input.
-- [ ] Do not dispatch touch input when navigation shell is not gameplay.
-- [ ] Do not process touch input while scene transitions or blocking overlays are active.
-- [ ] Run:
+- [x] Preserve existing ownership: `M_InputDeviceManager` detects devices, `UI_MobileControls` owns virtual control state, `S_TouchscreenSystem` dispatches gameplay input.
+- [x] Do not dispatch touch input when navigation shell is not gameplay.
+- [x] Do not process touch input while scene transitions or blocking overlays are active.
+- [x] Run:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_input_flow.gd

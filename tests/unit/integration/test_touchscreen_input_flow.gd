@@ -73,6 +73,116 @@ func test_controls_hide_and_processing_stops_on_device_change_and_transition() -
 	await _await_state_update(store)
 	assert_true(controls.visible, "MobileControls should show after transition completes")
 
+func test_reset_progress_after_victory_preserves_device_state_fields() -> void:
+	var input_state := U_InputReducer.get_default_gameplay_input_state()
+	input_state["active_device"] = M_InputDeviceManager.DeviceType.TOUCHSCREEN
+	input_state["gamepad_connected"] = true
+	input_state["gamepad_device_id"] = 4
+	input_state["touchscreen_enabled"] = true
+	input_state["last_input_time"] = 42.5
+	input_state["move_input"] = Vector2.RIGHT
+	input_state["look_input"] = Vector2(3.0, -2.0)
+	input_state["jump_pressed"] = true
+	input_state["jump_just_pressed"] = true
+	input_state["sprint_pressed"] = true
+	var state := {
+		"input": input_state,
+		"game_completed": true,
+		"last_victory_objective": StringName("finale"),
+		"player_max_health": 100.0,
+		"player_health": 1.0,
+	}
+
+	var result: Dictionary = U_GameplayReducer.reduce(state, U_GameplayActions.reset_progress())
+	var reset_input: Dictionary = result.get("input", {})
+
+	assert_false(result.get("game_completed", true), "Reset progress should clear victory completion")
+	assert_eq(reset_input.get("active_device"), M_InputDeviceManager.DeviceType.TOUCHSCREEN)
+	assert_true(reset_input.get("gamepad_connected", false), "Reset progress should preserve gamepad connection state")
+	assert_eq(reset_input.get("gamepad_device_id"), 4, "Reset progress should preserve gamepad device id")
+	assert_true(reset_input.get("touchscreen_enabled", false), "Reset progress should preserve touchscreen_enabled")
+	assert_almost_eq(float(reset_input.get("last_input_time", 0.0)), 42.5, 0.001,
+		"Reset progress should preserve last input time")
+	assert_vector_almost_eq(reset_input.get("move_input", Vector2.RIGHT), Vector2.ZERO, 0.001,
+		"Reset progress should clear transient move input")
+	assert_vector_almost_eq(reset_input.get("look_input", Vector2.ONE), Vector2.ZERO, 0.001,
+		"Reset progress should clear transient look input")
+	assert_false(reset_input.get("jump_pressed", true), "Reset progress should clear held jump")
+	assert_false(reset_input.get("jump_just_pressed", true), "Reset progress should clear just-pressed jump")
+	assert_false(reset_input.get("sprint_pressed", true), "Reset progress should clear sprint")
+
+func test_gamepad_input_takes_over_on_mobile_and_touch_reappears_on_real_touch() -> void:
+	var ctx := await _setup_environment()
+	var store: M_StateStore = ctx["store"]
+	var controls: UI_MobileControls = ctx["controls"]
+	store.dispatch(U_InputActions.device_changed(M_InputDeviceManager.DeviceType.TOUCHSCREEN, -1))
+	await _await_state_update(store)
+	assert_true(controls.visible, "Controls should start visible for active touchscreen gameplay")
+
+	var input_manager := await _create_input_device_manager()
+	input_manager.emulate_mobile_pointer_guard = true
+
+	var motion := InputEventJoypadMotion.new()
+	motion.device = 2
+	motion.axis = JOY_AXIS_LEFT_X
+	motion.axis_value = 0.75
+	input_manager._input(motion)
+	await _await_state_update(store)
+
+	assert_eq(U_InputSelectors.get_active_device_type(store.get_state()), M_InputDeviceManager.DeviceType.GAMEPAD,
+		"Gamepad input should take over active device on mobile")
+	assert_false(controls.visible, "Touch controls should hide after gamepad takeover")
+
+	var touch := InputEventScreenTouch.new()
+	touch.pressed = true
+	touch.index = 0
+	touch.position = Vector2(16.0, 16.0)
+	input_manager._input(touch)
+	await _await_state_update(store)
+
+	assert_eq(U_InputSelectors.get_active_device_type(store.get_state()), M_InputDeviceManager.DeviceType.TOUCHSCREEN,
+		"A real touch event should switch active device back to touchscreen")
+	assert_true(controls.visible, "Touch controls should reappear after real touch input")
+
+func test_touchscreen_system_does_not_dispatch_or_process_when_navigation_blocks_gameplay() -> void:
+	var ctx := await _setup_environment()
+	var store: M_StateStore = ctx["store"]
+	store.dispatch(U_InputActions.device_changed(M_InputDeviceManager.DeviceType.TOUCHSCREEN, -1))
+	await _await_state_update(store)
+
+	var joystick: UI_VirtualJoystick = ctx["joystick"]
+	var manager: M_ECSManager = ctx["ecs_manager"]
+	var component: C_InputComponent = ctx["component"]
+
+	store.dispatch(U_NavigationActions.open_pause())
+	await _await_state_update(store)
+	_press_joystick(joystick, Vector2.ZERO, Vector2(joystick.joystick_radius, 0.0))
+	manager._physics_process(0.016)
+	assert_vector_almost_eq(U_InputSelectors.get_move_input(store.get_state()), Vector2.ZERO, 0.001,
+		"TouchscreenSystem should not dispatch move input while overlays block gameplay")
+	assert_vector_almost_eq(component.move_vector, Vector2.ZERO, 0.001,
+		"TouchscreenSystem should not update components while overlays block gameplay")
+
+	store.dispatch(U_NavigationActions.close_pause())
+	store.dispatch(U_NavigationActions.set_shell(StringName("main_menu"), StringName("main_menu")))
+	await _await_state_update(store)
+	_press_joystick(joystick, Vector2.ZERO, Vector2(0.0, -joystick.joystick_radius))
+	manager._physics_process(0.016)
+	assert_vector_almost_eq(U_InputSelectors.get_move_input(store.get_state()), Vector2.ZERO, 0.001,
+		"TouchscreenSystem should not dispatch move input outside gameplay shell")
+	assert_vector_almost_eq(component.move_vector, Vector2.ZERO, 0.001,
+		"TouchscreenSystem should not update components outside gameplay shell")
+
+	store.dispatch(U_NavigationActions.start_game(StringName("demo_room")))
+	store.dispatch(U_SceneActions.transition_started(StringName("demo_room"), "fade"))
+	await _await_state_update(store)
+	_press_joystick(joystick, Vector2.ZERO, Vector2(-joystick.joystick_radius, 0.0))
+	manager._physics_process(0.016)
+	assert_vector_almost_eq(U_InputSelectors.get_move_input(store.get_state()), Vector2.ZERO, 0.001,
+		"TouchscreenSystem should not dispatch move input during scene transitions")
+	assert_vector_almost_eq(component.move_vector, Vector2.ZERO, 0.001,
+		"TouchscreenSystem should not update components during scene transitions")
+
 func test_virtual_control_positions_persist_via_state_handoff() -> void:
 	var store: M_StateStore = await _create_state_store()
 	var controls: UI_MobileControls = await _create_controls()
@@ -265,6 +375,12 @@ func _create_controls() -> UI_MobileControls:
 	add_child_autofree(controls)
 	await _await_frames(2)
 	return controls
+
+func _create_input_device_manager() -> M_InputDeviceManager:
+	var input_manager := M_InputDeviceManager.new()
+	add_child_autofree(input_manager)
+	await _await_frames(2)
+	return input_manager
 
 func _press_joystick(joystick: UI_VirtualJoystick, start: Vector2, end: Vector2) -> void:
 	if joystick == null:

@@ -225,6 +225,57 @@ func test_touch_event_switches_to_touchscreen_without_gamepad_state() -> void:
 	assert_eq(event.get("device_id"), -1)
 	assert_gt(float(event.get("timestamp", 0.0)), 0.0)
 
+func test_mobile_emulated_mouse_button_does_not_switch_from_touchscreen() -> void:
+	_manager.emulate_mobile_pointer_guard = true
+	var touch: InputEventScreenTouch = InputEventScreenTouch.new()
+	touch.pressed = true
+	touch.index = 0
+	touch.position = Vector2.ONE
+	_manager._input(touch)
+	await get_tree().process_frame
+	_dispatched_actions.clear()
+	_device_events.clear()
+
+	var mouse_button := InputEventMouseButton.new()
+	mouse_button.pressed = true
+	mouse_button.button_index = MOUSE_BUTTON_LEFT
+	mouse_button.position = Vector2(24.0, 32.0)
+	_manager._input(mouse_button)
+	await get_tree().process_frame
+
+	assert_eq(
+		_manager.get_active_device(),
+		M_InputDeviceManager.DeviceType.TOUCHSCREEN,
+		"Mobile/web emulated mouse buttons should not switch active device away from touchscreen"
+	)
+	assert_eq(_device_events.size(), 0, "Ignored emulated mouse button should not emit device_changed")
+	assert_eq(_dispatched_actions.size(), 0, "Ignored emulated mouse button should not dispatch device changes")
+
+func test_mobile_emulated_mouse_motion_does_not_switch_from_touchscreen() -> void:
+	_manager.emulate_mobile_pointer_guard = true
+	var touch: InputEventScreenTouch = InputEventScreenTouch.new()
+	touch.pressed = true
+	touch.index = 0
+	touch.position = Vector2.ONE
+	_manager._input(touch)
+	await get_tree().process_frame
+	_dispatched_actions.clear()
+	_device_events.clear()
+
+	var mouse_motion := InputEventMouseMotion.new()
+	mouse_motion.position = Vector2(28.0, 36.0)
+	mouse_motion.relative = Vector2(4.0, 0.0)
+	_manager._input(mouse_motion)
+	await get_tree().process_frame
+
+	assert_eq(
+		_manager.get_active_device(),
+		M_InputDeviceManager.DeviceType.TOUCHSCREEN,
+		"Mobile/web emulated mouse motion should not switch active device away from touchscreen"
+	)
+	assert_eq(_device_events.size(), 0, "Ignored emulated mouse motion should not emit device_changed")
+	assert_eq(_dispatched_actions.size(), 0, "Ignored emulated mouse motion should not dispatch device changes")
+
 func test_touch_event_does_not_switch_device_on_input_rebinding_overlay() -> void:
 	await _simulate_gamepad_input(6)
 	_store.dispatch(U_NavigationActions.start_game(StringName("demo_room")))

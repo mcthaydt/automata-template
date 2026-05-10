@@ -8,6 +8,7 @@ class_name S_TouchscreenSystem
 const INPUT_TYPE := StringName("C_InputComponent")
 const ACTION_MOVE_STRENGTH := StringName("move")
 const ACTION_LOOK_STRENGTH := StringName("look")
+const SHELL_GAMEPLAY := StringName("gameplay")
 const I_INPUT_DEVICE_MANAGER := preload("res://scripts/core/interfaces/i_input_device_manager.gd")
 const GAMEPLAY_ACTIONS := preload("res://scripts/core/state/actions/u_gameplay_actions.gd")
 
@@ -37,7 +38,7 @@ func process_tick(__delta: float) -> void:
 		return
 
 	var state := store.get_state()
-	if _is_touchscreen_disabled(state):
+	if not _can_process_gameplay_touch(state):
 		_dispatch_touch_look_active_if_changed(store, false)
 		return
 
@@ -219,3 +220,16 @@ func _update_components(
 
 func _is_touchscreen_disabled(state: Dictionary) -> bool:
 	return U_DebugSelectors.is_touchscreen_disabled(state)
+
+func _can_process_gameplay_touch(state: Dictionary) -> bool:
+	if _is_touchscreen_disabled(state):
+		return false
+	if U_NavigationSelectors.get_shell(state) != SHELL_GAMEPLAY:
+		return false
+	if not U_NavigationSelectors.get_overlay_stack(state).is_empty():
+		return false
+	if U_SceneSelectors.is_transitioning(state):
+		return false
+	if force_enable:
+		return true
+	return U_SceneRegistry.get_scene_type(U_SceneSelectors.get_current_scene_id(state)) == U_SceneRegistry.SceneType.GAMEPLAY

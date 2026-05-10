@@ -29,6 +29,7 @@ var _touchscreen_source: TouchscreenSource = null
 var _input_sources: Array[I_InputSource] = []
 
 @export var emulate_mobile_disconnect_guard: bool = false
+@export var emulate_mobile_pointer_guard: bool = false
 
 const DEVICE_SWITCH_DEADZONE := 0.25
 const DISCONNECT_GRACE_SECONDS := 1.0
@@ -109,7 +110,7 @@ func _input(event: InputEvent) -> void:
 		# CRITICAL FIX: Ignore mouse events emulated from touch on mobile
 		# Godot automatically converts touch to mouse for compatibility, but we handle
 		# touch separately. This prevents device type from flickering 2→0→2 on touch.
-		if OS.has_feature("mobile") or OS.has_feature("web"):
+		if _is_mobile_context():
 			return
 		_handle_keyboard_mouse_input(mouse_button)
 	elif event is InputEventMouseMotion:
@@ -117,7 +118,7 @@ func _input(event: InputEvent) -> void:
 		if mouse_motion.relative.length_squared() <= 0.0:
 			return
 		# CRITICAL FIX: Ignore mouse motion emulated from touch on mobile
-		if OS.has_feature("mobile") or OS.has_feature("web"):
+		if _is_mobile_context():
 			return
 		# Delegate to keyboard/mouse source
 		if _keyboard_mouse_source:
@@ -370,4 +371,6 @@ func _should_guard_disconnect_by_grace_period() -> bool:
 func _is_mobile_context() -> bool:
 	if OS.has_feature("mobile"):
 		return true
-	return emulate_mobile_disconnect_guard
+	if OS.has_feature("web"):
+		return true
+	return emulate_mobile_disconnect_guard or emulate_mobile_pointer_guard
