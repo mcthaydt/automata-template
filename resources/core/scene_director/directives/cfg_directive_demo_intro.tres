@@ -1,10 +1,10 @@
-[gd_resource type="Resource" script_class="RS_SceneDirective" format=3 uid="uid://cr3i30mdqp8gl"]
+[gd_resource type="Resource" script_class="RS_SceneDirective" format=3]
 
-[ext_resource type="Script" uid="uid://ic2ouvl1md7q" path="res://scripts/core/resources/scene_director/rs_beat_definition.gd" id="1_h2pvn"]
-[ext_resource type="Script" uid="uid://dhp1tdn8axoos" path="res://scripts/core/interfaces/i_effect.gd" id="2_8oh7y"]
-[ext_resource type="Script" uid="uid://cgk1j4fpq4c8" path="res://scripts/core/resources/qb/effects/rs_effect_publish_event.gd" id="3_xyiou"]
-[ext_resource type="Script" uid="uid://c3bnu5ue4okdf" path="res://scripts/core/interfaces/i_condition.gd" id="4_ynnds"]
-[ext_resource type="Script" uid="uid://ddki6ynkpsyds" path="res://scripts/core/resources/scene_director/rs_scene_directive.gd" id="5_w5ktk"]
+[ext_resource type="Script" path="res://scripts/core/resources/scene_director/rs_beat_definition.gd" id="1_h2pvn"]
+[ext_resource type="Script" path="res://scripts/core/interfaces/i_effect.gd" id="2_8oh7y"]
+[ext_resource type="Script" path="res://scripts/core/resources/qb/effects/rs_effect_publish_event.gd" id="3_xyiou"]
+[ext_resource type="Script" path="res://scripts/core/interfaces/i_condition.gd" id="4_ynnds"]
+[ext_resource type="Script" path="res://scripts/core/resources/scene_director/rs_scene_directive.gd" id="5_w5ktk"]
 
 [sub_resource type="Resource" id="Resource_iiy1l"]
 script = ExtResource("3_xyiou")
