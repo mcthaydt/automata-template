@@ -20,10 +20,12 @@ Completed phases:
 - Phase 2: Mobile Presentation Baseline.
 - Phase 3: Touch Gameplay Polish.
 - Phase 4: App Lifecycle & System UI.
+- Phase 5: Mobile Export Configuration.
+- Phase 6: QA, Docs, And Mobile Release Gates.
 
 Current phase:
 
-- Phase 5: Mobile Export Configuration is complete except the keystore path documentation item that belongs in the Phase 6 QA checklist.
+- Implementation plan tasks are complete; final verification is in progress.
 
 Recent commits:
 
@@ -39,6 +41,7 @@ Recent commits:
 - `8b404340 feat: clamp mobile controls to safe-area insets`
 - `b55df415 docs: document app lifecycle contract`
 - `5aa5ceef build: configure mobile and web export presets`
+- `b0698dc9 docs: add mobile experience QA gates`
 
 Latest verified gates:
 
@@ -58,7 +61,7 @@ Latest verified gates:
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/save/test_autosave_scheduler.gd` -> `17/17 passed`, 22 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd` -> `93/93 passed`, 154 asserts.
 
-Next task: Phase 6 Task 18, add mobile QA checklist.
+Next task: Final verification.
 
 ---
 
@@ -549,7 +552,7 @@ Completion notes:
 
 - [x] Populate launcher icons (foreground + background + adaptive) from existing `assets/core/textures/` assets — reuse `tex_icon.svg` derivatives; do not commission new art in this program.
 - [x] Set the Android package name and app category (already 2 / Games).
-- [ ] Document the keystore path and signing flow in `docs/systems/mobile_experience/mobile-qa-checklist.md` (created in Phase 6). The keystore itself stays gitignored.
+- [x] Document the keystore path and signing flow in `docs/systems/mobile_experience/mobile-qa-checklist.md` (created in Phase 6). The keystore itself stays gitignored.
 - [x] Limit permissions to engine defaults; do not add network, location, etc.
 
 Completion notes:
@@ -610,7 +613,7 @@ Completion notes:
 - Modify: `docs/systems/input_manager/input-manager-overview.md`
 - Modify: `docs/systems/display_manager/display-manager-overview.md`
 
-- [ ] Document real-device checks:
+- [x] Document real-device checks:
   - Boot to menu in landscape.
   - Rotate to portrait and confirm menu/settings/endgame remain usable.
   - Start gameplay and confirm portrait does not trap input or hide controls.
@@ -620,34 +623,42 @@ Completion notes:
   - Foreground after suspend and confirm audio restores and the game stays paused.
   - Trigger Android back gesture in gameplay (expect pause menu) and in a menu (expect back navigation).
   - Confirm `UI_MobileControls` joystick/buttons stay outside notch/cutout regions.
-- [ ] Document Android export checks:
+- [x] Document Android export checks:
   - APK builds via the configured preset.
   - APK installs and launches on at least one physical Android device.
   - Launcher icon and app name render correctly.
   - Keystore signing path is documented (path only — keystore itself gitignored).
-- [ ] Document Web export checks:
+- [x] Document Web export checks:
   - HTML5 export builds via the configured preset.
   - Served via a local HTTP server (e.g. `python3 -m http.server`) and loads in a mobile browser.
   - Touch controls reachable in both portrait and landscape browser orientations.
-- [ ] Document desktop fallback checks:
+- [x] Document desktop fallback checks:
 
 ```bash
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . --emulate-mobile --quit-after 3
 tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_input_flow.gd
 ```
 
-- [ ] Run style guard because new docs and possibly directories were added:
+- [x] Run style guard because new docs and possibly directories were added:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd
 ```
 
-- [ ] Commit:
+- [x] Commit:
 
 ```bash
 git add docs/systems/mobile_experience/mobile-qa-checklist.md docs/systems/mobile_experience/mobile-experience-tasks.md docs/guides/pitfalls/MOBILE.md docs/systems/input_manager/input-manager-overview.md docs/systems/display_manager/display-manager-overview.md
 git commit -m "docs: add mobile experience QA gates"
 ```
+
+Completed in `b0698dc9`.
+
+Completion notes:
+- Added `docs/systems/mobile_experience/mobile-qa-checklist.md` with real-device, Android export, Web export, and desktop fallback checks.
+- Added `docs/systems/mobile_experience/mobile-experience-tasks.md` as the project-facing mobile release gate tracker.
+- Linked mobile QA gates from mobile pitfalls, input manager, and display manager docs.
+- Documented the release keystore path as `~/.config/godot/automata-template/android/release.keystore`; the keystore itself remains outside the repo.
 
 ## Final Verification
 
