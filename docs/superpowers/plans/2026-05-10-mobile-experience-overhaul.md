@@ -30,6 +30,7 @@ Recent commits:
 - `6ca1528e fix: harden mobile touch input flow`
 - `ed80c676 feat: add app lifecycle redux slice`
 - `6a66cc43 feat: add app lifecycle observer`
+- `25f29ea2 feat: react to app lifecycle in audio and autosave`
 
 Latest verified gates:
 
@@ -44,9 +45,11 @@ Latest verified gates:
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/state/test_u_app_reducer.gd` -> `7/7 passed`, 14 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/state/test_m_state_store.gd` -> `30/30 passed`, 75 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_app_lifecycle_observer.gd` -> `6/6 passed`, 19 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_audio_manager.gd` -> `24/24 passed`, 68 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/save/test_autosave_scheduler.gd` -> `17/17 passed`, 22 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd` -> `93/93 passed`, 154 asserts.
 
-Next task: Phase 4 Task 12, wire audio and autosave reactions.
+Next task: Phase 4 Task 13, add safe-area inset helper.
 
 ---
 
@@ -441,23 +444,28 @@ git commit -m "feat: add app lifecycle observer"
 - Modify: `tests/unit/managers/test_m_audio_manager.gd`
 - Modify: `tests/unit/managers/helpers/test_u_autosave_scheduler.gd`
 
-- [ ] Add tests proving `M_AudioManager` mutes the master bus when `is_focused` transitions to false and restores when true.
-- [ ] Add tests proving `U_AutosaveScheduler` accepts a new `BACKGROUND` trigger and writes a save.
-- [ ] Implement the audio bus reaction subscribing to the `app` selector (or the dispatched action stream — match the pattern already used by other managers).
-- [ ] Implement the `BACKGROUND` autosave trigger and dispatch it from `U_AppLifecycleObserver` on background.
-- [ ] Run:
+- [x] Add tests proving `M_AudioManager` mutes the master bus when `is_focused` transitions to false and restores when true.
+- [x] Add tests proving `U_AutosaveScheduler` accepts a new `BACKGROUND` trigger and writes a save.
+- [x] Implement the audio bus reaction subscribing to the `app` selector (or the dispatched action stream — match the pattern already used by other managers).
+- [x] Implement the `BACKGROUND` autosave trigger and dispatch it from `U_AppLifecycleObserver` on background.
+- [x] Run:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_m_audio_manager.gd
 tools/run_gut_suite.sh -gtest=res://tests/unit/managers/helpers/test_u_autosave_scheduler.gd
 ```
 
-- [ ] Commit:
+- [x] Commit:
 
 ```bash
 git add scripts/core/managers/m_audio_manager.gd scripts/core/managers/helpers/u_autosave_scheduler.gd tests/unit/managers/test_m_audio_manager.gd tests/unit/managers/helpers/test_u_autosave_scheduler.gd
 git commit -m "feat: react to app lifecycle in audio and autosave"
 ```
+
+Completion notes:
+- Current test paths are `tests/unit/managers/test_audio_manager.gd` and `tests/unit/save/test_autosave_scheduler.gd`.
+- Added focus-lost/focus-gained master-bus mute restoration coverage, including preserving a user-muted master bus.
+- Added background lifecycle autosave coverage using critical priority and synchronous write behavior.
 
 ### Task 13: Add Safe-Area Inset Helper
 
