@@ -10,6 +10,37 @@
 
 ---
 
+## Current Progress
+
+Last updated: 2026-05-10.
+
+Completed phases:
+
+- Phase 1: Scene Convention Auto-Registration.
+- Phase 2: Mobile Presentation Baseline.
+
+Recent commits:
+
+- `7108b24c test: add scene convention scanner`
+- `87ea73bc feat: load conventional scene registry entries`
+- `9e93c32d docs: document convention-based scene registration`
+- `4569c63a feat: add mobile presentation baseline`
+- `3eef7ab8 feat: make mobile UI portrait-compatible`
+
+Latest verified gates:
+
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/scene_manager/test_scene_convention_scanner.gd` -> `5/5 passed`, 20 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/scene_manager/test_scene_registry.gd` -> `24/24 passed`, 140 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_display_manager.gd` -> `28/28 passed`, 51 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/managers/helpers/test_u_display_window_applier.gd` -> `4/4 passed`, 7 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_mobile_platform_detector.gd` -> `16/16 passed`, 18 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_input_flow.gd` -> `6/6 passed`, 55 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd` -> `93/93 passed`, 154 asserts.
+
+Next task: Phase 3 Task 8, expand touch reliability tests for reset/device handoff and mobile/web emulated mouse handling.
+
+---
+
 ## File Structure
 
 - Create `scripts/core/scene_management/helpers/u_scene_convention_scanner.gd`: pure helper that maps conventional `.tscn` paths to scene registry dictionaries.
@@ -55,25 +86,25 @@
 - Create: `tests/unit/scene_manager/test_scene_convention_scanner.gd`
 - Create later in task: `scripts/core/scene_management/helpers/u_scene_convention_scanner.gd`
 
-- [ ] Write tests for gameplay path inference:
+- [x] Write tests for gameplay path inference:
   - `res://scenes/demo/gameplay/gameplay_demo_room.tscn` produces scene_id `demo_room`.
   - `scene_type` is `U_SceneRegistry.SceneType.GAMEPLAY`.
   - `default_transition` is `loading`.
   - `preload_priority` is `5`.
-- [ ] Write tests for UI overlay/settings path inference:
+- [x] Write tests for UI overlay/settings path inference:
   - `res://scenes/core/ui/overlays/ui_save_load_menu.tscn` produces scene_id `save_load_menu`, type `UI`, transition `instant`.
   - `res://scenes/core/ui/settings/ui_settings_panel.tscn` produces scene_id `settings_panel`, type `UI`, transition `instant`.
-- [ ] Write tests for ignored paths:
+- [x] Write tests for ignored paths:
   - `res://scenes/core/prefabs/prefab_player.tscn` returns an empty dictionary.
   - `res://scenes/core/templates/tmpl_base_scene.tscn` returns an empty dictionary.
   - `res://scenes/core/ui/widgets/ui_virtual_button.tscn` returns an empty dictionary.
-- [ ] Run:
+- [x] Run:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/scene_manager/test_scene_convention_scanner.gd
 ```
 
-Expected: fail because `U_SceneConventionScanner` does not exist.
+Expected failure observed before implementation: `U_SceneConventionScanner` did not exist.
 
 ### Task 2: Implement Pure Convention Scanner
 
@@ -81,22 +112,24 @@ Expected: fail because `U_SceneConventionScanner` does not exist.
 - Create: `scripts/core/scene_management/helpers/u_scene_convention_scanner.gd`
 - Test: `tests/unit/scene_manager/test_scene_convention_scanner.gd`
 
-- [ ] Implement `U_SceneConventionScanner.infer_entry(path: String) -> Dictionary`.
-- [ ] Implement `U_SceneConventionScanner.infer_entries(paths: PackedStringArray) -> Dictionary`.
-- [ ] Use existing scene registry dictionary keys: `scene_id`, `path`, `scene_type`, `default_transition`, `preload_priority`.
-- [ ] Keep the helper pure: no `DirAccess`, no `load()`, no ServiceLocator.
-- [ ] Run the scanner test and verify pass:
+- [x] Implement `U_SceneConventionScanner.infer_entry(path: String) -> Dictionary`.
+- [x] Implement `U_SceneConventionScanner.infer_entries(paths: PackedStringArray) -> Dictionary`.
+- [x] Use existing scene registry dictionary keys: `scene_id`, `path`, `scene_type`, `default_transition`, `preload_priority`.
+- [x] Keep the helper pure: no `DirAccess`, no `load()`, no ServiceLocator.
+- [x] Run the scanner test and verify pass:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/scene_manager/test_scene_convention_scanner.gd
 ```
 
-- [ ] Commit:
+- [x] Commit:
 
 ```bash
 git add scripts/core/scene_management/helpers/u_scene_convention_scanner.gd tests/unit/scene_manager/test_scene_convention_scanner.gd
 git commit -m "test: add scene convention scanner"
 ```
+
+Completed in `7108b24c`.
 
 ### Task 3: Wire Scanner Into Registry Loader
 
@@ -104,28 +137,30 @@ git commit -m "test: add scene convention scanner"
 - Modify: `scripts/core/scene_management/helpers/u_scene_registry_loader.gd`
 - Modify: `tests/unit/scene_manager/test_scene_registry.gd`
 
-- [ ] Add tests proving convention entries are available through `U_SceneRegistry.get_scene(StringName("demo_room"))`.
-- [ ] Add tests proving explicit hardcoded or manifest entries win over convention entries when IDs collide.
-- [ ] Modify `U_SceneRegistryLoader` to collect conventional scene paths in dev/headless contexts and register inferred entries with duplicate skipping.
-- [ ] Do not enable runtime directory scanning for mobile/web exports. For exports, generated manifest entries remain the mobile-safe source.
-- [ ] Run:
+- [x] Add tests proving convention entries are available through `U_SceneRegistry.get_scene(StringName("demo_room"))`.
+- [x] Add tests proving explicit hardcoded or manifest entries win over convention entries when IDs collide.
+- [x] Modify `U_SceneRegistryLoader` to collect conventional scene paths in dev/headless contexts and register inferred entries with duplicate skipping.
+- [x] Do not enable runtime directory scanning for mobile/web exports. For exports, generated manifest entries remain the mobile-safe source.
+- [x] Run:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/scene_manager/test_scene_registry.gd
 ```
 
-- [ ] Run style guard because a production script was added:
+- [x] Run style guard because a production script was added:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd
 ```
 
-- [ ] Commit:
+- [x] Commit:
 
 ```bash
 git add scripts/core/scene_management/helpers/u_scene_registry_loader.gd tests/unit/scene_manager/test_scene_registry.gd
 git commit -m "feat: load conventional scene registry entries"
 ```
+
+Completed in `87ea73bc`.
 
 ### Task 4: Document Zero-Config Scene Authoring
 
@@ -134,21 +169,23 @@ git commit -m "feat: load conventional scene registry entries"
 - Modify: `docs/systems/scene_manager/scene-manager-overview.md`
 - Modify: `docs/architecture/extensions/scenes.md`
 
-- [ ] Replace the default “create a resource first” path with the convention-first workflow.
-- [ ] Keep registry resources documented as override and advanced module support.
-- [ ] State that new `.tscn` files must still be created by builders, not by hand.
-- [ ] Run style guard because docs structure/scene registration docs changed:
+- [x] Replace the default “create a resource first” path with the convention-first workflow.
+- [x] Keep registry resources documented as override and advanced module support.
+- [x] State that new `.tscn` files must still be created by builders, not by hand.
+- [x] Run style guard because docs structure/scene registration docs changed:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd
 ```
 
-- [ ] Commit:
+- [x] Commit:
 
 ```bash
 git add docs/systems/scene_manager/ADDING_SCENES_GUIDE.md docs/systems/scene_manager/scene-manager-overview.md docs/architecture/extensions/scenes.md
 git commit -m "docs: document convention-based scene registration"
 ```
+
+Completed in `9e93c32d`.
 
 ## Phase 2: Mobile Presentation Baseline
 
@@ -161,15 +198,17 @@ git commit -m "docs: document convention-based scene registration"
 - Modify: `tests/unit/managers/helpers/test_u_display_window_applier.gd`
 - Modify if needed: `tests/unit/utils/test_u_mobile_platform_detector.gd`
 
-- [ ] Add tests for mobile fullscreen/window mode defaults if current state does not already express them.
-- [ ] Add tests for selector behavior around `mobile_resolution_scale`.
-- [ ] Add tests for any new safe-area helper before implementing the helper.
-- [ ] Run targeted display tests and confirm expected failures:
+- [x] Add tests for mobile fullscreen/window mode defaults if current state does not already express them.
+- [x] Add tests for selector behavior around `mobile_resolution_scale`.
+- [x] Add tests for any new safe-area helper before implementing the helper. No safe-area helper was needed in this task; safe-area work remains scoped to Task 13.
+- [x] Run targeted display tests and confirm expected failures:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_display_manager.gd
 tools/run_gut_suite.sh -gtest=res://tests/unit/managers/helpers/test_u_display_window_applier.gd
 ```
+
+Expected failures observed before implementation: missing `mobile_window_mode`, unclamped scale selector, and missing mobile fullscreen/window-size behavior.
 
 ### Task 6: Implement Mobile Presentation State And Helpers
 
@@ -179,10 +218,10 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/managers/helpers/test_u_display_w
 - Modify as tests require: `scripts/core/managers/helpers/display/u_display_window_applier.gd`
 - Modify as tests require: `scripts/core/utils/display/u_mobile_platform_detector.gd`
 
-- [ ] Keep Display Manager responsible for fullscreen/window operations.
-- [ ] Keep UI layout scaling separate from post-process overlays.
-- [ ] Add only state fields that have a test and a runtime consumer.
-- [ ] Run:
+- [x] Keep Display Manager responsible for fullscreen/window operations.
+- [x] Keep UI layout scaling separate from post-process overlays.
+- [x] Add only state fields that have a test and a runtime consumer.
+- [x] Run:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_display_manager.gd
@@ -190,12 +229,14 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/managers/helpers/test_u_display_w
 tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_mobile_platform_detector.gd
 ```
 
-- [ ] Commit:
+- [x] Commit:
 
 ```bash
 git add scripts/core/resources/state/rs_display_initial_state.gd scripts/core/state/selectors/u_display_selectors.gd scripts/core/managers/helpers/display/u_display_window_applier.gd scripts/core/utils/display/u_mobile_platform_detector.gd tests/unit/managers/test_display_manager.gd tests/unit/managers/helpers/test_u_display_window_applier.gd tests/unit/utils/test_u_mobile_platform_detector.gd
 git commit -m "feat: add mobile presentation baseline"
 ```
+
+Completed in `4569c63a`.
 
 ### Task 7: Make Mobile UI Portrait-Compatible
 
@@ -205,22 +246,24 @@ git commit -m "feat: add mobile presentation baseline"
 - Modify if needed: `scripts/core/ui/settings/ui_settings_panel.gd`
 - Modify tests: `tests/unit/integration/test_touchscreen_input_flow.gd`
 
-- [ ] Add or update tests for clamping saved custom joystick and button positions to visible viewport bounds.
-- [ ] Add or update tests for controls staying hidden during overlays and non-gameplay shells.
-- [ ] Update mobile controls placement so portrait viewport sizes keep controls reachable.
-- [ ] Keep portrait gameplay compatibility limited to usable controls and non-overlapping UI.
-- [ ] Run:
+- [x] Add or update tests for clamping saved custom joystick and button positions to visible viewport bounds.
+- [x] Add or update tests for controls staying hidden during overlays and non-gameplay shells.
+- [x] Update mobile controls placement so portrait viewport sizes keep controls reachable.
+- [x] Keep portrait gameplay compatibility limited to usable controls and non-overlapping UI.
+- [x] Run:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_input_flow.gd
 ```
 
-- [ ] Commit:
+- [x] Commit:
 
 ```bash
 git add scripts/core/ui/hud/ui_mobile_controls.gd scripts/core/ui/hud/ui_hud_controller.gd scripts/core/ui/settings/ui_settings_panel.gd tests/unit/integration/test_touchscreen_input_flow.gd
 git commit -m "feat: make mobile UI portrait-compatible"
 ```
+
+Completed in `3eef7ab8`. Only `scripts/core/ui/hud/ui_mobile_controls.gd` and `tests/unit/integration/test_touchscreen_input_flow.gd` required changes.
 
 ## Phase 3: Touch Gameplay Polish
 
