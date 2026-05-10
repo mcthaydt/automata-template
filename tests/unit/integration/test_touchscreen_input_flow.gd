@@ -119,6 +119,91 @@ func test_virtual_control_positions_persist_via_state_handoff() -> void:
 	assert_vector_almost_eq(restored_jump.position, clamped_restored_jump, 0.01,
 		"Button position should restore from saved touchscreen settings (clamped to viewport)")
 
+func test_custom_control_positions_clamp_inside_portrait_viewport() -> void:
+	var store: M_StateStore = await _create_state_store()
+	store.dispatch(U_NavigationActions.start_game(StringName("demo_room")))
+	await _await_state_update(store)
+
+	var controls: UI_MobileControls = await _create_controls()
+	var joystick: UI_VirtualJoystick = controls.get_node_or_null("Controls/VirtualJoystick") as UI_VirtualJoystick
+	var jump_button: UI_VirtualButton = _find_button(controls.get_buttons(), StringName("jump"))
+	assert_not_null(joystick)
+	assert_not_null(jump_button)
+
+	var portrait_size := Vector2(360, 640)
+	var oversized_joystick := Vector2(500, 800)
+	var oversized_jump := Vector2(480, 760)
+
+	store.dispatch(U_InputActions.save_virtual_control_position("virtual_joystick", oversized_joystick))
+	store.dispatch(U_InputActions.save_virtual_control_position("jump", oversized_jump))
+	await _await_state_update(store)
+	controls.force_apply_positions(store.get_state(), false)
+	controls.call("_clamp_all_controls_to_rect", Rect2(Vector2.ZERO, portrait_size))
+
+	assert_vector_almost_eq(
+		joystick.position,
+		_expected_clamped_position(oversized_joystick, joystick, portrait_size),
+		0.01,
+		"Joystick should clamp into portrait viewport bounds"
+	)
+	assert_vector_almost_eq(
+		jump_button.position,
+		_expected_clamped_position(oversized_jump, jump_button, portrait_size),
+		0.01,
+		"Jump button should clamp into portrait viewport bounds"
+	)
+
+func test_default_control_positions_do_not_overlap_in_portrait_viewport() -> void:
+	var store: M_StateStore = await _create_state_store()
+	store.dispatch(U_NavigationActions.start_game(StringName("demo_room")))
+	await _await_state_update(store)
+
+	var controls: UI_MobileControls = await _create_controls()
+	var portrait_size := Vector2(360, 640)
+	controls.force_apply_positions(store.get_state(), false)
+	controls.call("_clamp_all_controls_to_rect", Rect2(Vector2.ZERO, portrait_size))
+
+	var joystick: UI_VirtualJoystick = controls.get_node_or_null("Controls/VirtualJoystick") as UI_VirtualJoystick
+	assert_not_null(joystick, "Portrait controls should include the joystick")
+	var positioned_controls: Array[Control] = [joystick]
+	for button in controls.get_buttons():
+		if button is Control:
+			positioned_controls.append(button as Control)
+
+	for control in positioned_controls:
+		assert_lte(control.position.x + (control.size.x * control.scale.x), portrait_size.x + 0.01,
+			"%s should fit horizontally in portrait" % control.name)
+		assert_lte(control.position.y + (control.size.y * control.scale.y), portrait_size.y + 0.01,
+			"%s should fit vertically in portrait" % control.name)
+
+	for i in positioned_controls.size():
+		for j in range(i + 1, positioned_controls.size()):
+			assert_false(
+				positioned_controls[i].get_global_rect().intersects(positioned_controls[j].get_global_rect()),
+				"%s and %s should not overlap in portrait" % [positioned_controls[i].name, positioned_controls[j].name]
+			)
+
+func test_controls_stay_hidden_during_overlays_and_non_gameplay_shells() -> void:
+	var ctx := await _setup_environment()
+	var store: M_StateStore = ctx["store"]
+	var controls: UI_MobileControls = ctx["controls"]
+
+	store.dispatch(U_InputActions.device_changed(M_InputDeviceManager.DeviceType.TOUCHSCREEN, -1))
+	await _await_state_update(store)
+	assert_true(controls.visible, "Controls should be visible during touchscreen gameplay")
+
+	store.dispatch(U_NavigationActions.open_pause())
+	await _await_state_update(store)
+	assert_false(controls.visible, "Controls should hide while gameplay overlays are open")
+
+	store.dispatch(U_NavigationActions.close_pause())
+	await _await_state_update(store)
+	assert_true(controls.visible, "Controls should reappear after gameplay overlay closes")
+
+	store.dispatch(U_NavigationActions.set_shell(StringName("main_menu"), StringName("main_menu")))
+	await _await_state_update(store)
+	assert_false(controls.visible, "Controls should stay hidden in non-gameplay shells")
+
 func _setup_environment() -> Dictionary:
 	var store := await _create_state_store()
 	store.dispatch(U_NavigationActions.start_game(StringName("demo_room")))
