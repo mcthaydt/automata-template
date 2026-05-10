@@ -52,3 +52,12 @@ func window_get_current_screen() -> int:
 func screen_get_usable_rect(screen: int) -> Rect2i:
 	return DisplayServer.screen_get_usable_rect(screen)
 
+## Value matches DisplayServer.SCREEN_OF_MAIN_WINDOW (Godot 4.7+).
+## Defined as a compat constant because the headless test runner (Godot 4.6)
+## does not expose this constant in its DisplayServer class.
+const SCREEN_OF_MAIN_WINDOW_COMPAT: int = -1
+
+func screen_set_orientation(orientation: int) -> void:
+	if DisplayServer.has_method("screen_set_orientation"):
+		DisplayServer.screen_set_orientation(orientation, SCREEN_OF_MAIN_WINDOW_COMPAT)
+

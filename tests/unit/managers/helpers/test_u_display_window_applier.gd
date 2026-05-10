@@ -125,6 +125,42 @@ func test_windowed_restore_reapplies_size_after_borderless_fullscreen() -> void:
 		"Windowed restore should reapply preset size after mode settles"
 	)
 
+func test_mobile_fullscreen_sets_orientation_to_sensor() -> void:
+	MOBILE_PLATFORM_DETECTOR.set_mobile_override(1)
+	var applier := U_DISPLAY_WINDOW_APPLIER.new()
+	var window_ops := MockWindowOps.new()
+	applier.set_window_ops(window_ops)
+
+	applier.apply_settings({
+		"window_size_preset": "1280x720",
+		"window_mode": "windowed",
+		"mobile_resolution_scale": 0.5,
+		"vsync_enabled": true,
+	})
+
+	assert_eq(
+		window_ops.orientation,
+		U_DISPLAY_WINDOW_APPLIER.SCREEN_ORIENTATION_SENSOR_LANDSCAPE,
+		"Mobile fullscreen should set orientation to SENSOR_LANDSCAPE for rotation responsiveness"
+	)
+
+func test_desktop_window_mode_does_not_change_orientation() -> void:
+	var applier := U_DISPLAY_WINDOW_APPLIER.new()
+	var window_ops := MockWindowOps.new()
+	applier.set_window_ops(window_ops)
+
+	applier.apply_settings({
+		"window_size_preset": "1280x720",
+		"window_mode": "windowed",
+		"vsync_enabled": true,
+	})
+
+	assert_eq(
+		window_ops.get_call_count("screen_set_orientation"),
+		0,
+		"Desktop windowed mode should not override screen orientation"
+	)
+
 func test_mobile_apply_settings_skips_desktop_window_resize() -> void:
 	MOBILE_PLATFORM_DETECTOR.set_mobile_override(1)
 	var applier := U_DISPLAY_WINDOW_APPLIER.new()

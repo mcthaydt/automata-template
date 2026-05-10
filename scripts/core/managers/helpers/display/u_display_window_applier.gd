@@ -3,6 +3,12 @@ class_name U_DisplayWindowApplier
 
 ## Applies window mode/size/vsync settings with platform guards.
 
+## Value matches DisplayServer.SCREEN_SENSOR_LANDSCAPE (Godot 4.7+).
+## Allows landscape and reverse-landscape rotation, blocks portrait.
+## Defined as a compat constant because the headless test runner (Godot 4.6)
+## does not expose ScreenOrientation enum values in its DisplayServer class.
+const SCREEN_ORIENTATION_SENSOR_LANDSCAPE: int = 4
+
 const U_DISPLAY_OPTION_CATALOG := preload("res://scripts/core/utils/display/u_display_option_catalog.gd")
 const U_DISPLAY_SELECTORS := preload("res://scripts/core/state/selectors/u_display_selectors.gd")
 const U_DISPLAY_SERVER_WINDOW_OPS := preload("res://scripts/core/utils/display/u_display_server_window_ops.gd")
@@ -31,6 +37,7 @@ func apply_settings(display_settings: Dictionary) -> void:
 		U_MOBILE_PLATFORM_DETECTOR.set_scale_override(
 			U_DISPLAY_SELECTORS.get_mobile_resolution_scale(state)
 		)
+		_set_orientation(SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
 	else:
 		U_MOBILE_PLATFORM_DETECTOR.set_scale_override(-1.0)
 
@@ -214,6 +221,11 @@ func _get_window_ops() -> I_WindowOps:
 		return _window_ops
 	_window_ops = U_DISPLAY_SERVER_WINDOW_OPS.new()
 	return _window_ops
+
+func _set_orientation(orientation: int) -> void:
+	var ops := _get_window_ops()
+	if ops != null:
+		ops.screen_set_orientation(orientation)
 
 func _should_defer() -> bool:
 	return _owner != null and _owner.is_inside_tree()

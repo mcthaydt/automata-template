@@ -66,3 +66,6 @@ func screen_get_usable_rect(_screen: int) -> Rect2i:
 	push_error("I_WindowOps.screen_get_usable_rect not implemented")
 	return Rect2i()
 
+func screen_set_orientation(_orientation: int) -> void:
+	push_error("I_WindowOps.screen_set_orientation not implemented")
+

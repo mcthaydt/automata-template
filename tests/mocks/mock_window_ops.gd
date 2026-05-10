@@ -73,6 +73,12 @@ func screen_get_size(_screen: int = -1) -> Vector2i:
 	calls.append({"method": "screen_get_size"})
 	return screen_size
 
+var orientation: int = 0
+
+func screen_set_orientation(orientation_value: int) -> void:
+	calls.append({"method": "screen_set_orientation", "orientation": orientation_value})
+	orientation = orientation_value
+
 func window_get_vsync_mode() -> int:
 	calls.append({"method": "window_get_vsync_mode"})
 	return vsync_mode
