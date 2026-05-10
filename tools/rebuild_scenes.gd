@@ -10,6 +10,7 @@ func _init() -> void:
 	_rebuild_gameplay_demo_room()
 	_rebuild_tmpl_base_scene()
 	_rebuild_test_exterior()
+	_rebuild_resources()
 	print("Done. Scenes rebuilt.")
 	quit()
 
@@ -95,6 +96,8 @@ func _rebuild_gameplay_demo_room() -> void:
 	builder.build_environment()
 	builder.build_systems()
 	builder.build_managers()
+	var demo_directive: Resource = preload("res://scripts/demo/helpers/br_demo_intro_directive.gd").new().build()
+	builder.add_scene_director_directive(demo_directive)
 	builder.build_entities()
 
 	var root: Node3D = builder.build()
@@ -245,9 +248,22 @@ func _rebuild_test_exterior() -> void:
 	instance.free()
 
 func _set_owner_recursive(node: Node, owner: Node) -> void:
-	if node != owner:
-		node.set_owner(owner)
 	if not node.get_scene_file_path().is_empty():
 		return
 	for child in node.get_children():
 		_set_owner_recursive(child, owner)
+
+
+func _rebuild_resources() -> void:
+	print("Rebuilding scene director resources...")
+	var br := preload("res://scripts/demo/helpers/br_demo_intro_directive.gd").new()
+	var directive := br.build()
+	var save_path := "res://resources/core/scene_director/directives/cfg_directive_demo_intro.tres"
+	var save_result := ResourceSaver.save(directive, save_path)
+	if save_result != OK:
+		push_error("Failed to save directive .tres at '%s' (error %d)" % [save_path, save_result])
+	else:
+		print("  Saved: %s" % save_path)
+
+
+

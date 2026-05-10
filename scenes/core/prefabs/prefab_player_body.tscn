@@ -3,9 +3,9 @@
 [ext_resource type="Texture2D" path="res://assets/core/textures/characters/tex_player_sprite_sheet.png" id="1_agckp"]
 [ext_resource type="Texture2D" path="res://assets/core/textures/tex_shadow_blob.png" id="2_a5ktg"]
 
-[node name="PlayerBodyVisualRoot" type="Node3D" unique_id=1404338901]
+[node name="PlayerBodyVisualRoot" type="Node3D" unique_id=824073810]
 
-[node name="DirectionalSprite" type="Sprite3D" parent="." unique_id=585271683]
+[node name="DirectionalSprite" type="Sprite3D" parent="." unique_id=93427690]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.64, 0)
 billboard = 1
 texture_filter = 0
@@ -13,7 +13,7 @@ texture = ExtResource("1_agckp")
 hframes = 3
 vframes = 3
 
-[node name="GroundIndicator" type="Sprite3D" parent="." unique_id=957424728]
+[node name="GroundIndicator" type="Sprite3D" parent="." unique_id=2041573478]
 transform = Transform3D(0.08, 0, 0, 0, -3.496911e-09, 0.08, 0, -0.08, -3.496911e-09, 0, -0.01, 0)
 modulate = Color(1, 1, 1, 0.49803922)
 texture = ExtResource("2_a5ktg")

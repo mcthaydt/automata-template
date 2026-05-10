@@ -2,6 +2,18 @@ extends GutTest
 
 const MobileControlsScene := preload("res://scenes/core/ui/hud/ui_mobile_controls.tscn")
 
+class FakeWindowOps:
+	extends I_WindowOps
+
+	var usable_rect := Rect2i()
+
+	func window_get_current_screen() -> int:
+		return 0
+
+	func screen_get_usable_rect(_screen: int) -> Rect2i:
+		return usable_rect
+
+
 func before_each() -> void:
 	U_StateHandoff.clear_all()
 
@@ -73,6 +85,116 @@ func test_controls_hide_and_processing_stops_on_device_change_and_transition() -
 	await _await_state_update(store)
 	assert_true(controls.visible, "MobileControls should show after transition completes")
 
+func test_reset_progress_after_victory_preserves_device_state_fields() -> void:
+	var input_state := U_InputReducer.get_default_gameplay_input_state()
+	input_state["active_device"] = M_InputDeviceManager.DeviceType.TOUCHSCREEN
+	input_state["gamepad_connected"] = true
+	input_state["gamepad_device_id"] = 4
+	input_state["touchscreen_enabled"] = true
+	input_state["last_input_time"] = 42.5
+	input_state["move_input"] = Vector2.RIGHT
+	input_state["look_input"] = Vector2(3.0, -2.0)
+	input_state["jump_pressed"] = true
+	input_state["jump_just_pressed"] = true
+	input_state["sprint_pressed"] = true
+	var state := {
+		"input": input_state,
+		"game_completed": true,
+		"last_victory_objective": StringName("finale"),
+		"player_max_health": 100.0,
+		"player_health": 1.0,
+	}
+
+	var result: Dictionary = U_GameplayReducer.reduce(state, U_GameplayActions.reset_progress())
+	var reset_input: Dictionary = result.get("input", {})
+
+	assert_false(result.get("game_completed", true), "Reset progress should clear victory completion")
+	assert_eq(reset_input.get("active_device"), M_InputDeviceManager.DeviceType.TOUCHSCREEN)
+	assert_true(reset_input.get("gamepad_connected", false), "Reset progress should preserve gamepad connection state")
+	assert_eq(reset_input.get("gamepad_device_id"), 4, "Reset progress should preserve gamepad device id")
+	assert_true(reset_input.get("touchscreen_enabled", false), "Reset progress should preserve touchscreen_enabled")
+	assert_almost_eq(float(reset_input.get("last_input_time", 0.0)), 42.5, 0.001,
+		"Reset progress should preserve last input time")
+	assert_vector_almost_eq(reset_input.get("move_input", Vector2.RIGHT), Vector2.ZERO, 0.001,
+		"Reset progress should clear transient move input")
+	assert_vector_almost_eq(reset_input.get("look_input", Vector2.ONE), Vector2.ZERO, 0.001,
+		"Reset progress should clear transient look input")
+	assert_false(reset_input.get("jump_pressed", true), "Reset progress should clear held jump")
+	assert_false(reset_input.get("jump_just_pressed", true), "Reset progress should clear just-pressed jump")
+	assert_false(reset_input.get("sprint_pressed", true), "Reset progress should clear sprint")
+
+func test_gamepad_input_takes_over_on_mobile_and_touch_reappears_on_real_touch() -> void:
+	var ctx := await _setup_environment()
+	var store: M_StateStore = ctx["store"]
+	var controls: UI_MobileControls = ctx["controls"]
+	store.dispatch(U_InputActions.device_changed(M_InputDeviceManager.DeviceType.TOUCHSCREEN, -1))
+	await _await_state_update(store)
+	assert_true(controls.visible, "Controls should start visible for active touchscreen gameplay")
+
+	var input_manager := await _create_input_device_manager()
+	input_manager.emulate_mobile_pointer_guard = true
+
+	var motion := InputEventJoypadMotion.new()
+	motion.device = 2
+	motion.axis = JOY_AXIS_LEFT_X
+	motion.axis_value = 0.75
+	input_manager._input(motion)
+	await _await_state_update(store)
+
+	assert_eq(U_InputSelectors.get_active_device_type(store.get_state()), M_InputDeviceManager.DeviceType.GAMEPAD,
+		"Gamepad input should take over active device on mobile")
+	assert_false(controls.visible, "Touch controls should hide after gamepad takeover")
+
+	var touch := InputEventScreenTouch.new()
+	touch.pressed = true
+	touch.index = 0
+	touch.position = Vector2(16.0, 16.0)
+	input_manager._input(touch)
+	await _await_state_update(store)
+
+	assert_eq(U_InputSelectors.get_active_device_type(store.get_state()), M_InputDeviceManager.DeviceType.TOUCHSCREEN,
+		"A real touch event should switch active device back to touchscreen")
+	assert_true(controls.visible, "Touch controls should reappear after real touch input")
+
+func test_touchscreen_system_does_not_dispatch_or_process_when_navigation_blocks_gameplay() -> void:
+	var ctx := await _setup_environment()
+	var store: M_StateStore = ctx["store"]
+	store.dispatch(U_InputActions.device_changed(M_InputDeviceManager.DeviceType.TOUCHSCREEN, -1))
+	await _await_state_update(store)
+
+	var joystick: UI_VirtualJoystick = ctx["joystick"]
+	var manager: M_ECSManager = ctx["ecs_manager"]
+	var component: C_InputComponent = ctx["component"]
+
+	store.dispatch(U_NavigationActions.open_pause())
+	await _await_state_update(store)
+	_press_joystick(joystick, Vector2.ZERO, Vector2(joystick.joystick_radius, 0.0))
+	manager._physics_process(0.016)
+	assert_vector_almost_eq(U_InputSelectors.get_move_input(store.get_state()), Vector2.ZERO, 0.001,
+		"TouchscreenSystem should not dispatch move input while overlays block gameplay")
+	assert_vector_almost_eq(component.move_vector, Vector2.ZERO, 0.001,
+		"TouchscreenSystem should not update components while overlays block gameplay")
+
+	store.dispatch(U_NavigationActions.close_pause())
+	store.dispatch(U_NavigationActions.set_shell(StringName("main_menu"), StringName("main_menu")))
+	await _await_state_update(store)
+	_press_joystick(joystick, Vector2.ZERO, Vector2(0.0, -joystick.joystick_radius))
+	manager._physics_process(0.016)
+	assert_vector_almost_eq(U_InputSelectors.get_move_input(store.get_state()), Vector2.ZERO, 0.001,
+		"TouchscreenSystem should not dispatch move input outside gameplay shell")
+	assert_vector_almost_eq(component.move_vector, Vector2.ZERO, 0.001,
+		"TouchscreenSystem should not update components outside gameplay shell")
+
+	store.dispatch(U_NavigationActions.start_game(StringName("demo_room")))
+	store.dispatch(U_SceneActions.transition_started(StringName("demo_room"), "fade"))
+	await _await_state_update(store)
+	_press_joystick(joystick, Vector2.ZERO, Vector2(-joystick.joystick_radius, 0.0))
+	manager._physics_process(0.016)
+	assert_vector_almost_eq(U_InputSelectors.get_move_input(store.get_state()), Vector2.ZERO, 0.001,
+		"TouchscreenSystem should not dispatch move input during scene transitions")
+	assert_vector_almost_eq(component.move_vector, Vector2.ZERO, 0.001,
+		"TouchscreenSystem should not update components during scene transitions")
+
 func test_virtual_control_positions_persist_via_state_handoff() -> void:
 	var store: M_StateStore = await _create_state_store()
 	var controls: UI_MobileControls = await _create_controls()
@@ -118,6 +240,132 @@ func test_virtual_control_positions_persist_via_state_handoff() -> void:
 		"Joystick position should restore from saved touchscreen settings (clamped to viewport)")
 	assert_vector_almost_eq(restored_jump.position, clamped_restored_jump, 0.01,
 		"Button position should restore from saved touchscreen settings (clamped to viewport)")
+
+func test_custom_control_positions_clamp_inside_portrait_viewport() -> void:
+	var store: M_StateStore = await _create_state_store()
+	store.dispatch(U_NavigationActions.start_game(StringName("demo_room")))
+	await _await_state_update(store)
+
+	var controls: UI_MobileControls = await _create_controls()
+	var joystick: UI_VirtualJoystick = controls.get_node_or_null("Controls/VirtualJoystick") as UI_VirtualJoystick
+	var jump_button: UI_VirtualButton = _find_button(controls.get_buttons(), StringName("jump"))
+	assert_not_null(joystick)
+	assert_not_null(jump_button)
+
+	var portrait_size := Vector2(360, 640)
+	var oversized_joystick := Vector2(500, 800)
+	var oversized_jump := Vector2(480, 760)
+
+	store.dispatch(U_InputActions.save_virtual_control_position("virtual_joystick", oversized_joystick))
+	store.dispatch(U_InputActions.save_virtual_control_position("jump", oversized_jump))
+	await _await_state_update(store)
+	controls.force_apply_positions(store.get_state(), false)
+	controls.call("_clamp_all_controls_to_rect", Rect2(Vector2.ZERO, portrait_size))
+
+	assert_vector_almost_eq(
+		joystick.position,
+		_expected_clamped_position(oversized_joystick, joystick, portrait_size),
+		0.01,
+		"Joystick should clamp into portrait viewport bounds"
+	)
+	assert_vector_almost_eq(
+		jump_button.position,
+		_expected_clamped_position(oversized_jump, jump_button, portrait_size),
+		0.01,
+		"Jump button should clamp into portrait viewport bounds"
+	)
+
+func test_custom_control_positions_clamp_outside_safe_area_insets() -> void:
+	var store: M_StateStore = await _create_state_store()
+	store.dispatch(U_NavigationActions.start_game(StringName("demo_room")))
+	await _await_state_update(store)
+
+	var controls: UI_MobileControls = await _create_controls()
+	var joystick: UI_VirtualJoystick = controls.get_node_or_null("Controls/VirtualJoystick") as UI_VirtualJoystick
+	var jump_button: UI_VirtualButton = _find_button(controls.get_buttons(), StringName("jump"))
+	assert_not_null(joystick)
+	assert_not_null(jump_button)
+
+	var portrait_size := Vector2(360, 640)
+	var safe_bounds := Rect2(Vector2(0, 32), Vector2(360, 608))
+	var oversized_joystick := Vector2(500, 0)
+	var oversized_jump := Vector2(480, 8)
+
+	store.dispatch(U_InputActions.save_virtual_control_position("virtual_joystick", oversized_joystick))
+	store.dispatch(U_InputActions.save_virtual_control_position("jump", oversized_jump))
+	await _await_state_update(store)
+	controls.force_apply_positions(store.get_state(), false)
+
+	var fake_window_ops := FakeWindowOps.new()
+	fake_window_ops.usable_rect = Rect2i(Vector2i(0, 32), Vector2i(360, 608))
+	controls.set("_window_ops", fake_window_ops)
+	var computed_bounds: Rect2 = controls.call("_get_safe_control_bounds", Rect2(Vector2.ZERO, portrait_size))
+	controls.call("_clamp_all_controls_to_rect", computed_bounds)
+
+	assert_eq(computed_bounds, safe_bounds, "Safe-area bounds should subtract the top notch inset")
+	assert_vector_almost_eq(
+		joystick.position,
+		_expected_clamped_position_in_rect(oversized_joystick, joystick, safe_bounds),
+		0.01,
+		"Joystick should clamp below the notch inset"
+	)
+	assert_vector_almost_eq(
+		jump_button.position,
+		_expected_clamped_position_in_rect(oversized_jump, jump_button, safe_bounds),
+		0.01,
+		"Jump button should clamp below the notch inset"
+	)
+
+func test_default_control_positions_do_not_overlap_in_portrait_viewport() -> void:
+	var store: M_StateStore = await _create_state_store()
+	store.dispatch(U_NavigationActions.start_game(StringName("demo_room")))
+	await _await_state_update(store)
+
+	var controls: UI_MobileControls = await _create_controls()
+	var portrait_size := Vector2(360, 640)
+	controls.force_apply_positions(store.get_state(), false)
+	controls.call("_clamp_all_controls_to_rect", Rect2(Vector2.ZERO, portrait_size))
+
+	var joystick: UI_VirtualJoystick = controls.get_node_or_null("Controls/VirtualJoystick") as UI_VirtualJoystick
+	assert_not_null(joystick, "Portrait controls should include the joystick")
+	var positioned_controls: Array[Control] = [joystick]
+	for button in controls.get_buttons():
+		if button is Control:
+			positioned_controls.append(button as Control)
+
+	for control in positioned_controls:
+		assert_lte(control.position.x + (control.size.x * control.scale.x), portrait_size.x + 0.01,
+			"%s should fit horizontally in portrait" % control.name)
+		assert_lte(control.position.y + (control.size.y * control.scale.y), portrait_size.y + 0.01,
+			"%s should fit vertically in portrait" % control.name)
+
+	for i in positioned_controls.size():
+		for j in range(i + 1, positioned_controls.size()):
+			assert_false(
+				positioned_controls[i].get_global_rect().intersects(positioned_controls[j].get_global_rect()),
+				"%s and %s should not overlap in portrait" % [positioned_controls[i].name, positioned_controls[j].name]
+			)
+
+func test_controls_stay_hidden_during_overlays_and_non_gameplay_shells() -> void:
+	var ctx := await _setup_environment()
+	var store: M_StateStore = ctx["store"]
+	var controls: UI_MobileControls = ctx["controls"]
+
+	store.dispatch(U_InputActions.device_changed(M_InputDeviceManager.DeviceType.TOUCHSCREEN, -1))
+	await _await_state_update(store)
+	assert_true(controls.visible, "Controls should be visible during touchscreen gameplay")
+
+	store.dispatch(U_NavigationActions.open_pause())
+	await _await_state_update(store)
+	assert_false(controls.visible, "Controls should hide while gameplay overlays are open")
+
+	store.dispatch(U_NavigationActions.close_pause())
+	await _await_state_update(store)
+	assert_true(controls.visible, "Controls should reappear after gameplay overlay closes")
+
+	store.dispatch(U_NavigationActions.set_shell(StringName("main_menu"), StringName("main_menu")))
+	await _await_state_update(store)
+	assert_false(controls.visible, "Controls should stay hidden in non-gameplay shells")
 
 func _setup_environment() -> Dictionary:
 	var store := await _create_state_store()
@@ -181,6 +429,12 @@ func _create_controls() -> UI_MobileControls:
 	await _await_frames(2)
 	return controls
 
+func _create_input_device_manager() -> M_InputDeviceManager:
+	var input_manager := M_InputDeviceManager.new()
+	add_child_autofree(input_manager)
+	await _await_frames(2)
+	return input_manager
+
 func _press_joystick(joystick: UI_VirtualJoystick, start: Vector2, end: Vector2) -> void:
 	if joystick == null:
 		return
@@ -209,12 +463,15 @@ func assert_vector_almost_eq(a: Vector2, b: Vector2, tolerance: float, message: 
 	assert_almost_eq(a.y, b.y, tolerance, message + " (y)")
 
 func _expected_clamped_position(target: Vector2, control: Control, viewport_size: Vector2) -> Vector2:
+	return _expected_clamped_position_in_rect(target, control, Rect2(Vector2.ZERO, viewport_size))
+
+func _expected_clamped_position_in_rect(target: Vector2, control: Control, bounds: Rect2) -> Vector2:
 	if control == null:
 		return target
 	var scaled_size: Vector2 = control.size * control.scale
 	return Vector2(
-		clampf(target.x, 0.0, max(viewport_size.x - scaled_size.x, 0.0)),
-		clampf(target.y, 0.0, max(viewport_size.y - scaled_size.y, 0.0))
+		clampf(target.x, bounds.position.x, max(bounds.end.x - scaled_size.x, bounds.position.x)),
+		clampf(target.y, bounds.position.y, max(bounds.end.y - scaled_size.y, bounds.position.y))
 	)
 
 func _await_frames(count: int) -> void:

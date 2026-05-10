@@ -13,17 +13,23 @@
 
 ## Scene Registration
 
-Register every scene in `U_SceneRegistry._register_all_scenes()` before use:
+Scene registration has three layers:
+
+1. Boot-critical scenes are hardcoded in `U_SceneRegistry` so the app can always reach the splash, language selector, main menu, pause menu, save/load menu, loading screen, and test scenes.
+2. Manifest/resource entries load next. These provide explicit metadata overrides and the mobile/web-safe generated baseline where runtime directory scans are not used.
+3. Convention-derived entries load in editor/headless development contexts, after explicit entries and before optional development resource-directory scans. Duplicate scene ids are skipped, so hardcoded and manifest/resource metadata wins.
+
+Convention-derived scene ids come from filenames:
 
 ```gdscript
-_register_scene(
-	StringName("my_scene"),
-	"res://scenes/demo/gameplay/my_scene.tscn",
-	SceneType.GAMEPLAY,
-	"fade",
-	5
-)
+res://scenes/demo/gameplay/gameplay_demo_room.tscn -> demo_room
+res://scenes/core/ui/overlays/ui_save_load_menu.tscn -> save_load_menu
+res://scenes/core/ui/settings/ui_settings_panel.tscn -> settings_panel
 ```
+
+`U_SceneConventionScanner` maps gameplay scenes to `SceneType.GAMEPLAY`, `loading`, priority `5`, and supported UI overlay/settings scenes to `SceneType.UI`, `instant`, priority `5`. Prefabs, templates, and UI widgets are ignored.
+
+Create new `.tscn` files through builders/editor tooling, not by hand. Add an `RS_SceneRegistryEntry` or manifest entry when a scene needs custom type, transition, priority, export-safe generated metadata, or an intentional override.
 
 Preload priority guidelines:
 

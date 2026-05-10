@@ -38,3 +38,14 @@ func test_chrome_row_expands_horizontally() -> void:
 	var row := chrome.get_chrome_row()
 	assert_eq(row.size_flags_horizontal, Control.SIZE_EXPAND_FILL)
 	chrome.queue_free()
+
+func test_chrome_reserves_row_height_in_vertical_container() -> void:
+	var container := VBoxContainer.new()
+	add_child_autofree(container)
+	var chrome := W_OverlayChrome.new()
+	container.add_child(chrome)
+
+	await get_tree().process_frame
+
+	var row := chrome.get_chrome_row()
+	assert_true(chrome.size.y >= row.get_combined_minimum_size().y, "Chrome wrapper should reserve vertical space for its row")

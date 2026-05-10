@@ -33,7 +33,6 @@ grow_vertical = 2
 
 [node name="MainPanelMotionHost" type="Control" parent="CenterContainer" unique_id=358572372]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(860, 620)
 layout_mode = 2
 
 [node name="MainPanel" type="PanelContainer" parent="CenterContainer/MainPanelMotionHost" unique_id=552026337]

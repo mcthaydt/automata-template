@@ -3,7 +3,7 @@ extends GutTest
 const M_SCENE_DIRECTOR := preload("res://scripts/core/managers/m_scene_director_manager.gd")
 const M_STATE_STORE := preload("res://scripts/core/state/m_state_store.gd")
 const RS_STATE_STORE_SETTINGS := preload("res://scripts/core/resources/state/rs_state_store_settings.gd")
-const CFG_DIRECTIVE_GAMEPLAY_BASE := preload("res://resources/core/scene_director/directives/cfg_directive_gameplay_base.tres")
+const BR_DEMO_INTRO_DIRECTIVE := preload("res://scripts/demo/helpers/br_demo_intro_directive.gd")
 const RS_SCENE_DIRECTIVE := preload("res://scripts/core/resources/scene_director/rs_scene_directive.gd")
 const RS_BEAT_DEFINITION := preload("res://scripts/core/resources/scene_director/rs_beat_definition.gd")
 const EFFECT_PUBLISH_EVENT := preload("res://scripts/core/resources/qb/effects/rs_effect_publish_event.gd")
@@ -41,7 +41,7 @@ func before_each() -> void:
 
 	_scene_director = M_SCENE_DIRECTOR.new()
 	_scene_director.state_store = _state_store
-	var directive_resource: Resource = (CFG_DIRECTIVE_GAMEPLAY_BASE as Resource).duplicate(true)
+	var directive_resource: Resource = BR_DEMO_INTRO_DIRECTIVE.new().build()
 	var directives: Array[Resource] = [directive_resource]
 	_scene_director.directives = directives
 	_root.add_child(_scene_director)
@@ -109,9 +109,9 @@ func test_scene_transition_starts_directive_and_completes_beats_in_order() -> vo
 	assert_eq(started_directive_ids.size(), 1, "Expected one start_directive action")
 	assert_eq(completed_directive_ids.size(), 1, "Expected one complete_directive action")
 	if started_directive_ids.size() > 0:
-		assert_eq(started_directive_ids[0], StringName("gameplay_base_intro"))
+		assert_eq(started_directive_ids[0], StringName("demo_intro"))
 	if completed_directive_ids.size() > 0:
-		assert_eq(completed_directive_ids[0], StringName("gameplay_base_intro"))
+		assert_eq(completed_directive_ids[0], StringName("demo_intro"))
 
 	var expected_beat_events: Array[StringName] = [EVENT_BEAT_ONE, EVENT_BEAT_TWO]
 	assert_eq(beat_event_order, expected_beat_events)
@@ -127,7 +127,7 @@ func test_scene_transition_starts_directive_and_completes_beats_in_order() -> vo
 	assert_eq(U_SCENE_DIRECTOR_SELECTORS.get_director_state(state), "completed")
 	assert_eq(
 		U_SCENE_DIRECTOR_SELECTORS.get_active_directive_id(state),
-		StringName("gameplay_base_intro")
+		StringName("demo_intro")
 	)
 
 	if unsub_beat_one.is_valid():

@@ -136,6 +136,10 @@ func test_event_serialization_round_trip() -> void:
 	assert_true(restored_joy is InputEventJoypadButton)
 	assert_eq(restored_joy.button_index, joy_event.button_index)
 
+func test_format_binding_label_trims_key_prefix() -> void:
+	assert_eq(U_InputRebindUtils.format_binding_label(" Key Space "), "Space")
+	assert_eq(U_InputRebindUtils.format_binding_label("Mouse Left"), "Mouse Left")
+
 func _setup_action(action: StringName, event: InputEvent) -> void:
 	if not InputMap.has_action(action):
 		InputMap.add_action(String(action))

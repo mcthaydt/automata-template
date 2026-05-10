@@ -162,7 +162,7 @@ func set_tooltip(key: StringName, tooltip_text: String) -> U_SettingsTabBuilder:
 		if entry.get("role") == &"field_control":
 			var control := entry.get("control") as Control
 			if control != null and control.name.to_lower().contains(key.to_lower().replace(".", "").replace("_", "")):
-					control.tooltip_text = tooltip_text
+				control.tooltip_text = tooltip_text
 	return self
 func hide_control_by_key(key: StringName) -> U_SettingsTabBuilder:
 	for entry in _theme_map:
@@ -276,13 +276,13 @@ func _bind_label(label: Label, key: StringName, role: StringName, fallback: Stri
 	if fallback != "":
 		_label_fallbacks[label] = fallback
 	_theme_map.append({"control": label, "role": role})
-func bind_panel(panel: PanelContainer, content_vbox: VBoxContainer = null, padding: MarginContainer = null) -> U_SettingsTabBuilder:
+func bind_panel(panel: PanelContainer, padding: MarginContainer = null, content_vbox: VBoxContainer = null) -> U_SettingsTabBuilder:
 	if panel != null:
 		_theme_map.append({"control": panel, "role": &"main_panel"})
-	if content_vbox != null:
-		_theme_map.append({"control": content_vbox, "role": &"content_vbox"})
 	if padding != null:
 		_theme_map.append({"control": padding, "role": &"panel_padding"})
+	if content_vbox != null:
+		_theme_map.append({"control": content_vbox, "role": &"content_vbox"})
 	return self
 func bind_overlay_background(alpha: float, overlay_background: ColorRect = null) -> U_SettingsTabBuilder:
 	_theme_map.append({"control": overlay_background, "role": &"overlay_dim", "alpha": alpha})

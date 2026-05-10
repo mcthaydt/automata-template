@@ -8,13 +8,16 @@ extends GutTest
 const U_SceneRegistry = preload("res://scripts/core/scene_management/u_scene_registry.gd")
 const U_SceneRegistryLoader = preload("res://scripts/core/scene_management/helpers/u_scene_registry_loader.gd")
 
+var _saved_scenes: Dictionary = {}
+var _saved_loaded: bool = false
+
 func before_each() -> void:
-	# U_SceneRegistry is static, no setup needed
-	pass
+	_saved_scenes = U_SceneRegistry._scenes.duplicate(true)
+	_saved_loaded = U_SceneRegistry._resource_entries_loaded
 
 func after_each() -> void:
-	# U_SceneRegistry is static, no teardown needed
-	pass
+	U_SceneRegistry._scenes = _saved_scenes.duplicate(true)
+	U_SceneRegistry._resource_entries_loaded = _saved_loaded
 
 ## Test scene metadata structure
 func test_get_scene_returns_metadata() -> void:
@@ -160,6 +163,46 @@ func test_demo_room_scene_registered() -> void:
 
 	assert_false(scene_data.is_empty(), "demo_room should be registered")
 	assert_eq(scene_data["scene_type"], U_SceneRegistry.SceneType.GAMEPLAY, "demo_room should be GAMEPLAY type")
+
+func test_demo_room_can_be_registered_from_scene_conventions() -> void:
+	U_SceneRegistry._scenes.clear()
+	U_SceneRegistry._resource_entries_loaded = true
+
+	U_SceneRegistry._loader.load_conventional_scene_entries(
+		U_SceneRegistry._scenes,
+		Callable(U_SceneRegistry, "_register_scene")
+	)
+
+	var scene_data: Dictionary = U_SceneRegistry.get_scene(StringName("demo_room"))
+
+	assert_false(scene_data.is_empty(), "demo_room should be available from conventional scene paths")
+	assert_eq(scene_data.get("scene_id"), StringName("demo_room"), "Should infer scene_id from gameplay_demo_room")
+	assert_eq(scene_data.get("path"), "res://scenes/demo/gameplay/gameplay_demo_room.tscn", "Should register the conventional demo scene path")
+	assert_eq(scene_data.get("scene_type"), U_SceneRegistry.SceneType.GAMEPLAY, "Should infer GAMEPLAY type")
+	assert_eq(scene_data.get("default_transition"), "loading", "Should use convention scanner gameplay defaults")
+	assert_eq(scene_data.get("preload_priority"), 5, "Should use convention scanner gameplay preload priority")
+
+func test_explicit_scene_entry_wins_over_convention_entry_on_id_collision() -> void:
+	U_SceneRegistry._scenes.clear()
+	U_SceneRegistry._resource_entries_loaded = true
+	U_SceneRegistry._register_scene(
+		StringName("demo_room"),
+		"res://tests/scenes/test_scene1.tscn",
+		U_SceneRegistry.SceneType.MENU,
+		"instant",
+		10
+	)
+
+	U_SceneRegistry._loader.load_conventional_scene_entries(
+		U_SceneRegistry._scenes,
+		Callable(U_SceneRegistry, "_register_scene")
+	)
+	var scene_data: Dictionary = U_SceneRegistry.get_scene(StringName("demo_room"))
+
+	assert_eq(scene_data.get("path"), "res://tests/scenes/test_scene1.tscn", "Explicit entry path should be preserved")
+	assert_eq(scene_data.get("scene_type"), U_SceneRegistry.SceneType.MENU, "Explicit entry type should be preserved")
+	assert_eq(scene_data.get("default_transition"), "instant", "Explicit transition should be preserved")
+	assert_eq(scene_data.get("preload_priority"), 10, "Explicit preload priority should be preserved")
 
 ## Test settings_panel scene exists
 func test_settings_panel_scene_registered() -> void:

@@ -34,6 +34,7 @@ static func build_theme(
 	_apply_button_styles(theme, typed_config)
 	_apply_panel_styles(theme, typed_config)
 	_apply_bar_styles(theme, typed_config)
+	_apply_scrollbar_styles(theme, typed_config)
 	_apply_separator_style(theme, typed_config)
 	_apply_text_colors(theme, typed_config, palette, base_font_theme != null)
 	_apply_type_variations(theme, typed_config)
@@ -157,6 +158,44 @@ static func _apply_bar_styles(theme: Theme, config) -> void:
 	_set_stylebox(theme, &"grabber_area_highlight", &"VSlider", config.slider_fill)
 	_set_stylebox(theme, &"grabber", &"VSlider", config.slider_grabber)
 	_set_stylebox(theme, &"grabber_highlight", &"VSlider", config.slider_grabber_highlight)
+
+static func _apply_scrollbar_styles(theme: Theme, config) -> void:
+	var track := _create_scrollbar_track(config)
+	var grabber := _create_scrollbar_grabber(config.accent_primary, config.accent_hover)
+	var grabber_highlight := _create_scrollbar_grabber(config.accent_hover, config.accent_hover)
+	var grabber_pressed := _create_scrollbar_grabber(config.accent_pressed, config.accent_pressed)
+
+	for type_name: StringName in [&"VScrollBar", &"HScrollBar"]:
+		_set_stylebox(theme, &"scroll", type_name, track)
+		_set_stylebox(theme, &"scroll_focus", type_name, track)
+		_set_stylebox(theme, &"grabber", type_name, grabber)
+		_set_stylebox(theme, &"grabber_highlight", type_name, grabber_highlight)
+		_set_stylebox(theme, &"grabber_pressed", type_name, grabber_pressed)
+		theme.set_constant(&"scroll_width", type_name, 8)
+
+static func _create_scrollbar_track(config) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(config.bg_surface.r, config.bg_surface.g, config.bg_surface.b, 0.42)
+	style.border_color = Color(config.bg_panel_light.r, config.bg_panel_light.g, config.bg_panel_light.b, 0.35)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(6)
+	style.content_margin_left = 4.0
+	style.content_margin_right = 4.0
+	style.content_margin_top = 4.0
+	style.content_margin_bottom = 4.0
+	return style
+
+static func _create_scrollbar_grabber(bg_color: Color, border_color: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg_color
+	style.border_color = border_color
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(6)
+	style.content_margin_left = 4.0
+	style.content_margin_right = 4.0
+	style.content_margin_top = 4.0
+	style.content_margin_bottom = 4.0
+	return style
 
 static func _apply_separator_style(theme: Theme, config) -> void:
 	_set_stylebox(theme, &"separator", &"HSeparator", config.separator_style)

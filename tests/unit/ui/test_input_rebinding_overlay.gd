@@ -3,6 +3,7 @@ extends GutTest
 const OverlayScene := preload("res://scenes/core/ui/overlays/ui_input_rebinding_overlay.tscn")
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
 const RS_UI_THEME_CONFIG := preload("res://scripts/core/resources/ui/rs_ui_theme_config.gd")
+const BaseOverlay := preload("res://scripts/core/ui/base/base_overlay.gd")
 
 var _store: TestStateStore
 var _profile_manager: ProfileManagerStub
@@ -118,6 +119,28 @@ func test_input_rebinding_overlay_has_motion_and_theme_tokens_when_active_config
 			overlay_background.color.is_equal_approx(expected_dim),
 			"Overlay dim should use bg_base at 0.5 alpha"
 		)
+
+func test_input_rebinding_panel_host_caps_to_project_viewport_margins() -> void:
+	var config := RS_UI_THEME_CONFIG.new()
+	config.margin_outer = 20
+	config.ensure_runtime_defaults()
+	U_UI_THEME_BUILDER.active_config = config
+
+	var overlay: Node = OverlayScene.instantiate()
+	add_child_autofree(overlay)
+	await _pump()
+	var host := overlay.get_node_or_null("%MainPanelMotionHost") as Control
+	var panel := overlay.get_node_or_null("%MainPanel") as PanelContainer
+	var resolved_size: Vector2 = overlay._resolve_panel_host_size(Vector2(960.0, 600.0), config)
+
+	assert_eq(resolved_size, Vector2(860.0, 560.0), "Rebind panel should leave top and bottom viewport padding at the project viewport size")
+	assert_not_null(host, "MainPanelMotionHost should exist")
+	assert_not_null(panel, "MainPanel should exist")
+	if host != null:
+		assert_lte(host.custom_minimum_size.x, BaseOverlay.OVERLAY_PANEL_SIZE.x, "Rebind host should not exceed the shared overlay width")
+		assert_lte(host.custom_minimum_size.y, BaseOverlay.OVERLAY_PANEL_SIZE.y, "Rebind host should not exceed the shared overlay height")
+	if panel != null:
+		assert_eq(panel.custom_minimum_size, Vector2.ZERO, "Rebind panel minimum should not override the host cap")
 
 func test_keyboard_horizontal_navigation_cycles_row_buttons_and_preserves_row_highlight() -> void:
 	var overlay: Node = OverlayScene.instantiate()

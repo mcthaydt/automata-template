@@ -5,8 +5,12 @@ class_name UI_InputRebindingOverlay
 const I_INPUT_PROFILE_MANAGER := preload("res://scripts/core/interfaces/i_input_profile_manager.gd")
 const DEFAULT_REBIND_SETTINGS: Resource = preload("res://resources/core/input/rebind_settings/cfg_default_rebind_settings.tres")
 const U_LOCALIZATION_UTILS := preload("res://scripts/core/utils/localization/u_localization_utils.gd")
+const U_OVERLAY_CLOSE_NAVIGATION := preload("res://scripts/core/ui/helpers/u_overlay_close_navigation.gd")
+const U_OVERLAY_PANEL_SIZE_RESOLVER := preload("res://scripts/core/ui/helpers/u_overlay_panel_size_resolver.gd")
 const U_UI_MENU_BUILDER := preload("res://scripts/core/ui/helpers/u_ui_menu_builder.gd")
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
+const RS_UI_THEME_CONFIG := preload("res://scripts/core/resources/ui/rs_ui_theme_config.gd")
+const W_RIGHT_STICK_SCROLLER := preload("res://scripts/core/ui/widgets/w_right_stick_scroller.gd")
 
 const TITLE_KEY := &"menu.settings.rebind"
 const STATUS_DEFAULT_KEY := &"overlay.input_rebinding.status.default"
@@ -25,6 +29,7 @@ const ERROR_RESET_RESERVED_KEY := &"overlay.input_rebinding.error.reset_reserved
 const ERROR_RESET_ACTION_UNAVAILABLE_KEY := &"overlay.input_rebinding.error.reset_action_unavailable"
 
 @onready var _title_label: Label = %TitleLabel
+@onready var _main_panel_motion_host: Control = %MainPanelMotionHost
 @onready var _main_panel: PanelContainer = %MainPanel
 @onready var _main_panel_padding: MarginContainer = %MainPanelPadding
 @onready var _main_panel_content: VBoxContainer = %MainPanelContent
@@ -35,6 +40,7 @@ const ERROR_RESET_ACTION_UNAVAILABLE_KEY := &"overlay.input_rebinding.error.rese
 @onready var _close_button: Button = %CloseButton
 @onready var _reset_button: Button = %ResetButton
 @onready var _scroll: ScrollContainer = %Scroll
+
 @onready var _conflict_dialog: ConfirmationDialog = %ConflictDialog
 @onready var _reset_confirm_dialog: ConfirmationDialog = %ResetConfirmDialog
 @onready var _error_dialog: AcceptDialog = %ErrorDialog
@@ -64,10 +70,12 @@ var _bottom_button_index: int = 0
 @warning_ignore("unused_private_class_variable")
 var _row_button_index: int = 0
 var _builder: RefCounted = null
+var _right_stick_scroller: W_RIGHT_STICK_SCROLLER = null
 
 func _on_panel_ready() -> void:
 	_setup_builder()
 	_apply_theme_tokens()
+	_apply_panel_host_size()
 	_profile_manager = _resolve_input_profile_manager()
 	if _profile_manager != null and "store_ref" in _profile_manager:
 		var manager_store: Variant = _profile_manager.store_ref
@@ -91,6 +99,10 @@ func _on_panel_ready() -> void:
 	# Connect search box
 	if _search_box != null:
 		_search_box.text_changed.connect(_on_search_changed)
+
+	_right_stick_scroller = W_RIGHT_STICK_SCROLLER.new()
+	_right_stick_scroller.bind_scroll_container(_scroll, 800.0, BaseMenuScreen.STICK_DEADZONE)
+	add_child(_right_stick_scroller)
 
 	_connect_profile_signals()
 	_localize_static_labels()
@@ -201,26 +213,6 @@ func _ensure_store_reference() -> void:
 		return
 	_store = get_store()
 
-func _get_action_events(action: StringName) -> Array[InputEvent]:
-	return U_RebindCaptureHandler.get_action_events(self, action)
-
-func _build_final_target_events(existing: Array[InputEvent], event: InputEvent, replace_existing: bool) -> Array[InputEvent]:
-	return U_RebindCaptureHandler.build_final_target_events(existing, event, replace_existing)
-
-func _build_final_conflict_events(conflict_existing: Array[InputEvent], previous_target: Array[InputEvent], new_event: InputEvent, replace_existing: bool) -> Array[InputEvent]:
-	return U_RebindCaptureHandler.build_final_conflict_events(
-		conflict_existing,
-		previous_target,
-		new_event,
-		replace_existing
-	)
-
-func _append_unique_event(events: Array[InputEvent], candidate: InputEvent) -> void:
-	U_RebindCaptureHandler.append_unique_event(events, candidate)
-
-func _clone_event(source: InputEvent) -> InputEvent:
-	return U_RebindCaptureHandler.clone_event(source)
-
 func _get_active_device_category() -> String:
 	_ensure_store_reference()
 	if _store == null:
@@ -233,9 +225,6 @@ func _get_active_device_category() -> String:
 		_:
 			# Treat keyboard + mouse + touchscreen as keyboard-style bindings in this overlay.
 			return "keyboard"
-
-func _events_match(a: InputEvent, b: InputEvent) -> bool:
-	return U_RebindCaptureHandler.events_match(a, b)
 
 func _show_error(message: String) -> void:
 	_error_dialog.dialog_text = message
@@ -272,65 +261,10 @@ func _on_close_pressed() -> void:
 	if _is_capturing:
 		_cancel_capture()
 	_ensure_store_reference()
-	var store := _store
-	if store == null:
-		_transition_back_to_settings_scene()
-		return
-
-	var nav_slice: Dictionary = store.get_state().get("navigation", {})
-	var overlay_stack: Array = U_NavigationSelectors.get_overlay_stack(nav_slice)
-	var shell: StringName = U_NavigationSelectors.get_shell(nav_slice)
-
-	if not overlay_stack.is_empty():
-		store.dispatch(U_NavigationActions.close_top_overlay())
-	else:
-		# Main menu path: when opened from the main menu settings panel,
-		# navigation overlays are not used. Prefer a direct transition back
-		# to the standalone settings scene so the Scene Manager can keep
-		# navigation/base_scene_id in sync.
-		if shell == StringName("main_menu"):
-			_transition_back_to_settings_scene()
-		else:
-			store.dispatch(U_NavigationActions.set_shell(StringName("main_menu"), StringName("settings_panel")))
+	U_OVERLAY_CLOSE_NAVIGATION.close_or_return_to_settings(self, _store)
 
 func _on_back_pressed() -> void:
 	_on_close_pressed()
-
-func _transition_back_to_settings_scene() -> void:
-	var store := get_store()
-	if store == null:
-		return
-	store.dispatch(U_NavigationActions.navigate_to_ui_screen(StringName("settings_panel"), "fade", 2))
-
-func _process(delta: float) -> void:
-	super._process(delta)
-	_update_right_stick_scroll(delta)
-
-func _update_right_stick_scroll(delta: float) -> void:
-	if _scroll == null:
-		return
-
-	var axis_x: float = 0.0
-	var axis_y: float = 0.0
-	var found_device: bool = false
-
-	for device in Input.get_connected_joypads():
-		axis_x = Input.get_joy_axis(device, JOY_AXIS_RIGHT_X)
-		axis_y = Input.get_joy_axis(device, JOY_AXIS_RIGHT_Y)
-		if abs(axis_x) > BaseMenuScreen.STICK_DEADZONE or abs(axis_y) > BaseMenuScreen.STICK_DEADZONE:
-			found_device = true
-			break
-
-	if not found_device:
-		return
-
-	# Horizontal: axis_x > 0 scrolls right, < 0 scrolls left.
-	# Vertical: axis_y > 0 scrolls down, < 0 scrolls up.
-	var scroll_speed: float = 800.0
-	var new_h: float = float(_scroll.scroll_horizontal) + axis_x * scroll_speed * delta
-	var new_v: float = float(_scroll.scroll_vertical) + axis_y * scroll_speed * delta
-	_scroll.scroll_horizontal = int(new_h)
-	_scroll.scroll_vertical = int(new_v)
 
 func _on_reset_pressed() -> void:
 	U_UISoundPlayer.play_confirm()
@@ -376,12 +310,6 @@ func _format_binding_text(events: Array) -> String:
 			if reconstructed is InputEvent:
 				labels.append(U_InputRebindUtils.format_event_label(reconstructed as InputEvent))
 	return ", ".join(labels)
-
-func _format_binding_label(binding_text: String) -> String:
-	var trimmed := binding_text.strip_edges()
-	if trimmed.begins_with("Key "):
-		trimmed = trimmed.substr(4, trimmed.length() - 4)
-	return trimmed
 
 func _reset_single_action(action: StringName) -> void:
 	if _is_reserved(action):
@@ -434,19 +362,23 @@ func _localize_static_labels() -> void:
 func _apply_theme_tokens() -> void:
 	if _builder != null:
 		_builder.apply_theme_tokens(U_UI_THEME_BUILDER.active_config)
+	_apply_panel_host_size()
 
+func _apply_panel_host_size() -> void:
+	var config := _get_active_theme_config()
+	if _main_panel_motion_host != null:
+		_main_panel_motion_host.custom_minimum_size = _resolve_panel_host_size(_get_visible_viewport_size(), config)
+	if _main_panel != null:
+		_main_panel.custom_minimum_size = Vector2.ZERO
+
+func _resolve_panel_host_size(viewport_size: Vector2, config: RS_UI_THEME_CONFIG) -> Vector2:
+	return U_OVERLAY_PANEL_SIZE_RESOLVER.resolve(viewport_size, OVERLAY_PANEL_SIZE, config)
+func _get_visible_viewport_size() -> Vector2:
+	return U_OVERLAY_PANEL_SIZE_RESOLVER.get_visible_viewport_size(self, OVERLAY_PANEL_SIZE)
+func _get_active_theme_config() -> RS_UI_THEME_CONFIG:
+	return U_OVERLAY_PANEL_SIZE_RESOLVER.get_theme_config(U_UI_THEME_BUILDER.active_config)
 func _get_status_default_text() -> String:
 	return U_LOCALIZATION_UTILS.localize_with_fallback(STATUS_DEFAULT_KEY, "Select an action to rebind.")
-
-
-
-# Helper functions for UX improvements
-
-func _categorize_actions(actions: Array[StringName]) -> Dictionary:
-	return U_RebindActionListHelper._categorize_actions(actions)
-
-func _matches_search_filter(action: StringName) -> bool:
-	return U_RebindActionListHelper._matches_search_filter(action, _search_filter)
 
 func _on_search_changed(new_text: String) -> void:
 	_search_filter = new_text
@@ -465,107 +397,13 @@ func _on_close_button_focus_entered() -> void:
 	_sync_focus_tracking_from_control(_close_button)
 
 func _sync_focus_tracking_from_control(control: Control) -> void:
-	if control == null:
-		return
-
-	if control == _reset_button or control == _close_button:
-		_is_on_bottom_row = true
-		_bottom_button_index = 0 if control == _reset_button else 1
-		_refresh_action_row_highlight()
-		return
-
-	for index in range(_focusable_actions.size()):
-		var action: StringName = _focusable_actions[index]
-		var row_data: Dictionary = _action_rows.get(action, {}) as Dictionary
-		var row_container := row_data.get("container") as Control
-		var add_button := row_data.get("add_button") as Button
-		var replace_button := row_data.get("replace_button") as Button
-		var reset_button := row_data.get("reset_button") as Button
-
-		if control != row_container and control != add_button and control != replace_button and control != reset_button:
-			continue
-
-		_is_on_bottom_row = false
-		_focused_action_index = index
-
-		var row_buttons: Array[Button] = []
-		if add_button != null and not add_button.disabled:
-			row_buttons.append(add_button)
-		if replace_button != null and not replace_button.disabled:
-			row_buttons.append(replace_button)
-		if reset_button != null and not reset_button.disabled:
-			row_buttons.append(reset_button)
-		_row_button_index = row_buttons.find(control) if (control is Button and row_buttons.has(control)) else 0
-		_refresh_action_row_highlight()
-		return
+	U_RebindFocusNavigation.sync_focus_tracking_from_control(self, control)
 
 func _refresh_action_row_highlight() -> void:
-	for action_key in _action_rows.keys():
-		var data: Dictionary = _action_rows[action_key]
-		var row_container := data.get("container") as Control
-		if row_container == null:
-			continue
-		if _is_on_bottom_row:
-			row_container.modulate = Color(1, 1, 1, 0.7)
-		elif _focused_action_index >= 0 \
-				and _focused_action_index < _focusable_actions.size() \
-				and action_key == _focusable_actions[_focused_action_index]:
-			row_container.modulate = Color(1, 1, 1, 1)
-		else:
-			row_container.modulate = Color(1, 1, 1, 0.7)
+	U_RebindFocusNavigation.refresh_action_row_highlight(self)
 
 func _unhandled_key_input(event: InputEvent) -> void:
-	if _is_capturing:
-		return
-	if event == null:
-		return
-
-	var direction := _get_navigation_direction(event)
-	if direction.is_empty():
-		return
-
-	var viewport := get_viewport()
-	if viewport == null:
-		return
-	var focused := viewport.gui_get_focus_owner() as Control
-	if focused == null or not is_ancestor_of(focused):
-		return
-	if focused == _search_box:
-		# Let the search box keep arrow-key caret behavior.
-		return
-
-	if not _is_rebind_action_or_bottom_focus(focused):
-		return
-
-	_navigate(direction)
-	viewport.set_input_as_handled()
-
-func _get_navigation_direction(event: InputEvent) -> StringName:
-	if event.is_action_pressed(StringName("ui_left")):
-		return StringName("ui_left")
-	if event.is_action_pressed(StringName("ui_right")):
-		return StringName("ui_right")
-	if event.is_action_pressed(StringName("ui_up")):
-		return StringName("ui_up")
-	if event.is_action_pressed(StringName("ui_down")):
-		return StringName("ui_down")
-	return StringName()
-
-func _is_rebind_action_or_bottom_focus(focused: Control) -> bool:
-	if focused == _reset_button or focused == _close_button:
-		return true
-
-	for action in _focusable_actions:
-		if not _action_rows.has(action):
-			continue
-		var row_data: Dictionary = _action_rows[action]
-		var row_container := row_data.get("container") as Control
-		if row_container != null and row_container.is_ancestor_of(focused):
-			return true
-	return false
-
-func _add_spacer(height: int) -> void:
-	U_RebindActionListHelper._add_spacer(_action_list, height)
+	U_RebindFocusNavigation.handle_unhandled_key_input(self, event, _search_box)
 
 func _is_binding_custom(action: StringName) -> bool:
 	_ensure_store_reference()
@@ -595,12 +433,6 @@ func _get_first_focusable() -> Control:
 	return super._get_first_focusable()
 
 func _unhandled_input(event: InputEvent) -> void:
-	# Handle gamepad navigation separately so keyboard continues to use
-	# the existing _unhandled_key_input path.
-	if _is_capturing:
-		super._unhandled_input(event)
-		return
-
 	# Let default UI navigation (neighbors) handle D-pad and keyboard,
 	# so behavior matches other menus.
 	super._unhandled_input(event)
@@ -610,39 +442,12 @@ func _exit_tree() -> void:
 		U_InputCaptureGuard.end_capture()
 	_capture_guard_active = false
 
-func _focus_next_action() -> void:
-	U_RebindFocusNavigation.focus_next_action(self)
-
-func _focus_previous_action() -> void:
-	U_RebindFocusNavigation.focus_previous_action(self)
-
-func _apply_focus() -> void:
-	U_RebindFocusNavigation.apply_focus(self)
-
-func _cycle_row_button(direction: int) -> void:
-	U_RebindFocusNavigation.cycle_row_button(self, direction)
-
-func _ensure_row_visible(row: Control) -> void:
-	U_RebindFocusNavigation.ensure_row_visible(self, row)
-
 func _connect_row_focus_handlers(row: Control, add_button: Button, replace_button: Button, reset_button: Button) -> void:
 	U_RebindFocusNavigation.connect_row_focus_handlers(self, row, add_button, replace_button, reset_button)
 
-func _cycle_bottom_button(direction: int) -> void:
-	U_RebindFocusNavigation.cycle_bottom_button(self, direction)
-
-func _navigate(direction: StringName) -> void:
-	U_RebindFocusNavigation.navigate(self, direction)
-
 func _navigate_focus(direction: StringName) -> void:
-	# Defer to BaseMenuScreen neighbor-based navigation for analog sticks
-	# so movement feels consistent with other menus.
+	# Defer to BaseMenuScreen neighbor-based navigation for analog sticks.
 	super._navigate_focus(direction)
-
-## Returns device type category for an InputEvent.
-## Returns: "keyboard", "mouse", "gamepad", or "unknown"
-func _get_event_device_type(event: InputEvent) -> String:
-	return U_RebindActionListHelper.get_event_device_type(event)
 
 # Public interface methods (delegate to private implementations)
 # Phase 9: Duck Typing Cleanup - Added to implement I_RebindOverlay interface
@@ -669,7 +474,7 @@ func configure_focus_neighbors() -> void:
 	_configure_focus_neighbors()
 
 func apply_focus() -> void:
-	_apply_focus()
+	U_RebindFocusNavigation.apply_focus(self)
 
 func get_active_device_category() -> String:
 	return _get_active_device_category()

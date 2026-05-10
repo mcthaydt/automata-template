@@ -12,6 +12,7 @@ const RS_AUDIO_INITIAL_STATE := preload("res://scripts/core/resources/state/rs_a
 const U_SERVICE_LOCATOR := preload("res://scripts/core/u_service_locator.gd")
 const U_AUDIO_SERIALIZATION := preload("res://scripts/core/utils/u_audio_serialization.gd")
 const U_AUDIO_ACTIONS := preload("res://scripts/core/state/actions/u_audio_actions.gd")
+const U_APP_ACTIONS := preload("res://scripts/core/state/actions/u_app_actions.gd")
 const U_SCENE_ACTIONS := preload("res://scripts/core/state/actions/u_scene_actions.gd")
 const U_NAVIGATION_ACTIONS := preload("res://scripts/core/state/actions/u_navigation_actions.gd")
 const U_SFX_SPAWNER := preload("res://scripts/core/managers/helpers/u_sfx_spawner.gd")
@@ -157,6 +158,48 @@ func test_spatial_audio_setting_updates_sfx_spawner() -> void:
 	_store.dispatch(U_AUDIO_ACTIONS.set_spatial_audio_enabled(false))
 
 	assert_false(U_SFX_SPAWNER.is_spatial_audio_enabled(), "Spatial audio toggle should update U_SFXSpawner")
+
+func test_app_focus_loss_mutes_master_and_focus_gain_restores_previous_mute() -> void:
+	_store = _make_store_with_audio_slice()
+	add_child_autofree(_store)
+	await get_tree().process_frame
+
+	_manager = M_AUDIO_MANAGER.new()
+	add_child_autofree(_manager)
+	await get_tree().process_frame
+
+	var master_idx := AudioServer.get_bus_index("Master")
+	AudioServer.set_bus_mute(master_idx, false)
+
+	_store.dispatch(U_APP_ACTIONS.app_focus_lost())
+	await get_tree().process_frame
+	assert_true(AudioServer.is_bus_mute(master_idx), "Focus loss should mute master bus")
+
+	_store.dispatch(U_APP_ACTIONS.app_focus_gained())
+	await get_tree().process_frame
+	assert_false(AudioServer.is_bus_mute(master_idx), "Focus gain should restore previous master mute state")
+
+func test_app_focus_gain_preserves_user_master_mute_when_previously_muted() -> void:
+	_store = _make_store_with_audio_slice()
+	add_child_autofree(_store)
+	await get_tree().process_frame
+
+	_manager = M_AUDIO_MANAGER.new()
+	add_child_autofree(_manager)
+	await get_tree().process_frame
+
+	var master_idx := AudioServer.get_bus_index("Master")
+	_store.dispatch(U_AUDIO_ACTIONS.set_master_muted(true))
+	await get_tree().process_frame
+	assert_true(AudioServer.is_bus_mute(master_idx), "Precondition: user master mute should be applied")
+
+	_store.dispatch(U_APP_ACTIONS.app_focus_lost())
+	await get_tree().process_frame
+	assert_true(AudioServer.is_bus_mute(master_idx), "Focus loss should keep master muted")
+
+	_store.dispatch(U_APP_ACTIONS.app_focus_gained())
+	await get_tree().process_frame
+	assert_true(AudioServer.is_bus_mute(master_idx), "Focus gain should preserve prior user mute")
 
 func _make_store_with_audio_slice() -> Node:
 	var store := M_STATE_STORE.new()

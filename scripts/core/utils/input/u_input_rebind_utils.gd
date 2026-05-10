@@ -9,6 +9,12 @@ class ValidationResult extends RefCounted:
 static func format_event_label(event: InputEvent) -> String:
 	return U_InputEventDisplay.format_event_label(event)
 
+static func format_binding_label(binding_text: String) -> String:
+	var trimmed := binding_text.strip_edges()
+	if trimmed.begins_with("Key "):
+		trimmed = trimmed.substr(4, trimmed.length() - 4)
+	return trimmed
+
 static func validate_rebind(
 	action: StringName,
 	event: InputEvent,

@@ -14,6 +14,13 @@ static func get_window_mode(state: Dictionary) -> String:
 	var display := _get_display_slice(state)
 	return str(display.get("window_mode", "windowed"))
 
+static func get_mobile_window_mode(state: Dictionary) -> String:
+	var display := _get_display_slice(state)
+	var mode := str(display.get("mobile_window_mode", "fullscreen"))
+	if not ["windowed", "fullscreen", "borderless"].has(mode):
+		return "fullscreen"
+	return mode
+
 static func is_vsync_enabled(state: Dictionary) -> bool:
 	var display := _get_display_slice(state)
 	return bool(display.get("vsync_enabled", true))
@@ -80,7 +87,7 @@ static func get_scanline_count(state: Dictionary) -> float:
 
 static func get_mobile_resolution_scale(state: Dictionary) -> float:
 	var display := _get_display_slice(state)
-	return float(display.get("mobile_resolution_scale", 0.35))
+	return clampf(float(display.get("mobile_resolution_scale", 0.35)), 0.25, 1.0)
 
 ## Returns the entire display slice for hash-based change detection
 ## and settings duplication.

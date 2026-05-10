@@ -3,6 +3,7 @@ extends BaseTest
 const M_AUTOSAVE_SCHEDULER := preload("res://scripts/core/managers/helpers/u_autosave_scheduler.gd")
 const MOCK_STATE_STORE := preload("res://tests/mocks/mock_state_store.gd")
 const MOCK_SAVE_MANAGER := preload("res://tests/mocks/mock_save_manager.gd")
+const U_APP_ACTIONS := preload("res://scripts/core/state/actions/u_app_actions.gd")
 
 var _scheduler: Node
 var _mock_store: MockStateStore
@@ -125,6 +126,24 @@ func test_scene_transition_completed_triggers_autosave_request() -> void:
 
 	# Verify autosave was requested
 	assert_gt(_mock_save_manager.autosave_request_count, 0, "Scene transition completed should trigger autosave request")
+
+func test_background_action_triggers_critical_autosave_request() -> void:
+	_scheduler = M_AUTOSAVE_SCHEDULER.new()
+	add_child(_scheduler)
+	autofree(_scheduler)
+
+	_mock_store.set_slice(StringName("navigation"), {"shell": "gameplay", "overlay_stack": []})
+	_mock_store.set_slice(StringName("gameplay"), {"death_in_progress": false})
+	_mock_store.set_slice(StringName("scene"), {"is_transitioning": false})
+
+	await get_tree().process_frame
+
+	_mock_store.dispatch(U_APP_ACTIONS.app_backgrounded())
+
+	assert_eq(_mock_save_manager.autosave_request_count, 1,
+		"Background lifecycle action should write an autosave immediately")
+	assert_eq(_mock_save_manager.last_autosave_priority, Priority.CRITICAL,
+		"Background autosave should use critical priority")
 
 func test_pending_autosave_flushes_before_pause_menu() -> void:
 	_scheduler = M_AUTOSAVE_SCHEDULER.new()

@@ -46,13 +46,6 @@ func _on_panel_ready() -> void:
 	_button_list.apply_theme_tokens(U_UI_THEME_BUILDER.active_config)
 	_button_list.localize_labels()
 
-	# Hide quit on mobile; remove from focus chain
-	var quit_btn := _quit_button
-	if quit_btn != null:
-		quit_btn.visible = not U_MobilePlatformDetector.is_mobile()
-		if not quit_btn.visible:
-			quit_btn.focus_mode = Control.FOCUS_NONE
-
 	play_enter_animation()
 
 func _setup_menu_builder() -> void:

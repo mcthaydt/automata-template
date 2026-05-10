@@ -3,6 +3,8 @@ class_name UI_MobileControls
 
 const VIRTUAL_JOYSTICK_SCENE := preload("res://scenes/core/ui/widgets/ui_virtual_joystick.tscn")
 const VIRTUAL_BUTTON_SCENE := preload("res://scenes/core/ui/widgets/ui_virtual_button.tscn")
+const SAFE_AREA_INSETS := preload("res://scripts/core/utils/display/u_safe_area_insets.gd")
+const WINDOW_OPS := preload("res://scripts/core/utils/display/u_display_server_window_ops.gd")
 
 @export var force_enable: bool = false
 @export var emulate_mobile_override: bool = false
@@ -20,6 +22,9 @@ const SIGNPOST_MIN_DURATION_SEC: float = 0.05
 const SIGNPOST_VISIBILITY_BUFFER_SEC: float = 0.35
 const DOUBLE_TAP_MAX_INTERVAL_SEC: float = 0.30
 const DOUBLE_TAP_MAX_DISTANCE_PX: float = 72.0
+const PORTRAIT_EDGE_PADDING: float = 16.0
+const PORTRAIT_CONTROL_GAP: float = 8.0
+const PORTRAIT_BUTTON_GAP: float = 16.0
 var _state_store: I_StateStore = null
 var _unsubscribe: Callable = Callable()
 var _unsubscribe_signpost: Callable = Callable()
@@ -35,6 +40,7 @@ var _is_transitioning: bool = false
 var _has_overlay_active: bool = false
 var _is_edit_overlay_active: bool = false
 var _current_shell: StringName = StringName("")
+var _window_ops: I_WindowOps = WINDOW_OPS.new()
 var _current_scene_id: StringName = StringName("")
 var _fade_delay: float = 0.0
 var _fade_duration: float = 0.0
@@ -377,31 +383,133 @@ func _apply_positions(state: Dictionary, allow_overlay_override: bool = false) -
 
 	if _joystick != null:
 		_joystick.position = _get_joystick_position(state)
+		_joystick.set_meta("_mobile_controls_custom_position", _has_custom_joystick_position(state))
 
 	var button_positions := _get_button_positions(state)
+	var custom_button_positions := _get_custom_button_positions(state)
 	for button in _buttons:
 		if button == null:
 			continue
 		var action_key := String(button.action)
 		if button_positions.has(action_key):
 			button.position = button_positions[action_key]
+		button.set_meta(
+			"_mobile_controls_custom_position",
+			_has_custom_button_position(custom_button_positions, action_key)
+		)
 
 func _clamp_all_controls() -> void:
-	_clamp_control_to_viewport(_joystick)
-	for button in _buttons:
-		_clamp_control_to_viewport(button)
-
-func _clamp_control_to_viewport(control: Control) -> void:
-	if control == null or not is_instance_valid(control):
-		return
 	var viewport := get_viewport()
 	if viewport == null:
 		return
-	var viewport_size: Vector2 = viewport.get_visible_rect().size
+	_clamp_all_controls_to_rect(_get_safe_control_bounds(viewport.get_visible_rect()))
+
+func _get_safe_control_bounds(viewport_bounds: Rect2) -> Rect2:
+	if _window_ops == null or not _window_ops.is_available():
+		return viewport_bounds
+	var screen: int = _window_ops.window_get_current_screen()
+	var usable_rect_i: Rect2i = _window_ops.screen_get_usable_rect(screen)
+	var usable_rect := Rect2(Vector2(usable_rect_i.position), Vector2(usable_rect_i.size))
+	if usable_rect.size.x > viewport_bounds.size.x or usable_rect.size.y > viewport_bounds.size.y:
+		return viewport_bounds
+	var window_rect := Rect2(Vector2.ZERO, viewport_bounds.size)
+	var insets: Rect2 = SAFE_AREA_INSETS.compute(usable_rect, window_rect)
+	return SAFE_AREA_INSETS.apply_to_rect(viewport_bounds, insets)
+
+func _clamp_all_controls_to_rect(bounds: Rect2) -> void:
+	_apply_portrait_reachable_layout(bounds)
+	_clamp_control_to_rect(_joystick, bounds)
+	for button in _buttons:
+		_clamp_control_to_rect(button, bounds)
+
+func _apply_portrait_reachable_layout(bounds: Rect2) -> void:
+	if bounds.size.x <= 0.0 or bounds.size.y <= 0.0:
+		return
+	if bounds.size.x >= bounds.size.y:
+		return
+	if _joystick == null or not is_instance_valid(_joystick):
+		return
+
+	var default_buttons: Array[UI_VirtualButton] = []
+	for action_name in [StringName("pause"), StringName("interact"), StringName("jump"), StringName("sprint")]:
+		var button := _get_button_for_action(action_name)
+		if button != null and not _uses_custom_position(button):
+			default_buttons.append(button)
+
+	if default_buttons.is_empty():
+		return
+
+	var max_button_width: float = _get_max_button_width(default_buttons)
+	if not _uses_custom_position(_joystick):
+		var available_joystick_width: float = (
+			bounds.size.x -
+			max_button_width -
+			(PORTRAIT_EDGE_PADDING * 2.0) -
+			PORTRAIT_CONTROL_GAP
+		)
+		if available_joystick_width > 0.0 and _joystick.size.x > 0.0:
+			var max_joystick_scale: float = available_joystick_width / _joystick.size.x
+			_joystick.scale = Vector2.ONE * minf(_joystick.scale.x, max_joystick_scale)
+		var joystick_size: Vector2 = _joystick.size * _joystick.scale
+		var joystick_x: float = bounds.position.x + PORTRAIT_EDGE_PADDING
+		var joystick_y: float = bounds.end.y - joystick_size.y - PORTRAIT_EDGE_PADDING
+		_joystick.position = Vector2(joystick_x, joystick_y)
+
+	_fit_default_button_stack_to_portrait(default_buttons, bounds)
+	max_button_width = _get_max_button_width(default_buttons)
+	var total_button_height: float = 0.0
+	for button in default_buttons:
+		var button_size: Vector2 = button.size * button.scale
+		total_button_height += button_size.y
+	total_button_height += PORTRAIT_BUTTON_GAP * float(maxi(default_buttons.size() - 1, 0))
+
+	var button_x: float = bounds.end.x - max_button_width - PORTRAIT_EDGE_PADDING
+	var stack_y: float = bounds.end.y - total_button_height - PORTRAIT_EDGE_PADDING
+	stack_y = maxf(stack_y, bounds.position.y + PORTRAIT_EDGE_PADDING)
+	for button in default_buttons:
+		var placed_button_size: Vector2 = button.size * button.scale
+		button.position = Vector2(button_x, stack_y)
+		stack_y += placed_button_size.y + PORTRAIT_BUTTON_GAP
+
+func _get_max_button_width(buttons: Array[UI_VirtualButton]) -> float:
+	var max_width: float = 0.0
+	for button in buttons:
+		if button == null or not is_instance_valid(button):
+			continue
+		max_width = maxf(max_width, (button.size * button.scale).x)
+	return max_width
+
+func _fit_default_button_stack_to_portrait(buttons: Array[UI_VirtualButton], bounds: Rect2) -> void:
+	var total_height: float = 0.0
+	for button in buttons:
+		if button == null or not is_instance_valid(button):
+			continue
+		total_height += (button.size * button.scale).y
+	total_height += PORTRAIT_BUTTON_GAP * float(maxi(buttons.size() - 1, 0))
+	var available_height := maxf(bounds.size.y - (PORTRAIT_EDGE_PADDING * 2.0), 1.0)
+	if total_height <= available_height:
+		return
+	var scale_factor := available_height / total_height
+	for button in buttons:
+		if button == null or not is_instance_valid(button):
+			continue
+		button.scale = button.scale * scale_factor
+
+func _clamp_control_to_rect(control: Control, bounds: Rect2) -> void:
+	if control == null or not is_instance_valid(control):
+		return
 	var scaled_size: Vector2 = control.size * control.scale
 	var clamped_position := control.position
-	clamped_position.x = clampf(clamped_position.x, 0.0, max(viewport_size.x - scaled_size.x, 0.0))
-	clamped_position.y = clampf(clamped_position.y, 0.0, max(viewport_size.y - scaled_size.y, 0.0))
+	clamped_position.x = clampf(
+		clamped_position.x,
+		bounds.position.x,
+		max(bounds.end.x - scaled_size.x, bounds.position.x)
+	)
+	clamped_position.y = clampf(
+		clamped_position.y,
+		bounds.position.y,
+		max(bounds.end.y - scaled_size.y, bounds.position.y)
+	)
 	control.position = clamped_position
 
 func _get_joystick_position(state: Dictionary) -> Vector2:
@@ -410,12 +518,12 @@ func _get_joystick_position(state: Dictionary) -> Vector2:
 		return custom
 	return _profile_joystick_position
 
+func _has_custom_joystick_position(state: Dictionary) -> bool:
+	return U_InputSelectors.get_virtual_control_position(state, "virtual_joystick") is Vector2
+
 func _get_button_positions(state: Dictionary) -> Dictionary:
 	var result: Dictionary = {}
-	var custom_positions_variant: Variant = U_InputSelectors.get_touchscreen_settings(state).get("custom_button_positions", {})
-	var custom_positions: Dictionary = {}
-	if custom_positions_variant is Dictionary:
-		custom_positions = custom_positions_variant
+	var custom_positions := _get_custom_button_positions(state)
 	for action_key in _profile_button_positions.keys():
 		var custom_position: Variant = custom_positions.get(action_key)
 		if custom_position == null and custom_positions.has(StringName(action_key)):
@@ -425,6 +533,26 @@ func _get_button_positions(state: Dictionary) -> Dictionary:
 		else:
 			result[action_key] = _profile_button_positions.get(action_key, Vector2.ZERO)
 	return result
+
+func _get_custom_button_positions(state: Dictionary) -> Dictionary:
+	var custom_positions_variant: Variant = U_InputSelectors.get_touchscreen_settings(state).get("custom_button_positions", {})
+	if custom_positions_variant is Dictionary:
+		return custom_positions_variant
+	return {}
+
+func _has_custom_button_position(custom_positions: Dictionary, action_key: String) -> bool:
+	return custom_positions.has(action_key) or custom_positions.has(StringName(action_key))
+
+func _get_button_for_action(action_name: StringName) -> UI_VirtualButton:
+	for button in _buttons:
+		if button != null and is_instance_valid(button) and button.action == action_name:
+			return button
+	return null
+
+func _uses_custom_position(control: Control) -> bool:
+	if control == null or not is_instance_valid(control):
+		return false
+	return bool(control.get_meta("_mobile_controls_custom_position", false))
 
 func _update_navigation_state(state: Dictionary) -> void:
 	var nav_state: Dictionary = state.get("navigation", {})

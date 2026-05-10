@@ -4,7 +4,9 @@ class_name RS_RebindSettings
 ## Rebinding rules and validation toggles.
 
 @export var reserved_actions: Array[StringName] = [
-	StringName("pause")
+	StringName("pause"),
+	StringName("ui_focus_next"),
+	StringName("ui_focus_prev"),
 ]
 @export var allow_conflicts: bool = false
 @export var require_confirmation: bool = true

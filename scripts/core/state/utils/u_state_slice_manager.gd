@@ -10,6 +10,7 @@ class_name U_StateSliceManager
 const U_VFX_REDUCER := preload("res://scripts/core/state/reducers/u_vfx_reducer.gd")
 const U_VCAM_REDUCER := preload("res://scripts/core/state/reducers/u_vcam_reducer.gd")
 const U_AUDIO_REDUCER := preload("res://scripts/core/state/reducers/u_audio_reducer.gd")
+const U_APP_REDUCER := preload("res://scripts/core/state/reducers/u_app_reducer.gd")
 const U_DISPLAY_REDUCER := preload("res://scripts/core/state/reducers/u_display_reducer.gd")
 const U_LOCALIZATION_REDUCER := preload("res://scripts/core/state/reducers/u_localization_reducer.gd")
 const U_TIME_REDUCER := preload("res://scripts/core/state/reducers/u_time_reducer.gd")
@@ -176,6 +177,15 @@ static func initialize_slices(
 		audio_config.dependencies = []
 		audio_config.transient_fields = []
 		register_slice(slice_configs, state, audio_config)
+
+	# App lifecycle slice (transient runtime state)
+	var app_config := RS_StateSliceConfig.new(StringName("app"))
+	app_config.reducer = Callable(U_APP_REDUCER, "reduce")
+	app_config.initial_state = U_APP_REDUCER.get_default_app_state()
+	app_config.dependencies = []
+	app_config.transient_fields = []
+	app_config.is_transient = true
+	register_slice(slice_configs, state, app_config)
 
 	# Display slice
 	if display_initial_state != null:

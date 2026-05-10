@@ -190,8 +190,8 @@ func test_panel_spacing_tokens_apply_to_outer_panel_not_inner_vbox():
 
 	var panel := await _create_panel()
 	panel._apply_layout_tokens()
-	var shell := panel.get_node("CenterContainer/Panel") as PanelContainer
-	var vbox := panel.get_node("CenterContainer/Panel/VBox") as VBoxContainer
+	var shell := _get_panel_shell(panel)
+	var vbox := shell.get_node("VBox") as VBoxContainer
 	var stylebox := shell.get_theme_stylebox("panel") as StyleBoxFlat
 
 	assert_not_null(stylebox, "Settings panel should apply a panel shell stylebox")
@@ -199,6 +199,71 @@ func test_panel_spacing_tokens_apply_to_outer_panel_not_inner_vbox():
 	assert_eq(stylebox.content_margin_right, 18.0, "Panel shell should own right padding")
 	assert_false(vbox.has_theme_constant_override("margin_left"), "Inner VBox should not own outer panel margin")
 	assert_false(vbox.has_theme_constant_override("margin_top"), "Inner VBox should not own outer panel margin")
+	panel.queue_free()
+	U_UIThemeBuilder.active_config = null
+
+func test_content_scroll_is_inset_from_panel_edge():
+	var config := RS_UIThemeConfig.new()
+	config.margin_inner = 14
+	config.ensure_runtime_defaults()
+	U_UIThemeBuilder.active_config = config
+
+	var panel := await _create_panel()
+	panel._apply_layout_tokens()
+	var scroll_margin := panel.find_child("ContentScrollMargin", true, false) as MarginContainer
+	var content_margin := panel.find_child("ContentScrollContentMargin", true, false) as MarginContainer
+	var content_scroll := panel.find_child("ContentScroll", true, false) as ScrollContainer
+	var content_container := panel.find_child("ContentContainer", true, false) as VBoxContainer
+
+	assert_not_null(scroll_margin, "Settings content scroll should have a margin wrapper")
+	assert_not_null(content_margin, "Settings content should have internal spacing from the scrollbar")
+	assert_not_null(content_scroll, "Settings content should still use a ScrollContainer")
+	assert_eq(content_scroll.get_parent(), scroll_margin, "ContentScroll should sit inside the inset wrapper")
+	assert_eq(content_margin.get_parent(), content_scroll, "Content margin should be the direct scroll child")
+	assert_eq(content_container.get_parent(), content_margin, "Settings content should sit inside the scroll content margin")
+	assert_eq(scroll_margin.get_theme_constant("margin_right"), 14, "Scroll bar should be inset from the panel edge")
+	assert_eq(content_margin.get_theme_constant("margin_right"), 28, "Content should leave extra space before the scrollbar")
+	assert_eq(scroll_margin.get_theme_constant("margin_bottom"), 14, "Scroll content should leave breathing room above the button edge")
+	panel.queue_free()
+	U_UIThemeBuilder.active_config = null
+
+func test_settings_panel_vertical_minimum_keeps_viewport_padding_available():
+	var panel := await _create_panel()
+	var shell := _get_panel_shell(panel)
+
+	assert_lte(
+		shell.get_combined_minimum_size().y,
+		BaseOverlay.OVERLAY_PANEL_SIZE.y,
+		"Settings panel content should not force the modal taller than the shared overlay size"
+	)
+	panel.queue_free()
+
+func test_settings_panel_uses_fixed_viewport_host_for_panel_size():
+	var panel := await _create_panel()
+	var shell := _get_panel_shell(panel)
+	var viewport_host := panel.find_child("PanelViewport", true, false) as Control
+
+	assert_not_null(viewport_host, "Settings panel should wrap the shell in a fixed-size viewport host")
+	assert_eq(shell.get_parent(), viewport_host, "Settings panel shell should fill the viewport host")
+	assert_lte(viewport_host.custom_minimum_size.x, BaseOverlay.OVERLAY_PANEL_SIZE.x, "Panel viewport host should not exceed the shared overlay width")
+	assert_lte(viewport_host.custom_minimum_size.y, BaseOverlay.OVERLAY_PANEL_SIZE.y, "Panel viewport host should not exceed the shared overlay height")
+	assert_eq(shell.anchor_left, 0.0, "Panel shell should fill the viewport host from the left")
+	assert_eq(shell.anchor_top, 0.0, "Panel shell should fill the viewport host from the top")
+	assert_eq(shell.anchor_right, 1.0, "Panel shell should fill the viewport host to the right")
+	assert_eq(shell.anchor_bottom, 1.0, "Panel shell should fill the viewport host to the bottom")
+	assert_eq(shell.custom_minimum_size, Vector2.ZERO, "Panel shell minimum should not override the viewport host cap")
+	panel.queue_free()
+
+func test_settings_panel_caps_host_height_to_project_viewport_margins():
+	var config := RS_UIThemeConfig.new()
+	config.margin_outer = 20
+	config.ensure_runtime_defaults()
+	U_UIThemeBuilder.active_config = config
+
+	var panel := await _create_panel()
+	var resolved_size: Vector2 = panel._resolve_panel_viewport_size(Vector2(960.0, 600.0), config)
+
+	assert_eq(resolved_size, Vector2(860.0, 560.0), "Settings panel should leave top and bottom viewport padding at the project viewport size")
 	panel.queue_free()
 	U_UIThemeBuilder.active_config = null
 
@@ -269,7 +334,7 @@ func test_panel_surface_alpha_is_boosted_to_readable_floor():
 
 	var panel := await _create_panel()
 	panel._apply_layout_tokens()
-	var shell := panel.get_node("CenterContainer/Panel") as PanelContainer
+	var shell := _get_panel_shell(panel)
 	var stylebox := shell.get_theme_stylebox("panel") as StyleBoxFlat
 
 	assert_true(stylebox.bg_color.a >= 0.92, "Settings panel surface should be opaque enough for readable forms")
@@ -285,6 +350,9 @@ func _create_panel() -> UI_SettingsPanel:
 
 func _get_tab_button(panel: UI_SettingsPanel, tab_id: int) -> Button:
 	return panel.find_child("TabButton_%d" % tab_id, true, false) as Button
+
+func _get_panel_shell(panel: UI_SettingsPanel) -> PanelContainer:
+	return panel.find_child("Panel", true, false) as PanelContainer
 
 func _create_state_store() -> M_StateStore:
 	var store := M_StateStore.new()

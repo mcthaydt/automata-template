@@ -150,6 +150,29 @@ func test_builder_can_bind_existing_controls() -> void:
 	assert_eq(_dropdown_selected, 2, "Bound control should wire callback")
 
 
+func test_bind_panel_uses_menu_builder_argument_order() -> void:
+	var builder_script := _get_builder_script()
+	if builder_script == null:
+		return
+	var config := RS_UI_THEME_CONFIG.new()
+	config.margin_section = 23
+	config.separation_default = 13
+	U_UI_THEME_BUILDER.active_config = config
+	var tab := VBoxContainer.new()
+	var panel := PanelContainer.new()
+	var padding := MarginContainer.new()
+	var content := VBoxContainer.new()
+	add_child_autofree(tab)
+	tab.add_child(panel)
+	panel.add_child(padding)
+	padding.add_child(content)
+
+	builder_script.new(tab).bind_panel(panel, padding, content).build()
+
+	assert_eq(padding.get_theme_constant(&"margin_left"), 23, "Second bind_panel argument should be panel padding")
+	assert_eq(content.get_theme_constant(&"separation"), 13, "Third bind_panel argument should be content container")
+
+
 func _get_builder_script() -> GDScript:
 	if not ResourceLoader.exists(BUILDER_PATH):
 		assert_true(false, "U_SettingsTabBuilder script should exist")
@@ -460,7 +483,7 @@ func test_action_buttons_row_has_comfortable_spacing_and_padding_role():
 
 	var row := tab.find_child("ActionButtons", true, false) as HBoxContainer
 	assert_not_null(row, "Builder should create action row")
-	assert_eq(row.get_theme_constant("separation"), 12, "Action row should use default button spacing")
+	assert_eq(row.get_theme_constant("separation"), 8, "Action row should use compact button spacing")
 	assert_eq(row.size_flags_horizontal, Control.SIZE_SHRINK_END, "Action row should keep compact button group width at the right edge")
 
 

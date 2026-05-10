@@ -14,6 +14,7 @@ const WALL_MATERIAL := preload("res://assets/core/materials/mat_wall_cutout.tres
 const WALL_CUTOUT_CONFIG := preload("res://resources/core/base_settings/gameplay/cfg_wall_cutout_config_default.tres")
 const JUMP_PARTICLES_SETTINGS := preload("res://resources/core/base_settings/gameplay/cfg_jump_particles_default.tres")
 const LANDING_PARTICLES_SETTINGS := preload("res://resources/core/base_settings/gameplay/cfg_landing_particles_default.tres")
+const SCENE_DIRECTOR_BUILDER := preload("res://scripts/core/utils/scene_director/u_scene_director_builder.gd")
 
 const MARKER_SCENE_OBJECTS := preload("res://scripts/core/scene_structure/marker_scene_objects_group.gd")
 const MARKER_ENVIRONMENT := preload("res://scripts/core/scene_structure/marker_environment_group.gd")
@@ -97,6 +98,26 @@ func build_managers() -> U_TemplateBaseSceneBuilder:
 	const ECS_MANAGER_SCRIPT := preload("res://scripts/core/managers/m_ecs_manager.gd")
 	ecs_manager.set_script(ECS_MANAGER_SCRIPT)
 	group.add_child(ecs_manager)
+
+	var sd_builder := SCENE_DIRECTOR_BUILDER.new()
+	sd_builder.create_root()
+	var sd_node: Node = sd_builder.build()
+	group.add_child(sd_node)
+	sd_node.set_owner(_root)
+	return self
+
+
+func add_scene_director_directive(directive: Resource) -> U_TemplateBaseSceneBuilder:
+	if _root == null:
+		push_error("U_TemplateBaseSceneBuilder: add_scene_director_directive() called before create_root()")
+		return self
+	var sd_node: Node = _root.get_node_or_null("Managers/M_SceneDirectorManager")
+	if sd_node == null:
+		push_error("U_TemplateBaseSceneBuilder: add_scene_director_directive() requires build_managers() first")
+		return self
+	var current: Array[Resource] = sd_node.directives
+	current.append(directive)
+	sd_node.directives = current
 	return self
 
 func build_entities() -> U_TemplateBaseSceneBuilder:

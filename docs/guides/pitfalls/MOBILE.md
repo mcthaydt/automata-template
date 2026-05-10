@@ -2,6 +2,34 @@
 
 Mobile and touchscreen-specific runtime gotchas.
 
+Manual release gates live in `docs/systems/mobile_experience/mobile-qa-checklist.md`.
+
+---
+
+## App Lifecycle And Back Gesture
+
+- **Do not subscribe to OS notifications in individual managers**: `U_AppLifecycleObserver` is the central lifecycle bridge. It translates Godot notifications into Redux actions and synthetic input only; managers should react to state/selectors or normal input flow.
+
+  **Lifecycle actions emitted by the observer**:
+  - `ACTION_APP_BACKGROUNDED` from `NOTIFICATION_APPLICATION_PAUSED`
+  - `ACTION_APP_FOREGROUNDED` from `NOTIFICATION_APPLICATION_RESUMED`
+  - `ACTION_APP_FOCUS_LOST` from `NOTIFICATION_WM_WINDOW_FOCUS_OUT`
+  - `ACTION_APP_FOCUS_GAINED` from `NOTIFICATION_WM_WINDOW_FOCUS_IN`
+
+  **Why this matters**: Scattering OS notification handlers across audio, save, UI, and input code creates ordering bugs and duplicate side effects. Keep the observer thin, then let subscribers handle side effects through the existing Redux contracts.
+
+- **Android back gesture maps to `ui_cancel` only**: `NOTIFICATION_WM_GO_BACK_REQUEST` becomes a synthetic `ui_cancel` event. `U_AppLifecycleObserver` must not open pause menus, pop overlays, or call scene managers directly.
+
+  **Current routing contract**:
+  - Gameplay shell with overlays: `ui_cancel` closes the top overlay.
+  - Gameplay shell without overlays: `ui_cancel` is a no-op; `ui_pause` opens the pause menu.
+  - Main-menu shell: `ui_cancel` routes back toward the root panel when the current base scene is the root menu.
+  - Endgame shell: `ui_cancel` follows the screen-specific retry, credits, or return-to-menu behavior.
+
+- **Backgrounding and focus are separate**: App pause/resume controls `is_backgrounded`; window focus in/out controls `is_focused`. Do not collapse them into one flag. Audio reacts to focus changes, while suspend/autosave behavior reacts to backgrounding.
+
+- **Safe area math stays pure**: `U_SafeAreaInsets` accepts caller-provided usable/window rects. It must not call `DisplayServer` directly. Runtime callers such as `UI_MobileControls` source live rects through `U_DisplayServerWindowOps`, then pass those rects into the helper.
+
 ---
 
 ## Mobile/Touchscreen Pitfalls
@@ -52,3 +80,27 @@ Mobile and touchscreen-specific runtime gotchas.
   4. Verify touchscreen controls continue working without gamepad input
 
   **Real example**: `scripts/state/reducers/u_gameplay_reducer.gd:199-207` preserves device state during `ACTION_RESET_PROGRESS` to fix touchscreen controls becoming unresponsive after victory screen reset.
+
+---
+
+## Screen Orientation
+
+- **Mobile fullscreen must explicitly set screen orientation**: When `M_DisplayManager` forces mobile into fullscreen mode, `U_DisplayWindowApplier` must call `screen_set_orientation(SCREEN_ORIENTATION_SENSOR)` to allow free rotation across all four orientations. Without this call, Godot's fullscreen mode on Android/iOS locks to the device's natural orientation, ignoring the `project.godot` `window/handheld/orientation` setting.
+
+  **Why this happens**: `DisplayServer.window_set_mode(WINDOW_MODE_FULLSCREEN)` on mobile overrides the project orientation setting. The project-level `sensor` acts as a default, but runtime fullscreen requires an explicit `screen_set_orientation` call to restore sensor-driven rotation.
+
+  **Current routing contract**:
+  - Mobile (`U_MobilePlatformDetector.is_mobile() == true`): `apply_settings()` calls `_set_orientation(SCREEN_ORIENTATION_SENSOR)` before setting window mode. This allows all four orientations (landscape, reverse-landscape, portrait, reverse-portrait) to auto-rotate with the device.
+  - Desktop: No orientation override is applied (OS manages window orientation).
+  - Orientation call goes through `I_WindowOps.screen_set_orientation()` for testability.
+
+  **Compat note**: `SCREEN_ORIENTATION_SENSOR` (value `6`) and `SCREEN_OF_MAIN_WINDOW` (value `-1`) are defined as compat constants in `U_DisplayWindowApplier` and `U_DisplayServerWindowOps` because Godot 4.6.1 (headless test runner) does not expose the `ScreenOrientation` enum. The constant values map to `DisplayServer.SCREEN_SENSOR` and `DisplayServer.SCREEN_OF_MAIN_WINDOW` in Godot 4.7. `U_DisplayServerWindowOps.screen_set_orientation()` guards with `DisplayServer.has_method("screen_set_orientation")` so it no-ops on older runtimes.
+
+  **Important**: The Godot 4.7 `ScreenOrientation` enum values differ from what you might expect. Always verify against `ClassDB.class_get_integer_constant_list("DisplayServer")` rather than guessing:
+  - `SCREEN_LANDSCAPE = 0` (locked landscape)
+  - `SCREEN_PORTRAIT = 1` (locked portrait)
+  - `SCREEN_REVERSE_LANDSCAPE = 2` (locked reverse-landscape)
+  - `SCREEN_REVERSE_PORTRAIT = 3` (locked reverse-portrait — this is NOT sensor landscape!)
+  - `SCREEN_SENSOR_LANDSCAPE = 4` (landscape + reverse-landscape, auto-rotate between them)
+  - `SCREEN_SENSOR_PORTRAIT = 5` (portrait + reverse-portrait)
+  - `SCREEN_SENSOR = 6` (all four orientations)

@@ -7,6 +7,8 @@ const MOCK_STATE_STORE := preload("res://tests/mocks/mock_state_store.gd")
 const MOCK_WINDOW_OPS := preload("res://tests/mocks/mock_window_ops.gd")
 const I_DISPLAY_MANAGER := preload("res://scripts/core/interfaces/i_display_manager.gd")
 const U_SERVICE_LOCATOR := preload("res://scripts/core/u_service_locator.gd")
+const U_DISPLAY_SELECTORS := preload("res://scripts/core/state/selectors/u_display_selectors.gd")
+const RS_DISPLAY_INITIAL_STATE := preload("res://scripts/core/resources/state/rs_display_initial_state.gd")
 const RS_UI_COLOR_PALETTE := preload("res://scripts/core/resources/ui/rs_ui_color_palette.gd")
 const U_DISPLAY_UI_THEME_APPLIER := preload("res://scripts/core/managers/helpers/display/u_display_ui_theme_applier.gd")
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
@@ -32,6 +34,35 @@ func test_manager_extends_interface() -> void:
 	add_child_autofree(_manager)
 
 	assert_true(_manager is I_DISPLAY_MANAGER, "M_DisplayManager should extend I_DisplayManager")
+
+func test_initial_state_keeps_desktop_windowed_and_defaults_mobile_to_fullscreen() -> void:
+	var defaults := RS_DISPLAY_INITIAL_STATE.new()
+	var display_state := defaults.to_dictionary()
+
+	assert_eq(display_state.get("window_mode"), "windowed", "Desktop default should remain windowed")
+	assert_eq(display_state.get("mobile_window_mode"), "fullscreen", "Mobile default should boot fullscreen")
+
+func test_mobile_resolution_scale_selector_defaults_to_mobile_baseline() -> void:
+	assert_almost_eq(
+		U_DISPLAY_SELECTORS.get_mobile_resolution_scale({}),
+		0.35,
+		0.001,
+		"Missing mobile_resolution_scale should use mobile baseline"
+	)
+
+func test_mobile_resolution_scale_selector_clamps_to_safe_range() -> void:
+	assert_almost_eq(
+		U_DISPLAY_SELECTORS.get_mobile_resolution_scale({"display": {"mobile_resolution_scale": 0.05}}),
+		0.25,
+		0.001,
+		"Selector should clamp mobile resolution scale to minimum"
+	)
+	assert_almost_eq(
+		U_DISPLAY_SELECTORS.get_mobile_resolution_scale({"display": {"mobile_resolution_scale": 1.25}}),
+		1.0,
+		0.001,
+		"Selector should clamp mobile resolution scale to maximum"
+	)
 
 func test_manager_registers_with_service_locator() -> void:
 	_manager = M_DISPLAY_MANAGER.new()

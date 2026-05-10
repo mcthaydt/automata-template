@@ -27,6 +27,7 @@ class_name RS_DisplayInitialState
 @export var color_blind_shader_enabled: bool = false
 
 @export_group("Mobile")
+@export_enum("windowed", "fullscreen", "borderless") var mobile_window_mode: String = "fullscreen"
 @export_range(0.25, 1.0, 0.05) var mobile_resolution_scale: float = 0.35
 
 ## Convert resource to Dictionary for state store.
@@ -52,6 +53,7 @@ func to_dictionary() -> Dictionary:
 		"color_blind_mode": color_blind_mode,
 		"high_contrast_enabled": high_contrast_enabled,
 		"color_blind_shader_enabled": color_blind_shader_enabled,
+		"mobile_window_mode": mobile_window_mode,
 		"mobile_resolution_scale": mobile_resolution_scale,
 	}
 

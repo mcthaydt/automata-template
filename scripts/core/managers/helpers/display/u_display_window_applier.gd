@@ -3,9 +3,16 @@ class_name U_DisplayWindowApplier
 
 ## Applies window mode/size/vsync settings with platform guards.
 
+## Value matches DisplayServer.SCREEN_SENSOR (Godot 4.7+).
+## Allows all four orientations (landscape, reverse-landscape, portrait, reverse-portrait).
+## Defined as a compat constant because the headless test runner (Godot 4.6)
+## does not expose ScreenOrientation enum values in its DisplayServer class.
+const SCREEN_ORIENTATION_SENSOR: int = 6
+
 const U_DISPLAY_OPTION_CATALOG := preload("res://scripts/core/utils/display/u_display_option_catalog.gd")
 const U_DISPLAY_SELECTORS := preload("res://scripts/core/state/selectors/u_display_selectors.gd")
 const U_DISPLAY_SERVER_WINDOW_OPS := preload("res://scripts/core/utils/display/u_display_server_window_ops.gd")
+const U_MOBILE_PLATFORM_DETECTOR := preload("res://scripts/core/utils/display/u_mobile_platform_detector.gd")
 
 var _owner: Node = null
 var _window_ops: I_WindowOps = null
@@ -23,10 +30,20 @@ func apply_settings(display_settings: Dictionary) -> void:
 	var window_preset := U_DISPLAY_SELECTORS.get_window_size_preset(state)
 	var window_mode := U_DISPLAY_SELECTORS.get_window_mode(state)
 	var vsync_enabled := U_DISPLAY_SELECTORS.is_vsync_enabled(state)
+	var is_mobile := U_MOBILE_PLATFORM_DETECTOR.is_mobile()
+
+	if is_mobile:
+		window_mode = U_DISPLAY_SELECTORS.get_mobile_window_mode(state)
+		U_MOBILE_PLATFORM_DETECTOR.set_scale_override(
+			U_DISPLAY_SELECTORS.get_mobile_resolution_scale(state)
+		)
+		_set_orientation(SCREEN_ORIENTATION_SENSOR)
+	else:
+		U_MOBILE_PLATFORM_DETECTOR.set_scale_override(-1.0)
 
 	_last_window_size_preset = window_preset
 	set_window_mode(window_mode)
-	if window_mode == "windowed":
+	if window_mode == "windowed" and not is_mobile:
 		apply_window_size_preset(window_preset)
 	set_vsync_enabled(vsync_enabled)
 
@@ -204,6 +221,11 @@ func _get_window_ops() -> I_WindowOps:
 		return _window_ops
 	_window_ops = U_DISPLAY_SERVER_WINDOW_OPS.new()
 	return _window_ops
+
+func _set_orientation(orientation: int) -> void:
+	var ops := _get_window_ops()
+	if ops != null:
+		ops.screen_set_orientation(orientation)
 
 func _should_defer() -> bool:
 	return _owner != null and _owner.is_inside_tree()

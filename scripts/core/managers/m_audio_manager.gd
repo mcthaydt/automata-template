@@ -9,6 +9,7 @@ class_name M_AudioManager
 
 const U_SERVICE_LOCATOR := preload("res://scripts/core/u_service_locator.gd")
 const U_AUDIO_SELECTORS := preload("res://scripts/core/state/selectors/u_audio_selectors.gd")
+const U_APP_ACTIONS := preload("res://scripts/core/state/actions/u_app_actions.gd")
 const U_SCENE_SELECTORS := preload("res://scripts/core/state/selectors/u_scene_selectors.gd")
 const U_SCENE_ACTIONS := preload("res://scripts/core/state/actions/u_scene_actions.gd")
 const U_NAVIGATION_ACTIONS := preload("res://scripts/core/state/actions/u_navigation_actions.gd")
@@ -34,6 +35,8 @@ var _last_audio_hash: int = 0
 var _music_bus_name: StringName = StringName("Music")
 var _ambient_bus_name: StringName = StringName("Ambient")
 var _ui_bus_name: StringName = StringName("UI")
+var _app_focus_muted_master: bool = false
+var _pre_focus_master_muted: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -248,6 +251,32 @@ func _on_state_changed(action: Dictionary, state: Dictionary) -> void:
 			_last_audio_hash = audio_hash
 
 	_handle_music_actions(action)
+	_handle_app_lifecycle_actions(action)
+
+func _handle_app_lifecycle_actions(action: Dictionary) -> void:
+	if action == null or action.is_empty():
+		return
+
+	var action_type: StringName = action.get("type", StringName(""))
+	match action_type:
+		U_APP_ACTIONS.ACTION_APP_FOCUS_LOST:
+			_apply_focus_mute()
+		U_APP_ACTIONS.ACTION_APP_FOCUS_GAINED:
+			_restore_focus_mute()
+
+func _apply_focus_mute() -> void:
+	var master_idx: int = U_AUDIO_BUS_CONSTANTS.get_bus_index_safe(StringName("Master"), false)
+	if not _app_focus_muted_master:
+		_pre_focus_master_muted = AudioServer.is_bus_mute(master_idx)
+	_app_focus_muted_master = true
+	AudioServer.set_bus_mute(master_idx, true)
+
+func _restore_focus_mute() -> void:
+	if not _app_focus_muted_master:
+		return
+	var master_idx: int = U_AUDIO_BUS_CONSTANTS.get_bus_index_safe(StringName("Master"), false)
+	AudioServer.set_bus_mute(master_idx, _pre_focus_master_muted)
+	_app_focus_muted_master = false
 
 func _handle_music_actions(action: Dictionary) -> void:
 	if action == null or action.is_empty():
@@ -327,6 +356,8 @@ func _apply_audio_settings(state: Dictionary) -> void:
 
 	AudioServer.set_bus_volume_db(master_idx, _linear_to_db(U_AUDIO_SELECTORS.get_master_volume(state)))
 	AudioServer.set_bus_mute(master_idx, U_AUDIO_SELECTORS.is_master_muted(state))
+	if _app_focus_muted_master:
+		AudioServer.set_bus_mute(master_idx, true)
 
 	AudioServer.set_bus_volume_db(music_idx, _linear_to_db(U_AUDIO_SELECTORS.get_music_volume(state)))
 	AudioServer.set_bus_mute(music_idx, U_AUDIO_SELECTORS.is_music_muted(state))

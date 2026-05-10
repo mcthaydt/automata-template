@@ -20,4 +20,6 @@ static func build() -> RS_InputProfile:
 	builder.bind_key("ui_down", KEY_S)
 	builder.bind_key("ui_left", KEY_A)
 	builder.bind_key("ui_right", KEY_D)
+	builder.bind_key("ui_focus_next", KEY_TAB)
+	builder.bind_key("ui_focus_prev", KEY_TAB, KEY_NONE, true)
 	return builder.build()

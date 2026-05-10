@@ -140,6 +140,61 @@ func test_default_keyboard_profiles_use_physical_keycode() -> void:
 						fail_test("Profile %s action '%s' has keycode=%d but physical_keycode=0 (should use physical_keycode)" %
 							[profile_script.resource_path, action_name, key_event.keycode])
 
+func test_keyboard_profiles_bind_ui_focus_actions() -> void:
+	var profiles := [
+		DefaultKeyboardProfile,
+		AlternateKeyboardProfile,
+		AccessibilityKeyboardProfile
+	]
+	for profile_script in profiles:
+		var instance: Object = profile_script.new()
+		var profile: RS_InputProfile = instance.build()
+		assert_not_null(profile, "Profile built from script")
+		var next_events := profile.get_events_for_action(StringName("ui_focus_next"))
+		assert_true(next_events.size() > 0, "Profile %s should bind ui_focus_next" % profile_script.resource_path)
+		var prev_events := profile.get_events_for_action(StringName("ui_focus_prev"))
+		assert_true(prev_events.size() > 0, "Profile %s should bind ui_focus_prev" % profile_script.resource_path)
+
+func test_default_keyboard_profile_binds_tab_to_ui_focus_next() -> void:
+	var instance: Object = DefaultKeyboardProfile.new()
+	var profile: RS_InputProfile = instance.build()
+	assert_not_null(profile, "Profile built from script")
+	var events := profile.get_events_for_action(StringName("ui_focus_next"))
+	var found_tab := false
+	for event in events:
+		if event is InputEventKey and (event as InputEventKey).physical_keycode == KEY_TAB:
+			found_tab = true
+			break
+	assert_true(found_tab, "Default keyboard profile should bind Tab to ui_focus_next")
+
+func test_default_keyboard_profile_binds_shift_tab_to_ui_focus_prev() -> void:
+	var instance: Object = DefaultKeyboardProfile.new()
+	var profile: RS_InputProfile = instance.build()
+	assert_not_null(profile, "Profile built from script")
+	var events := profile.get_events_for_action(StringName("ui_focus_prev"))
+	var found_shift_tab := false
+	for event in events:
+		if event is InputEventKey:
+			var key_event := event as InputEventKey
+			if key_event.physical_keycode == KEY_TAB and key_event.shift_pressed:
+				found_shift_tab = true
+				break
+	assert_true(found_shift_tab, "Default keyboard profile should bind Shift+Tab to ui_focus_prev")
+
+func test_gamepad_profiles_bind_ui_focus_actions() -> void:
+	var profiles := [
+		DefaultGamepadProfile,
+		AccessibilityGamepadProfile
+	]
+	for profile_script in profiles:
+		var instance: Object = profile_script.new()
+		var profile: RS_InputProfile = instance.build()
+		assert_not_null(profile, "Profile built from script")
+		var next_events := profile.get_events_for_action(StringName("ui_focus_next"))
+		assert_true(next_events.size() > 0, "Profile %s should bind ui_focus_next" % profile_script.resource_path)
+		var prev_events := profile.get_events_for_action(StringName("ui_focus_prev"))
+		assert_true(prev_events.size() > 0, "Profile %s should bind ui_focus_prev" % profile_script.resource_path)
+
 func test_default_gamepad_profiles_bind_camera_center_to_right_stick() -> void:
 	var profiles := [
 		DefaultGamepadProfile,

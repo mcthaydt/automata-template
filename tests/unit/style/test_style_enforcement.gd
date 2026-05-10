@@ -97,6 +97,10 @@ const U_SETTINGS_TAB_BUILDER_PATH := "res://scripts/core/ui/helpers/u_settings_t
 const U_SETTINGS_TAB_BUILDER_MAX_LINES := 300
 const U_UI_MENU_BUILDER_PATH := "res://scripts/core/ui/helpers/u_ui_menu_builder.gd"
 const U_UI_MENU_BUILDER_MAX_LINES := 200
+const UI_INPUT_REBINDING_OVERLAY_PATH := "res://scripts/core/ui/overlays/ui_input_rebinding_overlay.gd"
+const UI_INPUT_REBINDING_OVERLAY_MAX_LINES := 500
+const UI_INPUT_PROFILE_SELECTOR_PATH := "res://scripts/core/ui/overlays/ui_input_profile_selector.gd"
+const UI_INPUT_PROFILE_SELECTOR_MAX_LINES := 420
 const U_UI_SETTINGS_CATALOG_PATH := "res://scripts/core/ui/helpers/u_ui_settings_catalog.gd"
 const U_UI_SETTINGS_CATALOG_MAX_LINES := 180
 const WIDGET_DIR := "res://scripts/core/ui/widgets"
@@ -139,6 +143,7 @@ const SCRIPT_PREFIX_RULES := {
 	"res://scripts/core/interfaces": ["i_"],
 	"res://scripts/core/managers": ["m_"],
 	"res://scripts/demo/gameplay": ["inter_", "s_"],
+	"res://scripts/demo/helpers": ["br_", "u_"], # br_ for demo directive builders, u_ for demo utilities
 	"res://scripts/core/utils": ["u_"],
 	"res://scripts/core/input": ["u_", "i_"],
 	"res://scripts/core/input/sources": [""], # Wildcard: validated by suffix rule (see test_input_source_scripts_follow_suffix_rule)
@@ -168,6 +173,7 @@ const SCRIPT_PREFIX_RULES := {
 	"res://scripts/core/resources/qb/conditions": ["rs_"], # QB condition resources
 	"res://scripts/core/resources/qb/effects": ["rs_"], # QB effect resources
 	"res://scripts/core/qb/rules": ["br_"], # QB rule builder scripts
+	"res://scripts/core/utils/scene_director": ["u_"], # SD utilities only — directive builders belong in scripts/demo/helpers
 	"res://scripts/core/resources/scene_director": ["rs_"], # Scene director beat/objective/directive resources
 	"res://scripts/core/resources/ecs": ["rs_"], # ECS component settings resources
 	"res://scripts/core/resources/display": ["rs_"], # Display preset resources
@@ -741,6 +747,23 @@ func test_u_ui_menu_builder_stays_under_two_hundred_lines() -> void:
 		message += ":\n" + "\n".join(violations)
 	assert_eq(violations.size(), 0, message)
 
+func test_input_builder_migration_overlays_stay_under_line_caps() -> void:
+	var violations: Array[String] = []
+	_collect_gd_single_file_line_limit_violation(
+		UI_INPUT_REBINDING_OVERLAY_PATH,
+		UI_INPUT_REBINDING_OVERLAY_MAX_LINES,
+		violations
+	)
+	_collect_gd_single_file_line_limit_violation(
+		UI_INPUT_PROFILE_SELECTOR_PATH,
+		UI_INPUT_PROFILE_SELECTOR_MAX_LINES,
+		violations
+	)
+	var message := "Input builder migration overlays must stay under their Phase 9/10 line caps"
+	if violations.size() > 0:
+		message += ":\n" + "\n".join(violations)
+	assert_eq(violations.size(), 0, message)
+
 func test_u_ui_settings_catalog_stays_under_one_hundred_eighty_lines() -> void:
 	var violations: Array[String] = []
 	_collect_gd_single_file_line_limit_violation(U_UI_SETTINGS_CATALOG_PATH, U_UI_SETTINGS_CATALOG_MAX_LINES, violations)
@@ -764,6 +787,16 @@ func test_ecs_system_filenames_do_not_include_demo_marker() -> void:
 	var message := "ECS system scripts under scripts/core/ecs/systems must not include '_demo_' in filename"
 	if violations.size() > 0:
 		message += ":\n" + "\n".join(violations)
+	assert_eq(violations.size(), 0, message)
+
+func test_core_scripts_have_no_demo_content() -> void:
+	var violations: Array[String] = []
+	_collect_gd_filename_substring_violations("res://scripts/core", "demo", violations)
+
+	var message := "Demo-specific scripts must not live under scripts/core — move them to scripts/demo"
+	if violations.size() > 0:
+		message += ":\n" + "\n".join(violations)
+		message += "\nSee STYLE_GUIDE.md: scripts/demo is the home for all demo-scoped content."
 	assert_eq(violations.size(), 0, message)
 
 func test_save_manager_has_no_bare_print_calls() -> void:
