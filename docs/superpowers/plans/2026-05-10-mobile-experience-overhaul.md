@@ -27,6 +27,8 @@ Recent commits:
 - `9e93c32d docs: document convention-based scene registration`
 - `4569c63a feat: add mobile presentation baseline`
 - `3eef7ab8 feat: make mobile UI portrait-compatible`
+- `6ca1528e fix: harden mobile touch input flow`
+- `ed80c676 feat: add app lifecycle redux slice`
 
 Latest verified gates:
 
@@ -38,9 +40,11 @@ Latest verified gates:
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_input_flow.gd` -> `9/9 passed`, 85 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_m_input_device_manager.gd` -> `16/16 passed`, 85 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_settings_migration.gd` -> `4/4 passed`, 48 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/state/test_u_app_reducer.gd` -> `7/7 passed`, 14 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/state/test_m_state_store.gd` -> `30/30 passed`, 75 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd` -> `93/93 passed`, 154 asserts.
 
-Next task: Phase 4 Task 8, add app slice tests for lifecycle Redux state.
+Next task: Phase 4 Task 10, add lifecycle observer tests.
 
 ---
 
@@ -328,12 +332,12 @@ git commit -m "fix: harden mobile touch input flow"
 - Create later in task: `scripts/core/state/reducers/u_app_reducer.gd`
 - Create later in task: `scripts/core/state/selectors/u_app_selectors.gd`
 
-- [ ] Write tests for `ACTION_APP_BACKGROUNDED` flipping `is_backgrounded` true and leaving other state untouched.
-- [ ] Write tests for `ACTION_APP_FOREGROUNDED` flipping `is_backgrounded` false.
-- [ ] Write tests for `ACTION_APP_FOCUS_LOST` / `ACTION_APP_FOCUS_GAINED` toggling `is_focused`.
-- [ ] Write tests for selectors returning current values.
-- [ ] Write a reducer-purity test (same input state + action returns equal state, reducer does not mutate the input).
-- [ ] Run:
+- [x] Write tests for `ACTION_APP_BACKGROUNDED` flipping `is_backgrounded` true and leaving other state untouched.
+- [x] Write tests for `ACTION_APP_FOREGROUNDED` flipping `is_backgrounded` false.
+- [x] Write tests for `ACTION_APP_FOCUS_LOST` / `ACTION_APP_FOCUS_GAINED` toggling `is_focused`.
+- [x] Write tests for selectors returning current values.
+- [x] Write a reducer-purity test (same input state + action returns equal state, reducer does not mutate the input).
+- [x] Run:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/state/test_u_app_reducer.gd
@@ -341,28 +345,33 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/state/test_u_app_reducer.gd
 
 Expected: fail because reducer/selectors do not exist yet.
 
+Completion notes:
+- Added `U_AppActions`, `U_AppReducer`, and `U_AppSelectors`.
+- Added app slice registration through `U_StateSliceManager` as transient runtime state.
+- Initial focused run failed because app actions/reducer/selectors did not exist; final focused run passed.
+
 ### Task 9: Implement App Reducer And Selectors
 
 **Files:**
 - Create: `scripts/core/state/reducers/u_app_reducer.gd`
 - Create: `scripts/core/state/selectors/u_app_selectors.gd`
 
-- [ ] Implement the four actions and the `is_backgrounded` / `is_focused` fields.
-- [ ] Keep reducer pure: no `ServiceLocator`, no signals, no I/O.
-- [ ] Wire into the existing root reducer alongside other slice reducers.
-- [ ] Run the slice tests and verify pass:
+- [x] Implement the four actions and the `is_backgrounded` / `is_focused` fields.
+- [x] Keep reducer pure: no `ServiceLocator`, no signals, no I/O.
+- [x] Wire into the existing root reducer alongside other slice reducers.
+- [x] Run the slice tests and verify pass:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/state/test_u_app_reducer.gd
 ```
 
-- [ ] Run style guard:
+- [x] Run style guard:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd
 ```
 
-- [ ] Commit:
+- [x] Commit:
 
 ```bash
 git add scripts/core/state/reducers/u_app_reducer.gd scripts/core/state/selectors/u_app_selectors.gd tests/unit/state/test_u_app_reducer.gd
