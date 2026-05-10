@@ -72,6 +72,7 @@ func _setup_menu_builder() -> void:
 func _setup_widget_focus() -> void:
 	_button_list = W_MENU_BUTTON_LIST.new()
 	_button_list.name = "MenuButtonList"
+	add_child(_button_list)
 	_button_list.add_existing_button(_continue_button, &"menu.main.continue", "Continue", _on_continue_pressed)
 	_button_list.add_existing_button(_new_game_button,   &"menu.main.new_game",   "New Game",   _on_new_game_pressed)
 	_button_list.add_existing_button(_load_game_button,  &"menu.main.load_game",  "Load Game",  _on_load_game_pressed)

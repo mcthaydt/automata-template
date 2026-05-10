@@ -80,10 +80,10 @@ func _setup_builder() -> void:
 	)
 
 func _capture_control_references() -> void:
-	_master_row = _find_child_by_name(self, "MasterVolumeSlider").get_parent() as HBoxContainer
-	_music_row = _find_child_by_name(self, "MusicVolumeSlider").get_parent() as HBoxContainer
-	_sfx_row = _find_child_by_name(self, "SFXVolumeSlider").get_parent() as HBoxContainer
-	_ambient_row = _find_child_by_name(self, "AmbientVolumeSlider").get_parent() as HBoxContainer
+	_master_row = _find_child_by_name(self, "MasterVolumeRow") as HBoxContainer
+	_music_row = _find_child_by_name(self, "MusicVolumeRow") as HBoxContainer
+	_sfx_row = _find_child_by_name(self, "SFXVolumeRow") as HBoxContainer
+	_ambient_row = _find_child_by_name(self, "AmbientVolumeRow") as HBoxContainer
 	_button_row = _find_child_by_name(self, "ActionButtons") as HBoxContainer
 	
 	_master_volume_slider = _find_child_by_name(self, "MasterVolumeSlider") as HSlider

@@ -139,7 +139,7 @@ static func apply_settings_role(entry: Dictionary, control: Control, config: RS_
 		&"compact_row":
 			control.add_theme_constant_override(&"separation", config.separation_compact)
 		&"action_row":
-			control.add_theme_constant_override(&"separation", config.separation_default)
+			control.add_theme_constant_override(&"separation", config.separation_compact)
 		&"main_panel":
 			if config.panel_section != null:
 				control.add_theme_stylebox_override(&"panel", config.panel_section)

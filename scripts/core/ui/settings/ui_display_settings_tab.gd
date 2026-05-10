@@ -804,8 +804,8 @@ func _configure_focus_neighbors() -> void:
 		func() -> Control: return _get_color_blind_mode_option(),
 		func() -> Control: return _get_high_contrast_toggle(),
 		func() -> Control: return _get_cancel_button(),
-		func() -> Control: return _get_apply_button(),
 		func() -> Control: return _get_reset_button(),
+		func() -> Control: return _get_apply_button(),
 	])
 
 	W_SETTINGS_FOCUS_CONFIGURATOR.configure_inline_pairs(self, [

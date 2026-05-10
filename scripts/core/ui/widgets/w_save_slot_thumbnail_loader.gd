@@ -31,6 +31,7 @@ static func poll_pending(pending: Dictionary, placeholder: Texture2D) -> Array[T
 	for key in pending.keys():
 		if not is_instance_valid(key):
 			pending.erase(key)
+			completed.append(null)
 			continue
 		var texture_rect := key as TextureRect
 		if texture_rect == null:
