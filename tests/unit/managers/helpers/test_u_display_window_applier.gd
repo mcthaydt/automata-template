@@ -140,8 +140,8 @@ func test_mobile_fullscreen_sets_orientation_to_sensor() -> void:
 
 	assert_eq(
 		window_ops.orientation,
-		U_DISPLAY_WINDOW_APPLIER.SCREEN_ORIENTATION_SENSOR_LANDSCAPE,
-		"Mobile fullscreen should set orientation to SENSOR_LANDSCAPE for rotation responsiveness"
+		U_DISPLAY_WINDOW_APPLIER.SCREEN_ORIENTATION_SENSOR,
+		"Mobile fullscreen should set orientation to SENSOR for all-orientation rotation responsiveness"
 	)
 
 func test_desktop_window_mode_does_not_change_orientation() -> void:

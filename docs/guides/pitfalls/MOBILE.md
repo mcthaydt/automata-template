@@ -85,16 +85,16 @@ Manual release gates live in `docs/systems/mobile_experience/mobile-qa-checklist
 
 ## Screen Orientation
 
-- **Mobile fullscreen must explicitly set screen orientation**: When `M_DisplayManager` forces mobile into fullscreen mode, `U_DisplayWindowApplier` must call `screen_set_orientation(SCREEN_ORIENTATION_SENSOR_LANDSCAPE)` to allow landscape rotation. Without this call, Godot's fullscreen mode on Android/iOS locks to the device's natural orientation, ignoring the `project.godot` `window/handheld/orientation` setting.
+- **Mobile fullscreen must explicitly set screen orientation**: When `M_DisplayManager` forces mobile into fullscreen mode, `U_DisplayWindowApplier` must call `screen_set_orientation(SCREEN_ORIENTATION_SENSOR)` to allow free rotation across all four orientations. Without this call, Godot's fullscreen mode on Android/iOS locks to the device's natural orientation, ignoring the `project.godot` `window/handheld/orientation` setting.
 
-  **Why this happens**: `DisplayServer.window_set_mode(WINDOW_MODE_FULLSCREEN)` on mobile overrides the project orientation setting. The project-level `sensor_landscape` acts as a default, but runtime fullscreen requires an explicit `screen_set_orientation` call to restore landscape rotation.
+  **Why this happens**: `DisplayServer.window_set_mode(WINDOW_MODE_FULLSCREEN)` on mobile overrides the project orientation setting. The project-level `sensor` acts as a default, but runtime fullscreen requires an explicit `screen_set_orientation` call to restore sensor-driven rotation.
 
   **Current routing contract**:
-  - Mobile (`U_MobilePlatformDetector.is_mobile() == true`): `apply_settings()` calls `_set_orientation(SCREEN_ORIENTATION_SENSOR_LANDSCAPE)` before setting window mode. This allows landscape↔reverse-landscape rotation but blocks portrait.
+  - Mobile (`U_MobilePlatformDetector.is_mobile() == true`): `apply_settings()` calls `_set_orientation(SCREEN_ORIENTATION_SENSOR)` before setting window mode. This allows all four orientations (landscape, reverse-landscape, portrait, reverse-portrait) to auto-rotate with the device.
   - Desktop: No orientation override is applied (OS manages window orientation).
   - Orientation call goes through `I_WindowOps.screen_set_orientation()` for testability.
 
-  **Compat note**: `SCREEN_ORIENTATION_SENSOR_LANDSCAPE` (value `4`) and `SCREEN_OF_MAIN_WINDOW` (value `-1`) are defined as compat constants in `U_DisplayWindowApplier` and `U_DisplayServerWindowOps` because Godot 4.6.1 (headless test runner) does not expose the `ScreenOrientation` enum. The constant values map to `DisplayServer.SCREEN_SENSOR_LANDSCAPE` and `DisplayServer.SCREEN_OF_MAIN_WINDOW` in Godot 4.7. `U_DisplayServerWindowOps.screen_set_orientation()` guards with `DisplayServer.has_method("screen_set_orientation")` so it no-ops on older runtimes.
+  **Compat note**: `SCREEN_ORIENTATION_SENSOR` (value `6`) and `SCREEN_OF_MAIN_WINDOW` (value `-1`) are defined as compat constants in `U_DisplayWindowApplier` and `U_DisplayServerWindowOps` because Godot 4.6.1 (headless test runner) does not expose the `ScreenOrientation` enum. The constant values map to `DisplayServer.SCREEN_SENSOR` and `DisplayServer.SCREEN_OF_MAIN_WINDOW` in Godot 4.7. `U_DisplayServerWindowOps.screen_set_orientation()` guards with `DisplayServer.has_method("screen_set_orientation")` so it no-ops on older runtimes.
 
   **Important**: The Godot 4.7 `ScreenOrientation` enum values differ from what you might expect. Always verify against `ClassDB.class_get_integer_constant_list("DisplayServer")` rather than guessing:
   - `SCREEN_LANDSCAPE = 0` (locked landscape)

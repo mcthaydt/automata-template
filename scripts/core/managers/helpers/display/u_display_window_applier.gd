@@ -3,11 +3,11 @@ class_name U_DisplayWindowApplier
 
 ## Applies window mode/size/vsync settings with platform guards.
 
-## Value matches DisplayServer.SCREEN_SENSOR_LANDSCAPE (Godot 4.7+).
-## Allows landscape and reverse-landscape rotation, blocks portrait.
+## Value matches DisplayServer.SCREEN_SENSOR (Godot 4.7+).
+## Allows all four orientations (landscape, reverse-landscape, portrait, reverse-portrait).
 ## Defined as a compat constant because the headless test runner (Godot 4.6)
 ## does not expose ScreenOrientation enum values in its DisplayServer class.
-const SCREEN_ORIENTATION_SENSOR_LANDSCAPE: int = 4
+const SCREEN_ORIENTATION_SENSOR: int = 6
 
 const U_DISPLAY_OPTION_CATALOG := preload("res://scripts/core/utils/display/u_display_option_catalog.gd")
 const U_DISPLAY_SELECTORS := preload("res://scripts/core/state/selectors/u_display_selectors.gd")
@@ -37,7 +37,7 @@ func apply_settings(display_settings: Dictionary) -> void:
 		U_MOBILE_PLATFORM_DETECTOR.set_scale_override(
 			U_DISPLAY_SELECTORS.get_mobile_resolution_scale(state)
 		)
-		_set_orientation(SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
+		_set_orientation(SCREEN_ORIENTATION_SENSOR)
 	else:
 		U_MOBILE_PLATFORM_DETECTOR.set_scale_override(-1.0)
 
