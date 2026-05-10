@@ -28,7 +28,7 @@ particles_anim_h_frames = 1
 particles_anim_v_frames = 1
 particles_anim_loop = false
 
-[node name="E_GoalZone" type="Node3D" unique_id=540471532]
+[node name="E_GoalZone" type="Node3D" unique_id=2070630126]
 script = ExtResource("1_qstqo")
 config = ExtResource("2_6xr0m")
 settings = SubResource("Resource_hdm4o")
@@ -36,15 +36,15 @@ visual_paths = Array[NodePath]([NodePath("Visual"), NodePath("Sparkles")])
 entity_id = &"goalzone"
 tags = Array[StringName]([&"objective", &"goal"])
 
-[node name="Visual" type="CSGCylinder3D" parent="." unique_id=1310799136]
+[node name="Visual" type="CSGCylinder3D" parent="." unique_id=1308108345]
 radius = 0.7910156
 height = 2.0715332
 material = ExtResource("4_cbfex")
 
-[node name="Sparkles" type="Node3D" parent="." unique_id=1005074586]
+[node name="Sparkles" type="Node3D" parent="." unique_id=477142002]
 script = ExtResource("5_stqnw")
 
-[node name="Sparkle_0" type="Sprite3D" parent="Sparkles" unique_id=1224134494]
+[node name="Sparkle_0" type="Sprite3D" parent="Sparkles" unique_id=1286526321]
 transform = Transform3D(0.04, 0, 0, 0, 0.04, 0, 0, 0, 0.04, -0.2, 0.4, -0.15)
 visible = false
 material_override = SubResource("StandardMaterial3D_vdbg2")
@@ -52,7 +52,7 @@ billboard = 1
 texture_filter = 0
 texture = ExtResource("6_i6vc5")
 
-[node name="Sparkle_1" type="Sprite3D" parent="Sparkles" unique_id=1583826670]
+[node name="Sparkle_1" type="Sprite3D" parent="Sparkles" unique_id=1995038263]
 transform = Transform3D(0.04, 0, 0, 0, 0.04, 0, 0, 0, 0.04, 0, 0.9, 0.1)
 visible = false
 material_override = SubResource("StandardMaterial3D_vdbg2")
@@ -60,7 +60,7 @@ billboard = 1
 texture_filter = 0
 texture = ExtResource("6_i6vc5")
 
-[node name="Sparkle_2" type="Sprite3D" parent="Sparkles" unique_id=1603007422]
+[node name="Sparkle_2" type="Sprite3D" parent="Sparkles" unique_id=1489183193]
 transform = Transform3D(0.04, 0, 0, 0, 0.04, 0, 0, 0, 0.04, 0.2, 0.6, 0.1)
 visible = false
 material_override = SubResource("StandardMaterial3D_vdbg2")

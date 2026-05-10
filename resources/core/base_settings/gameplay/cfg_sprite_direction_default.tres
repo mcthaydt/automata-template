@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="RS_SpriteDirectionSettings" format=3 uid="uid://do6srmdfj5dpm"]
+
+[ext_resource type="Script" uid="uid://htw076exevswt" path="res://scripts/core/resources/ecs/rs_sprite_direction_settings.gd" id="1_0"]
+
+[resource]
+script = ExtResource("1_0")
+move_threshold = 0.1

@@ -285,6 +285,7 @@ func _add_feedback_systems(parent: Node) -> void:
 	feedback.add_child(land_parts)
 
 	_add_system_node(feedback, "S_GamepadVibrationSystem", preload("res://scripts/core/ecs/systems/s_gamepad_vibration_system.gd"), 122)
+	_add_system_node(feedback, "S_SpriteDirectionSystem", preload("res://scripts/core/ecs/systems/s_sprite_direction_system.gd"), 115)
 
 func _add_system_node(parent: Node, name_: String, script: Script, priority: int) -> void:
 	var node := Node.new()
