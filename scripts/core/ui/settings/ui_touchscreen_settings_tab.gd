@@ -305,9 +305,10 @@ func _on_state_changed(_action: Dictionary, state: Dictionary) -> void:
 	_update_slider_label(_button_opacity_value_label, _button_opacity_slider.value if _button_opacity_slider != null else 0.0)
 	_update_slider_label(_joystick_deadzone_value_label, _joystick_deadzone_slider.value if _joystick_deadzone_slider != null else 0.0)
 	_update_slider_label(_look_sensitivity_value_label, _look_sensitivity_slider.value if _look_sensitivity_slider != null else 0.0)
-	_updating_from_state = false
 
 	_apply_preview_size_limits()
+	_updating_from_state = false
+
 	_update_preview_from_sliders()
 
 func _on_joystick_size_changed(value: float) -> void:
