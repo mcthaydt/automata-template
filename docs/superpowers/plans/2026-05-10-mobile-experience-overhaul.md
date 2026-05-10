@@ -19,10 +19,11 @@ Completed phases:
 - Phase 1: Scene Convention Auto-Registration.
 - Phase 2: Mobile Presentation Baseline.
 - Phase 3: Touch Gameplay Polish.
+- Phase 4: App Lifecycle & System UI.
 
 Current phase:
 
-- Phase 4: App Lifecycle & System UI is complete.
+- Phase 5: Mobile Export Configuration is complete except the keystore path documentation item that belongs in the Phase 6 QA checklist.
 
 Recent commits:
 
@@ -37,6 +38,7 @@ Recent commits:
 - `25f29ea2 feat: react to app lifecycle in audio and autosave`
 - `8b404340 feat: clamp mobile controls to safe-area insets`
 - `b55df415 docs: document app lifecycle contract`
+- `5aa5ceef build: configure mobile and web export presets`
 
 Latest verified gates:
 
@@ -56,7 +58,7 @@ Latest verified gates:
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/save/test_autosave_scheduler.gd` -> `17/17 passed`, 22 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd` -> `93/93 passed`, 154 asserts.
 
-Next task: Phase 5 Task 15, configure Android export preset.
+Next task: Phase 6 Task 18, add mobile QA checklist.
 
 ---
 
@@ -545,39 +547,55 @@ Completion notes:
 **Files:**
 - Modify: `export_presets.cfg`
 
-- [ ] Populate launcher icons (foreground + background + adaptive) from existing `assets/core/textures/` assets — reuse `tex_icon.svg` derivatives; do not commission new art in this program.
-- [ ] Set the Android package name and app category (already 2 / Games).
+- [x] Populate launcher icons (foreground + background + adaptive) from existing `assets/core/textures/` assets — reuse `tex_icon.svg` derivatives; do not commission new art in this program.
+- [x] Set the Android package name and app category (already 2 / Games).
 - [ ] Document the keystore path and signing flow in `docs/systems/mobile_experience/mobile-qa-checklist.md` (created in Phase 6). The keystore itself stays gitignored.
-- [ ] Limit permissions to engine defaults; do not add network, location, etc.
+- [x] Limit permissions to engine defaults; do not add network, location, etc.
+
+Completion notes:
+- Android preset now exports to `builds/android/automata-template.apk`.
+- Package is `com.crispycabaret.automatatemplate`, app name is `Automata Template`, and app category remains Games.
+- Launcher icon fields reuse `res://assets/core/textures/tex_icon.svg`; no new art was added.
+- Permission toggles remain disabled, including network and location.
 
 ### Task 16: Add Web Export Preset
 
 **Files:**
 - Modify: `export_presets.cfg`
 
-- [ ] Add an HTML5 preset.
-- [ ] Leave PWA support off in this program.
-- [ ] Confirm canvas sizing remains portrait-compatible (no fixed-aspect lock that would break portrait layout).
+- [x] Add an HTML5 preset.
+- [x] Leave PWA support off in this program.
+- [x] Confirm canvas sizing remains portrait-compatible (no fixed-aspect lock that would break portrait layout).
+
+Completion notes:
+- Added a Web preset exporting to `builds/web/index.html`.
+- PWA support remains disabled.
+- `html/canvas_resize_policy=2` keeps canvas sizing responsive instead of fixed-aspect locked.
 
 ### Task 17: Update project.godot Mobile Settings
 
 **Files:**
 - Modify: `project.godot`
 
-- [ ] Add `display/window/handheld/orientation = "sensor_landscape"` (landscape preferred, portrait allowed for compatibility).
-- [ ] Set `rendering/renderer/rendering_method.mobile` to match the desktop renderer method. Renderer/perf retuning is deferred.
-- [ ] Run style guard since `project.godot` changed:
+- [x] Add `display/window/handheld/orientation = "sensor_landscape"` (landscape preferred, portrait allowed for compatibility).
+- [x] Set `rendering/renderer/rendering_method.mobile` to match the desktop renderer method. Renderer/perf retuning is deferred.
+- [x] Run style guard since `project.godot` changed:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd
 ```
 
-- [ ] Commit:
+- [x] Commit:
 
 ```bash
 git add export_presets.cfg project.godot
 git commit -m "build: configure mobile and web export presets"
 ```
+
+Completed in `5aa5ceef`.
+
+Completion notes:
+- `project.godot` already had `rendering/renderer/rendering_method.mobile="gl_compatibility"`, matching desktop. This task only needed the handheld orientation setting.
 
 ## Phase 6: QA, Docs, And Mobile Release Gates
 
