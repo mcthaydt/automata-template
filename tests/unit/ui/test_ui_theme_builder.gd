@@ -48,6 +48,20 @@ func test_build_theme_applies_slider_styles() -> void:
 
 	assert_true(slider is StyleBoxFlat, "HSlider slider stylebox should be StyleBoxFlat")
 
+func test_build_theme_applies_scrollbar_styles() -> void:
+	var theme := U_UI_THEME_BUILDER.build_theme(_config)
+	var scroll_track := theme.get_stylebox(&"scroll", &"VScrollBar")
+	var grabber := theme.get_stylebox(&"grabber", &"VScrollBar")
+	var grabber_highlight := theme.get_stylebox(&"grabber_highlight", &"VScrollBar")
+
+	assert_true(scroll_track is StyleBoxFlat, "VScrollBar track should use themed StyleBoxFlat")
+	assert_true(grabber is StyleBoxFlat, "VScrollBar grabber should use themed StyleBoxFlat")
+	assert_true(grabber_highlight is StyleBoxFlat, "VScrollBar hover grabber should use themed StyleBoxFlat")
+	assert_true(
+		(grabber as StyleBoxFlat).bg_color.is_equal_approx(_config.accent_primary),
+		"VScrollBar grabber should use the primary accent color"
+	)
+
 func test_build_theme_applies_panel_styles() -> void:
 	var theme := U_UI_THEME_BUILDER.build_theme(_config)
 	var panel := theme.get_stylebox(&"panel", &"PanelContainer")
