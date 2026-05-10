@@ -1,7 +1,6 @@
 extends SceneTree
 
 const U_SPARKLE_ANIMATOR := preload("res://scripts/core/gameplay/helpers/u_sparkle_animator.gd")
-const RS_BEAT_DEFINITION := preload("res://scripts/core/resources/scene_director/rs_beat_definition.gd")
 
 func _init() -> void:
 	print("Rebuilding scenes...")
@@ -97,6 +96,8 @@ func _rebuild_gameplay_demo_room() -> void:
 	builder.build_environment()
 	builder.build_systems()
 	builder.build_managers()
+	var demo_directive: Resource = preload("res://scripts/core/utils/scene_director/br_demo_intro_directive.gd").new().build()
+	builder.add_scene_director_directive(demo_directive)
 	builder.build_entities()
 
 	var root: Node3D = builder.build()
@@ -247,8 +248,6 @@ func _rebuild_test_exterior() -> void:
 	instance.free()
 
 func _set_owner_recursive(node: Node, owner: Node) -> void:
-	if node != owner:
-		node.set_owner(owner)
 	if not node.get_scene_file_path().is_empty():
 		return
 	for child in node.get_children():
@@ -257,59 +256,14 @@ func _set_owner_recursive(node: Node, owner: Node) -> void:
 
 func _rebuild_resources() -> void:
 	print("Rebuilding scene director resources...")
-
-	var effect_1 := U_SDResourceBuilder.publish_event(
-		&"scene_director_intro_beat_1",
-		{"beat_id": &"intro_beat_1"},
-		false
-	)
-	var effect_1b := U_SDResourceBuilder.publish_event(
-		&"signpost_message",
-		{"message": "hud.scene_director_intro_beat_1", "message_duration_sec": 1.8},
-		false
-	)
-	var beat_1 := U_SDResourceBuilder.beat(
-		&"intro_beat_1",
-		RS_BEAT_DEFINITION.WaitMode.INSTANT,
-		0.0,
-		&"",
-		[],
-		[effect_1, effect_1b]
-	)
-	beat_1.description = "Publishes the initial gameplay intro event."
-
-	var effect_2 := U_SDResourceBuilder.publish_event(
-		&"scene_director_intro_beat_2",
-		{"beat_id": &"intro_beat_2"},
-		false
-	)
-	var effect_2b := U_SDResourceBuilder.publish_event(
-		&"signpost_message",
-		{"message": "hud.scene_director_intro_beat_2", "message_duration_sec": 2.2},
-		false
-	)
-	var beat_2 := U_SDResourceBuilder.beat(
-		&"intro_beat_2",
-		RS_BEAT_DEFINITION.WaitMode.TIMED,
-		0.05,
-		&"",
-		[],
-		[effect_2, effect_2b]
-	)
-	beat_2.description = "Publishes a follow-up intro event after a short delay."
-
-	var directive := U_SDResourceBuilder.directive(
-		&"gameplay_base_intro",
-		&"demo_room",
-		0,
-		[],
-		[beat_1, beat_2],
-		"Default introductory directive for demo_room."
-	)
-
-	var save_path := "res://resources/core/scene_director/directives/cfg_directive_gameplay_base.tres"
+	var br := preload("res://scripts/core/utils/scene_director/br_demo_intro_directive.gd").new()
+	var directive := br.build()
+	var save_path := "res://resources/core/scene_director/directives/cfg_directive_demo_intro.tres"
 	var save_result := ResourceSaver.save(directive, save_path)
 	if save_result != OK:
 		push_error("Failed to save directive .tres at '%s' (error %d)" % [save_path, save_result])
 	else:
 		print("  Saved: %s" % save_path)
+
+
+

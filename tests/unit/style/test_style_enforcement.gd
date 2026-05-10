@@ -172,6 +172,7 @@ const SCRIPT_PREFIX_RULES := {
 	"res://scripts/core/resources/qb/conditions": ["rs_"], # QB condition resources
 	"res://scripts/core/resources/qb/effects": ["rs_"], # QB effect resources
 	"res://scripts/core/qb/rules": ["br_"], # QB rule builder scripts
+	"res://scripts/core/utils/scene_director": ["br_", "u_"], # br_ for directive builders, u_ for SD utilities
 	"res://scripts/core/resources/scene_director": ["rs_"], # Scene director beat/objective/directive resources
 	"res://scripts/core/resources/ecs": ["rs_"], # ECS component settings resources
 	"res://scripts/core/resources/display": ["rs_"], # Display preset resources

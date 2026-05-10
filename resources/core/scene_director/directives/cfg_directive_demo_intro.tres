@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="RS_SceneDirective" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/resources/scene_director/rs_beat_definition.gd" id="1_h2pvn"]
+[ext_resource type="Script" path="res://scripts/core/interfaces/i_effect.gd" id="2_8oh7y"]
+[ext_resource type="Script" path="res://scripts/core/resources/qb/effects/rs_effect_publish_event.gd" id="3_xyiou"]
+[ext_resource type="Script" path="res://scripts/core/interfaces/i_condition.gd" id="4_ynnds"]
+[ext_resource type="Script" path="res://scripts/core/resources/scene_director/rs_scene_directive.gd" id="5_w5ktk"]
+
+[sub_resource type="Resource" id="Resource_iiy1l"]
+script = ExtResource("3_xyiou")
+event_name = &"scene_director_intro_beat_1"
+payload = {
+"beat_id": &"intro_beat_1"
+}
+inject_entity_id = false
+
+[sub_resource type="Resource" id="Resource_oh50k"]
+script = ExtResource("3_xyiou")
+event_name = &"signpost_message"
+payload = {
+"message": "hud.scene_director_intro_beat_1",
+"message_duration_sec": 1.8
+}
+inject_entity_id = false
+
+[sub_resource type="Resource" id="Resource_kwkyl"]
+script = ExtResource("1_h2pvn")
+beat_id = &"intro_beat_1"
+description = "Publishes the initial gameplay intro event."
+effects = Array[ExtResource("2_8oh7y")]([SubResource("Resource_iiy1l"), SubResource("Resource_oh50k")])
+
+[sub_resource type="Resource" id="Resource_feck5"]
+script = ExtResource("3_xyiou")
+event_name = &"scene_director_intro_beat_2"
+payload = {
+"beat_id": &"intro_beat_2"
+}
+inject_entity_id = false
+
+[sub_resource type="Resource" id="Resource_vuwt8"]
+script = ExtResource("3_xyiou")
+event_name = &"signpost_message"
+payload = {
+"message": "hud.scene_director_intro_beat_2",
+"message_duration_sec": 2.2
+}
+inject_entity_id = false
+
+[sub_resource type="Resource" id="Resource_7aa7x"]
+script = ExtResource("1_h2pvn")
+beat_id = &"intro_beat_2"
+description = "Publishes a follow-up intro event after a short delay."
+effects = Array[ExtResource("2_8oh7y")]([SubResource("Resource_feck5"), SubResource("Resource_vuwt8")])
+wait_mode = 1
+duration = 0.05
+
+[resource]
+script = ExtResource("5_w5ktk")
+directive_id = &"demo_intro"
+description = "Demo room introductory directive (2 beats)."
+target_scene_id = &"demo_room"
+beats = Array[ExtResource("1_h2pvn")]([SubResource("Resource_kwkyl"), SubResource("Resource_7aa7x")])

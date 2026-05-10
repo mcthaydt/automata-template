@@ -39,7 +39,6 @@
 [ext_resource type="Script" uid="uid://bgwyekmo7l8y5" path="res://scripts/core/managers/m_objectives_manager.gd" id="37_objectives_manager"]
 [ext_resource type="Resource" uid="uid://dlyoikoiqtr81" path="res://resources/core/scene_director/sets/cfg_objset_default.tres" id="38_objset_default"]
 [ext_resource type="Script" uid="uid://ct5n17envv40q" path="res://scripts/core/managers/m_scene_director_manager.gd" id="39_scene_director"]
-[ext_resource type="Resource" uid="uid://d2gupe7j15r78" path="res://resources/core/scene_director/directives/cfg_directive_gameplay_base.tres" id="40_directive_gameplay_base"]
 [ext_resource type="Script" uid="uid://d2w2tpq145yl4" path="res://scripts/core/managers/m_run_coordinator_manager.gd" id="41_run_coordinator"]
 [ext_resource type="Resource" uid="uid://xn3e3t3x7lad" path="res://resources/core/state/cfg_default_objectives_initial_state.tres" id="42_objectives_state"]
 [ext_resource type="Resource" uid="uid://nbd84s2mk7ye" path="res://resources/core/state/cfg_default_scene_director_initial_state.tres" id="43_scene_director_state"]
@@ -137,7 +136,7 @@ game_config = ExtResource("44_game_config")
 
 [node name="M_SceneDirectorManager" type="Node" parent="Managers" unique_id=1509652505]
 script = ExtResource("39_scene_director")
-directives = Array[Resource]([ExtResource("40_directive_gameplay_base")])
+directives = Array[Resource]([])
 
 [node name="GameViewportContainer" type="SubViewportContainer" parent="." unique_id=1316095608]
 anchors_preset = 15

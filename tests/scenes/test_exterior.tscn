@@ -41,9 +41,7 @@
 [ext_resource type="Script" path="res://scripts/core/gameplay/inter_endgame_goal_zone.gd" id="41_goal_script"]
 [ext_resource type="Script" path="res://scripts/core/ecs/systems/s_checkpoint_handler_system.gd" id="42_checkpoint_handler"]
 [ext_resource type="Script" path="res://scripts/core/gameplay/inter_checkpoint_zone.gd" id="43_checkpoint_zone_script"]
-[ext_resource type="Script" path="res://scripts/core/gameplay/helpers/u_sparkle_animator.gd" id="43_t0k3o"]
 [ext_resource type="Script" path="res://scripts/core/gameplay/inter_hazard_zone.gd" id="44_hazard_controller"]
-[ext_resource type="Texture2D" path="res://assets/core/textures/tex_dust_puff.png" id="44_wlnqq"]
 [ext_resource type="Script" path="res://scripts/core/gameplay/inter_signpost.gd" id="45_signpost_controller"]
 [ext_resource type="Script" path="res://scripts/core/ecs/systems/s_victory_handler_system.gd" id="46_victory_handler"]
 
@@ -124,19 +122,6 @@ albedo_color = Color(0.968627, 0.847059, 0.239216, 1)
 emission_enabled = true
 emission = Color(1, 0.843137, 0.223529, 1)
 emission_energy_multiplier = 1.5
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bss0b"]
-transparency = 1
-cull_mode = 2
-no_depth_test = true
-shading_mode = 0
-albedo_color = Color(0.97, 0.85, 0.24, 1)
-texture_filter = 0
-billboard_mode = 3
-billboard_keep_scale = true
-particles_anim_h_frames = 1
-particles_anim_v_frames = 1
-particles_anim_loop = false
 
 [node name="GameplayRoot" type="Node3D" unique_id=1018813846]
 script = ExtResource("1_f2o31")
@@ -371,33 +356,6 @@ material = SubResource("StandardMaterial3D_goal")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 light_color = Color(1, 0.87451, 0.364706, 1)
 light_energy = 2.5
-
-[node name="Sparkles" type="Node3D" parent="Entities/E_FinalGoal" unique_id=2067719388]
-script = ExtResource("43_t0k3o")
-
-[node name="Sparkle_0" type="Sprite3D" parent="Entities/E_FinalGoal/Sparkles" unique_id=1398687502]
-transform = Transform3D(0.04, 0, 0, 0, 0.04, 0, 0, 0, 0.04, -0.2, 0.4, -0.15)
-visible = false
-material_override = SubResource("StandardMaterial3D_bss0b")
-billboard = 1
-texture_filter = 0
-texture = ExtResource("44_wlnqq")
-
-[node name="Sparkle_1" type="Sprite3D" parent="Entities/E_FinalGoal/Sparkles" unique_id=606095813]
-transform = Transform3D(0.04, 0, 0, 0, 0.04, 0, 0, 0, 0.04, 0, 0.9, 0.1)
-visible = false
-material_override = SubResource("StandardMaterial3D_bss0b")
-billboard = 1
-texture_filter = 0
-texture = ExtResource("44_wlnqq")
-
-[node name="Sparkle_2" type="Sprite3D" parent="Entities/E_FinalGoal/Sparkles" unique_id=516758084]
-transform = Transform3D(0.04, 0, 0, 0, 0.04, 0, 0, 0, 0.04, 0.2, 0.6, 0.1)
-visible = false
-material_override = SubResource("StandardMaterial3D_bss0b")
-billboard = 1
-texture_filter = 0
-texture = ExtResource("44_wlnqq")
 
 [node name="SpawnPoints" type="Node3D" parent="Entities" unique_id=1030480086]
 script = ExtResource("21_spawnpoints")
