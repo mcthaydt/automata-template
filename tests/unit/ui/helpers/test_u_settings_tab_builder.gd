@@ -483,7 +483,7 @@ func test_action_buttons_row_has_comfortable_spacing_and_padding_role():
 
 	var row := tab.find_child("ActionButtons", true, false) as HBoxContainer
 	assert_not_null(row, "Builder should create action row")
-	assert_eq(row.get_theme_constant("separation"), 12, "Action row should use default button spacing")
+	assert_eq(row.get_theme_constant("separation"), 8, "Action row should use compact button spacing")
 	assert_eq(row.size_flags_horizontal, Control.SIZE_SHRINK_END, "Action row should keep compact button group width at the right edge")
 
 
