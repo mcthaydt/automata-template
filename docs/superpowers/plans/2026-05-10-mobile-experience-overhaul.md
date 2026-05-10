@@ -20,6 +20,10 @@ Completed phases:
 - Phase 2: Mobile Presentation Baseline.
 - Phase 3: Touch Gameplay Polish.
 
+Current phase:
+
+- Phase 4: App Lifecycle & System UI is complete through Task 13.
+
 Recent commits:
 
 - `7108b24c test: add scene convention scanner`
@@ -31,6 +35,7 @@ Recent commits:
 - `ed80c676 feat: add app lifecycle redux slice`
 - `6a66cc43 feat: add app lifecycle observer`
 - `25f29ea2 feat: react to app lifecycle in audio and autosave`
+- `8b404340 feat: clamp mobile controls to safe-area insets`
 
 Latest verified gates:
 
@@ -39,17 +44,18 @@ Latest verified gates:
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_display_manager.gd` -> `28/28 passed`, 51 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/managers/helpers/test_u_display_window_applier.gd` -> `4/4 passed`, 7 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_mobile_platform_detector.gd` -> `16/16 passed`, 18 asserts.
-- `tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_input_flow.gd` -> `9/9 passed`, 85 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_input_flow.gd` -> `10/10 passed`, 92 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_m_input_device_manager.gd` -> `16/16 passed`, 85 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_settings_migration.gd` -> `4/4 passed`, 48 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/state/test_u_app_reducer.gd` -> `7/7 passed`, 14 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/state/test_m_state_store.gd` -> `30/30 passed`, 75 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_app_lifecycle_observer.gd` -> `6/6 passed`, 19 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_safe_area_insets.gd` -> `3/3 passed`, 6 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_audio_manager.gd` -> `24/24 passed`, 68 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/save/test_autosave_scheduler.gd` -> `17/17 passed`, 22 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd` -> `93/93 passed`, 154 asserts.
 
-Next task: Phase 4 Task 13, add safe-area inset helper.
+Next task: Phase 4 Task 14, document lifecycle and back-gesture pitfalls.
 
 ---
 
@@ -319,12 +325,14 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_m_input_device_mana
 tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_settings_migration.gd
 ```
 
-- [ ] Commit:
+- [x] Commit:
 
 ```bash
 git add scripts/core/ui/hud/ui_mobile_controls.gd scripts/core/ecs/systems/s_touchscreen_system.gd scripts/core/managers/m_input_device_manager.gd scripts/core/state/reducers/u_gameplay_reducer.gd tests/unit/integration/test_touchscreen_input_flow.gd tests/unit/managers/test_m_input_device_manager.gd tests/unit/integration/test_touchscreen_settings_migration.gd
 git commit -m "fix: harden mobile touch input flow"
 ```
+
+Completed in `6ca1528e`.
 
 ## Phase 4: App Lifecycle & System UI
 
@@ -475,23 +483,30 @@ Completion notes:
 - Modify: `scripts/core/ui/hud/ui_mobile_controls.gd`
 - Modify: `tests/unit/integration/test_touchscreen_input_flow.gd`
 
-- [ ] Write tests for `U_SafeAreaInsets.compute(usable_rect, window_rect) -> Rect2` with: full-screen case (zero insets), notched case (top inset only), all-sides padded case.
-- [ ] Implement the helper; keep it pure — no `DisplayServer` calls inside the helper, callers pass rects in.
-- [ ] Update `UI_MobileControls` clamp (current viewport clamp at lines 389-405) to subtract insets from the allowed area before clamping. Source the live insets via `U_DisplayServerWindowOps` + `U_SafeAreaInsets`.
-- [ ] Add a test in `test_touchscreen_input_flow.gd` proving custom joystick/button positions stay outside notch insets.
-- [ ] Run:
+- [x] Write tests for `U_SafeAreaInsets.compute(usable_rect, window_rect) -> Rect2` with: full-screen case (zero insets), notched case (top inset only), all-sides padded case.
+- [x] Implement the helper; keep it pure — no `DisplayServer` calls inside the helper, callers pass rects in.
+- [x] Update `UI_MobileControls` clamp (current viewport clamp at lines 389-405) to subtract insets from the allowed area before clamping. Source the live insets via `U_DisplayServerWindowOps` + `U_SafeAreaInsets`.
+- [x] Add a test in `test_touchscreen_input_flow.gd` proving custom joystick/button positions stay outside notch insets.
+- [x] Run:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_safe_area_insets.gd
 tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_input_flow.gd
 ```
 
-- [ ] Commit:
+- [x] Commit:
 
 ```bash
 git add scripts/core/utils/display/u_safe_area_insets.gd scripts/core/ui/hud/ui_mobile_controls.gd tests/unit/utils/test_u_safe_area_insets.gd tests/unit/integration/test_touchscreen_input_flow.gd
 git commit -m "feat: clamp mobile controls to safe-area insets"
 ```
+
+Completed in `8b404340`.
+
+Completion notes:
+- Added pure safe-area inset math plus focused full-screen, notched, and all-sides padded coverage.
+- `UI_MobileControls` now clamps against safe control bounds sourced from `U_DisplayServerWindowOps`; desktop-sized usable rects larger than the viewport are ignored to avoid false insets in windowed/editor contexts.
+- Added touchscreen integration coverage for custom joystick/button positions clamping below a simulated top notch inset.
 
 ### Task 14: Document Lifecycle And Back-Gesture Pitfalls
 
