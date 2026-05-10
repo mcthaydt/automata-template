@@ -28,7 +28,8 @@ This recipe does **not** cover:
 
 - Base gameplay scene: `scenes/core/gameplay/gameplay_base.tscn`
 - Gameplay template: `scenes/core/templates/tmpl_base_scene.tscn`
-- Scene registry entry: `resources/core/scene_registry/cfg_gameplay_base_entry.tres`
+- Convention-derived scene id: `scenes/demo/gameplay/gameplay_demo_room.tscn` -> `demo_room`
+- Scene registry override: `resources/core/scene_registry/cfg_gameplay_base_entry.tres`
 - Registry entry resource type: `scripts/core/resources/scene_management/rs_scene_registry_entry.gd`
 - Spawn metadata resource type: `scripts/core/resources/scene_management/rs_spawn_metadata.gd`
 - Scene manager: `scripts/core/managers/m_scene_manager.gd`
@@ -40,7 +41,7 @@ This recipe does **not** cover:
 |------|---------|
 | `gameplay_*.tscn` | Gameplay scene filename prefix. Core base scenes remain under `scenes/core/gameplay/`; demo gameplay scenes move under `scenes/demo/gameplay/` during the core/demo split. |
 | `tmpl_*.tscn` | Reusable template scene under `scenes/core/templates/`. |
-| `cfg_*_entry.tres` | `RS_SceneRegistryEntry` instance under `resources/core/scene_registry/`. |
+| `cfg_*_entry.tres` | `RS_SceneRegistryEntry` instance under `resources/core/scene_registry/`; used for explicit overrides and generated export-safe baselines. |
 | `cfg_sp_*.tres` | `RS_SpawnMetadata` instance under `resources/core/spawn_metadata/`. |
 | `sp_*` | Spawn marker node name under `Entities/SpawnPoints`. |
 | `U_SceneRegistry` | Static registry for scene ids, paths, scene types, transition defaults, preload priority, and door pairings. |
@@ -52,12 +53,12 @@ Core scenes must survive removal of demo content. Demo scenes may depend on core
 
 ### Adding a new gameplay scene
 
-1. Start from `scenes/core/templates/tmpl_base_scene.tscn` or duplicate `scenes/core/gameplay/gameplay_base.tscn`.
+1. Start from `scenes/core/templates/tmpl_base_scene.tscn` or duplicate `scenes/core/gameplay/gameplay_base.tscn` through builder/editor tooling. Do not create `.tscn` files by hand.
 2. Save the scene as `scenes/core/gameplay/gameplay_<name>.tscn` for core scenes. For demo-only content, use `scenes/demo/gameplay/gameplay_<name>.tscn`.
 3. Keep the scene tree aligned with `docs/guides/SCENE_ORGANIZATION_GUIDE.md`: `SceneObjects`, `Environment`, `Systems`, `Managers`, and `Entities`.
 4. Add spawn markers under `Entities/SpawnPoints`; include `sp_default` unless the scene is never entered directly.
-5. Add `resources/core/scene_registry/cfg_<name>_entry.tres` using `RS_SceneRegistryEntry`.
-6. Register the scene in `U_SceneRegistry` or the current registry loading path. Set scene id, scene path, type, default transition, and preload priority.
+5. Let the convention scanner register the scene id from the filename. For example, `gameplay_demo_room.tscn` registers as `demo_room` with type `GAMEPLAY`, transition `loading`, and preload priority `5`.
+6. Add `resources/core/scene_registry/cfg_<name>_entry.tres` using `RS_SceneRegistryEntry` only when the scene needs custom metadata, an explicit override, or generated mobile/web export coverage.
 7. If the scene is entered from another scene, add `resources/core/spawn_metadata/cfg_sp_<name>.tres` or update existing spawn metadata.
 8. Add or update scene manager integration tests for routing, preload behavior, spawn selection, or transition behavior as applicable.
 9. Run `tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd`.
@@ -83,6 +84,8 @@ Core scenes must survive removal of demo content. Demo scenes may depend on core
 - **Gameplay scenes embedding root managers**: persistent managers live only in `scenes/root.tscn`; gameplay scenes own scene-local `M_ECSManager`.
 - **Manual active-scene tree edits**: use `M_SceneManager` APIs instead of adding/removing children under `ActiveSceneContainer`.
 - **Core scene references to demo paths**: violates the core/demo split and should be caught by import/path boundary checks.
+- **Hand-authored `.tscn` files**: use builder/editor workflows so Godot owns scene metadata and UIDs.
+- **Resource entries for default metadata**: use conventions first; reserve registry resources for overrides, advanced modules, and export-safe generated baselines.
 - **Missing `sp_default`**: spawn fallback becomes fragile.
 - **Spawn markers inside trigger volumes**: causes transition ping-pong.
 - **Transition callbacks with Array wrappers**: use `U_TransitionState`.
