@@ -3,6 +3,8 @@ class_name UI_MobileControls
 
 const VIRTUAL_JOYSTICK_SCENE := preload("res://scenes/core/ui/widgets/ui_virtual_joystick.tscn")
 const VIRTUAL_BUTTON_SCENE := preload("res://scenes/core/ui/widgets/ui_virtual_button.tscn")
+const SAFE_AREA_INSETS := preload("res://scripts/core/utils/display/u_safe_area_insets.gd")
+const WINDOW_OPS := preload("res://scripts/core/utils/display/u_display_server_window_ops.gd")
 
 @export var force_enable: bool = false
 @export var emulate_mobile_override: bool = false
@@ -38,6 +40,7 @@ var _is_transitioning: bool = false
 var _has_overlay_active: bool = false
 var _is_edit_overlay_active: bool = false
 var _current_shell: StringName = StringName("")
+var _window_ops: I_WindowOps = WINDOW_OPS.new()
 var _current_scene_id: StringName = StringName("")
 var _fade_delay: float = 0.0
 var _fade_duration: float = 0.0
@@ -399,7 +402,19 @@ func _clamp_all_controls() -> void:
 	var viewport := get_viewport()
 	if viewport == null:
 		return
-	_clamp_all_controls_to_rect(viewport.get_visible_rect())
+	_clamp_all_controls_to_rect(_get_safe_control_bounds(viewport.get_visible_rect()))
+
+func _get_safe_control_bounds(viewport_bounds: Rect2) -> Rect2:
+	if _window_ops == null or not _window_ops.is_available():
+		return viewport_bounds
+	var screen: int = _window_ops.window_get_current_screen()
+	var usable_rect_i: Rect2i = _window_ops.screen_get_usable_rect(screen)
+	var usable_rect := Rect2(Vector2(usable_rect_i.position), Vector2(usable_rect_i.size))
+	if usable_rect.size.x > viewport_bounds.size.x or usable_rect.size.y > viewport_bounds.size.y:
+		return viewport_bounds
+	var window_rect := Rect2(Vector2.ZERO, viewport_bounds.size)
+	var insets: Rect2 = SAFE_AREA_INSETS.compute(usable_rect, window_rect)
+	return SAFE_AREA_INSETS.apply_to_rect(viewport_bounds, insets)
 
 func _clamp_all_controls_to_rect(bounds: Rect2) -> void:
 	_apply_portrait_reachable_layout(bounds)

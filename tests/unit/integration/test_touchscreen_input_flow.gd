@@ -2,6 +2,18 @@ extends GutTest
 
 const MobileControlsScene := preload("res://scenes/core/ui/hud/ui_mobile_controls.tscn")
 
+class FakeWindowOps:
+	extends I_WindowOps
+
+	var usable_rect := Rect2i()
+
+	func window_get_current_screen() -> int:
+		return 0
+
+	func screen_get_usable_rect(_screen: int) -> Rect2i:
+		return usable_rect
+
+
 func before_each() -> void:
 	U_StateHandoff.clear_all()
 
@@ -263,6 +275,47 @@ func test_custom_control_positions_clamp_inside_portrait_viewport() -> void:
 		"Jump button should clamp into portrait viewport bounds"
 	)
 
+func test_custom_control_positions_clamp_outside_safe_area_insets() -> void:
+	var store: M_StateStore = await _create_state_store()
+	store.dispatch(U_NavigationActions.start_game(StringName("demo_room")))
+	await _await_state_update(store)
+
+	var controls: UI_MobileControls = await _create_controls()
+	var joystick: UI_VirtualJoystick = controls.get_node_or_null("Controls/VirtualJoystick") as UI_VirtualJoystick
+	var jump_button: UI_VirtualButton = _find_button(controls.get_buttons(), StringName("jump"))
+	assert_not_null(joystick)
+	assert_not_null(jump_button)
+
+	var portrait_size := Vector2(360, 640)
+	var safe_bounds := Rect2(Vector2(0, 32), Vector2(360, 608))
+	var oversized_joystick := Vector2(500, 0)
+	var oversized_jump := Vector2(480, 8)
+
+	store.dispatch(U_InputActions.save_virtual_control_position("virtual_joystick", oversized_joystick))
+	store.dispatch(U_InputActions.save_virtual_control_position("jump", oversized_jump))
+	await _await_state_update(store)
+	controls.force_apply_positions(store.get_state(), false)
+
+	var fake_window_ops := FakeWindowOps.new()
+	fake_window_ops.usable_rect = Rect2i(Vector2i(0, 32), Vector2i(360, 608))
+	controls.set("_window_ops", fake_window_ops)
+	var computed_bounds: Rect2 = controls.call("_get_safe_control_bounds", Rect2(Vector2.ZERO, portrait_size))
+	controls.call("_clamp_all_controls_to_rect", computed_bounds)
+
+	assert_eq(computed_bounds, safe_bounds, "Safe-area bounds should subtract the top notch inset")
+	assert_vector_almost_eq(
+		joystick.position,
+		_expected_clamped_position_in_rect(oversized_joystick, joystick, safe_bounds),
+		0.01,
+		"Joystick should clamp below the notch inset"
+	)
+	assert_vector_almost_eq(
+		jump_button.position,
+		_expected_clamped_position_in_rect(oversized_jump, jump_button, safe_bounds),
+		0.01,
+		"Jump button should clamp below the notch inset"
+	)
+
 func test_default_control_positions_do_not_overlap_in_portrait_viewport() -> void:
 	var store: M_StateStore = await _create_state_store()
 	store.dispatch(U_NavigationActions.start_game(StringName("demo_room")))
@@ -410,12 +463,15 @@ func assert_vector_almost_eq(a: Vector2, b: Vector2, tolerance: float, message: 
 	assert_almost_eq(a.y, b.y, tolerance, message + " (y)")
 
 func _expected_clamped_position(target: Vector2, control: Control, viewport_size: Vector2) -> Vector2:
+	return _expected_clamped_position_in_rect(target, control, Rect2(Vector2.ZERO, viewport_size))
+
+func _expected_clamped_position_in_rect(target: Vector2, control: Control, bounds: Rect2) -> Vector2:
 	if control == null:
 		return target
 	var scaled_size: Vector2 = control.size * control.scale
 	return Vector2(
-		clampf(target.x, 0.0, max(viewport_size.x - scaled_size.x, 0.0)),
-		clampf(target.y, 0.0, max(viewport_size.y - scaled_size.y, 0.0))
+		clampf(target.x, bounds.position.x, max(bounds.end.x - scaled_size.x, bounds.position.x)),
+		clampf(target.y, bounds.position.y, max(bounds.end.y - scaled_size.y, bounds.position.y))
 	)
 
 func _await_frames(count: int) -> void:
