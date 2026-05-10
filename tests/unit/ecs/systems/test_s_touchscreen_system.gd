@@ -197,8 +197,11 @@ func _setup_touchscreen_scene() -> Dictionary:
 	store.scene_initial_state.current_scene_id = StringName("demo_room")
 	store.settings_initial_state = RS_SettingsInitialState.new()
 	store.debug_initial_state = RS_DebugInitialState.new()
+	store.navigation_initial_state = RS_NavigationInitialState.new()
 	add_child_autofree(store)
 	await _await_frames(2)
+	store.dispatch(U_NavigationActions.start_game(StringName("demo_room")))
+	await _await_frames(1)
 
 	var manager := M_ECSManager.new()
 	add_child_autofree(manager)
