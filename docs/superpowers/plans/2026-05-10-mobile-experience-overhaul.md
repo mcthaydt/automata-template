@@ -22,7 +22,7 @@ Completed phases:
 
 Current phase:
 
-- Phase 4: App Lifecycle & System UI is complete through Task 13.
+- Phase 4: App Lifecycle & System UI is complete.
 
 Recent commits:
 
@@ -36,6 +36,7 @@ Recent commits:
 - `6a66cc43 feat: add app lifecycle observer`
 - `25f29ea2 feat: react to app lifecycle in audio and autosave`
 - `8b404340 feat: clamp mobile controls to safe-area insets`
+- `b55df415 docs: document app lifecycle contract`
 
 Latest verified gates:
 
@@ -55,7 +56,7 @@ Latest verified gates:
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/save/test_autosave_scheduler.gd` -> `17/17 passed`, 22 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd` -> `93/93 passed`, 154 asserts.
 
-Next task: Phase 4 Task 14, document lifecycle and back-gesture pitfalls.
+Next task: Phase 5 Task 15, configure Android export preset.
 
 ---
 
@@ -514,21 +515,26 @@ Completion notes:
 - Modify: `docs/systems/input_manager/input-manager-overview.md`
 - Modify: `docs/guides/pitfalls/MOBILE.md`
 
-- [ ] Document the lifecycle observer contract and the four actions it emits.
-- [ ] Document that gameplay shells map `ui_cancel` (from back gesture) to pause-menu open, while menu shells navigate back.
-- [ ] Add pitfall: do not subscribe to OS notifications in individual managers — go through the observer + Redux.
-- [ ] Run style guard:
+- [x] Document the lifecycle observer contract and the four actions it emits.
+- [x] Document Android back gesture routing as a synthetic `ui_cancel` input event.
+- [x] Add pitfall: do not subscribe to OS notifications in individual managers — go through the observer + Redux.
+- [x] Run style guard:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd
 ```
 
-- [ ] Commit:
+- [x] Commit:
 
 ```bash
 git add docs/systems/input_manager/input-manager-overview.md docs/guides/pitfalls/MOBILE.md
 git commit -m "docs: document app lifecycle contract"
 ```
+
+Completed in `b55df415`.
+
+Completion notes:
+- The original checklist said gameplay back gesture should open the pause menu. Current runtime tests and `M_UIInputHandler` define a different contract: `ui_cancel` closes gameplay overlays and otherwise no-ops; `ui_pause` opens pause. The docs were updated to match the existing tested behavior instead of documenting a false routing contract.
 
 ## Phase 5: Mobile Export Configuration
 
