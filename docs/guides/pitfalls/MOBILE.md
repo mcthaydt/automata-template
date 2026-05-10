@@ -2,6 +2,8 @@
 
 Mobile and touchscreen-specific runtime gotchas.
 
+Manual release gates live in `docs/systems/mobile_experience/mobile-qa-checklist.md`.
+
 ---
 
 ## App Lifecycle And Back Gesture

@@ -13,6 +13,7 @@ The Display Manager handles visual post-processing effects, graphics quality set
 ## Current Runtime Contracts
 
 - Display Manager owns display-domain post-process, graphics settings, UI scale, color blind palettes, and settings-preview APIs.
+- Mobile presentation defaults and export checks are tracked through `docs/systems/mobile_experience/mobile-qa-checklist.md`.
 - Display Manager does not own gameplay camera orchestration, screen shake, damage flash, audio settings, or particle systems.
 - DisplayServer operations must be deferred to the main thread.
 - Current UI scale behavior is font-only; avoid layout scaling unless pivot/position compensation is intentionally reintroduced.

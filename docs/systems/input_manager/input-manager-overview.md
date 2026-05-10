@@ -9,6 +9,7 @@ Input Manager owns hardware input detection, input profile/rebind behavior, and 
 - Tasks: `docs/systems/input_manager/input-manager-tasks.md`
 - File structure: `docs/systems/input_manager/general/input-manager-file-structure.md`
 - Touchscreen architecture: `docs/systems/input_manager/general/phase-6-touchscreen-architecture.md`
+- Mobile QA gates: `docs/systems/mobile_experience/mobile-qa-checklist.md`
 
 ## Ownership
 
@@ -61,3 +62,4 @@ See `docs/systems/ui_manager/ui-pitfalls.md` for the UI/Input boundary.
 - Input map tests live under `tests/unit/input/`.
 - UI/gamepad navigation deadzone tests live under `tests/unit/ui/`.
 - Mobile controls tests should construct navigation state explicitly before asserting visibility.
+- Mobile release checks live in `docs/systems/mobile_experience/mobile-qa-checklist.md`.
