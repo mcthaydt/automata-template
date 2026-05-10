@@ -31,6 +31,19 @@
 - Modify `tests/unit/managers/test_m_input_device_manager.gd`: cover touch/gamepad/mobile disconnect edge cases.
 - Create `docs/systems/mobile_experience/mobile-experience-tasks.md`: project-facing task checklist with completion notes.
 - Create `docs/systems/mobile_experience/mobile-qa-checklist.md`: manual mobile QA checklist for real devices.
+- Create `scripts/core/state/reducers/u_app_reducer.gd`: Redux reducer for the new `app` slice (`is_backgrounded`, `is_focused`).
+- Create `scripts/core/state/selectors/u_app_selectors.gd`: selectors for the `app` slice.
+- Create `scripts/core/utils/lifecycle/u_app_lifecycle_observer.gd`: autoload that translates Godot lifecycle notifications into Redux actions and back-gesture into `ui_cancel`.
+- Create `scripts/core/utils/display/u_safe_area_insets.gd`: pure helper that returns `Rect2` insets from usable-rect minus window-rect.
+- Create `tests/unit/state/test_u_app_reducer.gd`: focused tests for the `app` reducer and selectors.
+- Create `tests/unit/utils/test_u_app_lifecycle_observer.gd`: tests for notification → action translation using injected dispatch.
+- Create `tests/unit/utils/test_u_safe_area_insets.gd`: tests for inset math with mocked rects.
+- Modify `scripts/core/managers/m_audio_manager.gd`: mute/unmute master bus on focus changes.
+- Modify `scripts/core/managers/helpers/u_autosave_scheduler.gd`: add a `BACKGROUND` trigger.
+- Modify `tests/unit/managers/test_m_audio_manager.gd`: cover focus-driven mute/unmute behavior.
+- Modify `tests/unit/managers/helpers/test_u_autosave_scheduler.gd`: cover the new `BACKGROUND` trigger.
+- Modify `export_presets.cfg`: fill in Android preset (launcher icons, package name, permissions, signing path doc) and add a Web preset.
+- Modify `project.godot`: add `display/window/handheld/orientation` and `rendering/renderer/rendering_method.mobile`.
 
 ## Phase 1: Scene Convention Auto-Registration
 
@@ -252,11 +265,229 @@ git add scripts/core/ui/hud/ui_mobile_controls.gd scripts/core/ecs/systems/s_tou
 git commit -m "fix: harden mobile touch input flow"
 ```
 
-## Phase 4: QA, Docs, And Mobile Release Gates
+## Phase 4: App Lifecycle & System UI
+
+**Outcome:** Mobile builds respond to OS-level focus and background events through Redux, audio mutes when backgrounded, autosave fires on suspend, the Android back gesture maps to `ui_cancel`, and `UI_MobileControls` respects safe-area insets.
+
+### Task 8: Add App Slice Tests
+
+**Files:**
+- Create: `tests/unit/state/test_u_app_reducer.gd`
+- Create later in task: `scripts/core/state/reducers/u_app_reducer.gd`
+- Create later in task: `scripts/core/state/selectors/u_app_selectors.gd`
+
+- [ ] Write tests for `ACTION_APP_BACKGROUNDED` flipping `is_backgrounded` true and leaving other state untouched.
+- [ ] Write tests for `ACTION_APP_FOREGROUNDED` flipping `is_backgrounded` false.
+- [ ] Write tests for `ACTION_APP_FOCUS_LOST` / `ACTION_APP_FOCUS_GAINED` toggling `is_focused`.
+- [ ] Write tests for selectors returning current values.
+- [ ] Write a reducer-purity test (same input state + action returns equal state, reducer does not mutate the input).
+- [ ] Run:
+
+```bash
+tools/run_gut_suite.sh -gtest=res://tests/unit/state/test_u_app_reducer.gd
+```
+
+Expected: fail because reducer/selectors do not exist yet.
+
+### Task 9: Implement App Reducer And Selectors
+
+**Files:**
+- Create: `scripts/core/state/reducers/u_app_reducer.gd`
+- Create: `scripts/core/state/selectors/u_app_selectors.gd`
+
+- [ ] Implement the four actions and the `is_backgrounded` / `is_focused` fields.
+- [ ] Keep reducer pure: no `ServiceLocator`, no signals, no I/O.
+- [ ] Wire into the existing root reducer alongside other slice reducers.
+- [ ] Run the slice tests and verify pass:
+
+```bash
+tools/run_gut_suite.sh -gtest=res://tests/unit/state/test_u_app_reducer.gd
+```
+
+- [ ] Run style guard:
+
+```bash
+tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd
+```
+
+- [ ] Commit:
+
+```bash
+git add scripts/core/state/reducers/u_app_reducer.gd scripts/core/state/selectors/u_app_selectors.gd tests/unit/state/test_u_app_reducer.gd
+git commit -m "feat: add app lifecycle redux slice"
+```
+
+### Task 10: Add Lifecycle Observer Tests
+
+**Files:**
+- Create: `tests/unit/utils/test_u_app_lifecycle_observer.gd`
+- Create later in task: `scripts/core/utils/lifecycle/u_app_lifecycle_observer.gd`
+
+- [ ] Inject a fake dispatcher into the observer; do not require real OS notifications.
+- [ ] Test `_notification(NOTIFICATION_APPLICATION_PAUSED)` dispatches `ACTION_APP_BACKGROUNDED`.
+- [ ] Test `_notification(NOTIFICATION_APPLICATION_RESUMED)` dispatches `ACTION_APP_FOREGROUNDED`.
+- [ ] Test `_notification(NOTIFICATION_WM_WINDOW_FOCUS_OUT)` dispatches `ACTION_APP_FOCUS_LOST`.
+- [ ] Test `_notification(NOTIFICATION_WM_WINDOW_FOCUS_IN)` dispatches `ACTION_APP_FOCUS_GAINED`.
+- [ ] Test `_notification(NOTIFICATION_WM_GO_BACK_REQUEST)` emits a `ui_cancel` action through the configured input dispatch.
+- [ ] Test the observer does not dispatch on unrelated notifications.
+- [ ] Run:
+
+```bash
+tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_app_lifecycle_observer.gd
+```
+
+Expected: fail because the observer does not exist yet.
+
+### Task 11: Implement Lifecycle Observer
+
+**Files:**
+- Create: `scripts/core/utils/lifecycle/u_app_lifecycle_observer.gd`
+- Modify if needed: `scripts/core/managers/m_game_manager.gd` (autoload registration / boot wiring)
+
+- [ ] Implement `_notification(what: int)` translating the five notifications listed in Task 10 into actions.
+- [ ] Keep the observer thin: no pause logic, no audio logic — just emit actions. Side effects live in subscribing managers.
+- [ ] Register as an autoload (or attach to an existing root manager) so it stays alive across scene changes.
+- [ ] Run the observer test and verify pass:
+
+```bash
+tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_app_lifecycle_observer.gd
+```
+
+- [ ] Run style guard:
+
+```bash
+tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd
+```
+
+- [ ] Commit:
+
+```bash
+git add scripts/core/utils/lifecycle/u_app_lifecycle_observer.gd scripts/core/managers/m_game_manager.gd tests/unit/utils/test_u_app_lifecycle_observer.gd
+git commit -m "feat: add app lifecycle observer"
+```
+
+### Task 12: Wire Audio And Autosave Reactions
+
+**Files:**
+- Modify: `scripts/core/managers/m_audio_manager.gd`
+- Modify: `scripts/core/managers/helpers/u_autosave_scheduler.gd`
+- Modify: `tests/unit/managers/test_m_audio_manager.gd`
+- Modify: `tests/unit/managers/helpers/test_u_autosave_scheduler.gd`
+
+- [ ] Add tests proving `M_AudioManager` mutes the master bus when `is_focused` transitions to false and restores when true.
+- [ ] Add tests proving `U_AutosaveScheduler` accepts a new `BACKGROUND` trigger and writes a save.
+- [ ] Implement the audio bus reaction subscribing to the `app` selector (or the dispatched action stream — match the pattern already used by other managers).
+- [ ] Implement the `BACKGROUND` autosave trigger and dispatch it from `U_AppLifecycleObserver` on background.
+- [ ] Run:
+
+```bash
+tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_m_audio_manager.gd
+tools/run_gut_suite.sh -gtest=res://tests/unit/managers/helpers/test_u_autosave_scheduler.gd
+```
+
+- [ ] Commit:
+
+```bash
+git add scripts/core/managers/m_audio_manager.gd scripts/core/managers/helpers/u_autosave_scheduler.gd tests/unit/managers/test_m_audio_manager.gd tests/unit/managers/helpers/test_u_autosave_scheduler.gd
+git commit -m "feat: react to app lifecycle in audio and autosave"
+```
+
+### Task 13: Add Safe-Area Inset Helper
+
+**Files:**
+- Create: `tests/unit/utils/test_u_safe_area_insets.gd`
+- Create later in task: `scripts/core/utils/display/u_safe_area_insets.gd`
+- Modify: `scripts/core/ui/hud/ui_mobile_controls.gd`
+- Modify: `tests/unit/integration/test_touchscreen_input_flow.gd`
+
+- [ ] Write tests for `U_SafeAreaInsets.compute(usable_rect, window_rect) -> Rect2` with: full-screen case (zero insets), notched case (top inset only), all-sides padded case.
+- [ ] Implement the helper; keep it pure — no `DisplayServer` calls inside the helper, callers pass rects in.
+- [ ] Update `UI_MobileControls` clamp (current viewport clamp at lines 389-405) to subtract insets from the allowed area before clamping. Source the live insets via `U_DisplayServerWindowOps` + `U_SafeAreaInsets`.
+- [ ] Add a test in `test_touchscreen_input_flow.gd` proving custom joystick/button positions stay outside notch insets.
+- [ ] Run:
+
+```bash
+tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_safe_area_insets.gd
+tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_input_flow.gd
+```
+
+- [ ] Commit:
+
+```bash
+git add scripts/core/utils/display/u_safe_area_insets.gd scripts/core/ui/hud/ui_mobile_controls.gd tests/unit/utils/test_u_safe_area_insets.gd tests/unit/integration/test_touchscreen_input_flow.gd
+git commit -m "feat: clamp mobile controls to safe-area insets"
+```
+
+### Task 14: Document Lifecycle And Back-Gesture Pitfalls
+
+**Files:**
+- Modify: `docs/systems/input_manager/input-manager-overview.md`
+- Modify: `docs/guides/pitfalls/MOBILE.md`
+
+- [ ] Document the lifecycle observer contract and the four actions it emits.
+- [ ] Document that gameplay shells map `ui_cancel` (from back gesture) to pause-menu open, while menu shells navigate back.
+- [ ] Add pitfall: do not subscribe to OS notifications in individual managers — go through the observer + Redux.
+- [ ] Run style guard:
+
+```bash
+tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd
+```
+
+- [ ] Commit:
+
+```bash
+git add docs/systems/input_manager/input-manager-overview.md docs/guides/pitfalls/MOBILE.md
+git commit -m "docs: document app lifecycle contract"
+```
+
+## Phase 5: Mobile Export Configuration
+
+**Outcome:** `export_presets.cfg` ships an Android preset with launcher icons and signing path documented, plus a Web preset. `project.godot` declares mobile orientation and renderer.
+
+### Task 15: Configure Android Export Preset
+
+**Files:**
+- Modify: `export_presets.cfg`
+
+- [ ] Populate launcher icons (foreground + background + adaptive) from existing `assets/core/textures/` assets — reuse `tex_icon.svg` derivatives; do not commission new art in this program.
+- [ ] Set the Android package name and app category (already 2 / Games).
+- [ ] Document the keystore path and signing flow in `docs/systems/mobile_experience/mobile-qa-checklist.md` (created in Phase 6). The keystore itself stays gitignored.
+- [ ] Limit permissions to engine defaults; do not add network, location, etc.
+
+### Task 16: Add Web Export Preset
+
+**Files:**
+- Modify: `export_presets.cfg`
+
+- [ ] Add an HTML5 preset.
+- [ ] Leave PWA support off in this program.
+- [ ] Confirm canvas sizing remains portrait-compatible (no fixed-aspect lock that would break portrait layout).
+
+### Task 17: Update project.godot Mobile Settings
+
+**Files:**
+- Modify: `project.godot`
+
+- [ ] Add `display/window/handheld/orientation = "sensor_landscape"` (landscape preferred, portrait allowed for compatibility).
+- [ ] Set `rendering/renderer/rendering_method.mobile` to match the desktop renderer method. Renderer/perf retuning is deferred.
+- [ ] Run style guard since `project.godot` changed:
+
+```bash
+tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd
+```
+
+- [ ] Commit:
+
+```bash
+git add export_presets.cfg project.godot
+git commit -m "build: configure mobile and web export presets"
+```
+
+## Phase 6: QA, Docs, And Mobile Release Gates
 
 **Outcome:** The project has a repeatable mobile validation path before shipping mobile changes.
 
-### Task 10: Add Mobile QA Checklist
+### Task 18: Add Mobile QA Checklist
 
 **Files:**
 - Create: `docs/systems/mobile_experience/mobile-qa-checklist.md`
@@ -271,7 +502,19 @@ git commit -m "fix: harden mobile touch input flow"
   - Start gameplay and confirm portrait does not trap input or hide controls.
   - Complete/reset run and confirm touch controls still work.
   - Connect/disconnect gamepad and confirm correct touch visibility.
-  - Suspend/resume app and confirm state remains usable.
+  - Suspend/resume app and confirm pause engages, audio mutes, and an autosave was written.
+  - Foreground after suspend and confirm audio restores and the game stays paused.
+  - Trigger Android back gesture in gameplay (expect pause menu) and in a menu (expect back navigation).
+  - Confirm `UI_MobileControls` joystick/buttons stay outside notch/cutout regions.
+- [ ] Document Android export checks:
+  - APK builds via the configured preset.
+  - APK installs and launches on at least one physical Android device.
+  - Launcher icon and app name render correctly.
+  - Keystore signing path is documented (path only — keystore itself gitignored).
+- [ ] Document Web export checks:
+  - HTML5 export builds via the configured preset.
+  - Served via a local HTTP server (e.g. `python3 -m http.server`) and loads in a mobile browser.
+  - Touch controls reachable in both portrait and landscape browser orientations.
 - [ ] Document desktop fallback checks:
 
 ```bash
@@ -308,6 +551,16 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_inpu
 tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_m_input_device_manager.gd
 ```
 
+- [ ] Run the targeted lifecycle and safe-area suite:
+
+```bash
+tools/run_gut_suite.sh -gtest=res://tests/unit/state/test_u_app_reducer.gd
+tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_app_lifecycle_observer.gd
+tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_safe_area_insets.gd
+tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_m_audio_manager.gd
+tools/run_gut_suite.sh -gtest=res://tests/unit/managers/helpers/test_u_autosave_scheduler.gd
+```
+
 - [ ] Run the style guard:
 
 ```bash
@@ -322,7 +575,8 @@ tools/run_gut_suite.sh
 
 ## Self-Review Notes
 
-- Spec coverage: the plan covers scene auto-registration, mobile fullscreen/presentation, portrait compatibility, touch reliability, and QA docs.
-- Scope: this is a master plan. If execution feels too large for one branch, split into four branches matching the phases above.
+- Spec coverage: the plan covers scene auto-registration, mobile fullscreen/presentation, portrait compatibility, touch reliability, app lifecycle (suspend/resume + back gesture), system-UI affordances (safe-area insets), mobile export configuration, and QA docs.
+- Scope: this is a master plan. If execution feels too large for one branch, split into six branches matching the phases above.
+- Targets: Android native export and Mobile web. iOS, mobile renderer/perf retuning, save-path verification, and on-screen keyboard integration are deferred per the spec's Deferred section.
 - Ambiguity resolved: portrait support means compatibility, not optimized portrait gameplay.
-- Runtime boundary check: SceneManager still consumes registry metadata; mobile behavior stays in Display/UI/Input ownership boundaries.
+- Runtime boundary check: SceneManager still consumes registry metadata; mobile behavior stays in Display/UI/Input ownership boundaries; lifecycle observer dispatches actions only — managers react via existing Redux subscriptions.
