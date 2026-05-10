@@ -5,13 +5,16 @@ extends Node
 
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
 const U_UI_THEME_DEBUG := preload("res://scripts/core/ui/utils/u_ui_theme_debug.gd")
+const U_APP_LIFECYCLE_OBSERVER := preload("res://scripts/core/utils/lifecycle/u_app_lifecycle_observer.gd")
 const UI_THEME_CONFIG_DEFAULT := preload("res://resources/core/ui/cfg_ui_theme_default.tres")
+const APP_LIFECYCLE_OBSERVER_NAME := "U_AppLifecycleObserver"
 
 func _enter_tree() -> void:
 	_theme_debug_log("_enter_tree start")
 	_register_demo_scene_entries()
 	_initialize_ui_theme_config()
 	_initialize_service_locator()
+	_ensure_app_lifecycle_observer()
 
 func _register_demo_scene_entries() -> void:
 	var scene_registry_loader := preload("res://scripts/core/scene_management/helpers/u_scene_registry_loader.gd")
@@ -22,6 +25,7 @@ func _ready() -> void:
 	_theme_debug_log("_ready start")
 	_initialize_ui_theme_config()
 	_initialize_service_locator()
+	_ensure_app_lifecycle_observer()
 
 func _exit_tree() -> void:
 	var is_persistent := _is_persistent_app_root()
@@ -125,6 +129,13 @@ func _register_container(path: String, service_name: StringName) -> void:
 	var node := get_node_or_null(path)
 	if node != null:
 		U_ServiceLocator.register(service_name, node)
+
+func _ensure_app_lifecycle_observer() -> void:
+	if get_node_or_null(APP_LIFECYCLE_OBSERVER_NAME) != null:
+		return
+	var observer := U_APP_LIFECYCLE_OBSERVER.new()
+	observer.name = APP_LIFECYCLE_OBSERVER_NAME
+	add_child(observer)
 
 func _initialize_ui_theme_config() -> void:
 	U_UI_THEME_BUILDER.active_config = UI_THEME_CONFIG_DEFAULT
