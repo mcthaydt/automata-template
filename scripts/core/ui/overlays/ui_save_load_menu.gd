@@ -13,6 +13,7 @@ class_name UI_SaveLoadMenu
 const PLACEHOLDER_TEXTURE_PATH: String = "res://resources/core/ui/tex_save_slot_placeholder.png"
 const U_LOCALIZATION_UTILS := preload("res://scripts/core/utils/localization/u_localization_utils.gd")
 const U_UI_MENU_BUILDER := preload("res://scripts/core/ui/helpers/u_ui_menu_builder.gd")
+const RS_UI_THEME_CONFIG := preload("res://scripts/core/resources/ui/rs_ui_theme_config.gd")
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
 const U_SAVE_ACTIONS := preload("res://scripts/core/state/actions/u_save_actions.gd")
 const W_SAVE_SLOT_GRID := preload("res://scripts/core/ui/widgets/w_save_slot_grid.gd")
@@ -56,6 +57,8 @@ var _builder: RefCounted = null
 @onready var _spinner_label: Label = %SpinnerLabel
 @onready var _error_label: Label = %ErrorLabel
 @onready var _loading_label: Label = %LoadingLabel
+
+var _panel_viewport: Control = null
 
 func _ready() -> void:
 	_ensure_placeholder_texture_loaded()
@@ -360,12 +363,60 @@ func _set_buttons_enabled(enabled: bool) -> void:
 		_slot_grid.set_buttons_enabled(enabled)
 
 func _on_panel_ready() -> void:
+	_create_panel_viewport()
 	_setup_builder()
 	_apply_theme_tokens()
 	_connect_buttons()
 	_localize_static_ui()
 	_read_mode_from_state()
 	play_enter_animation()
+
+func _create_panel_viewport() -> void:
+	var center := get_node_or_null("CenterContainer") as CenterContainer
+	var host := center.get_node_or_null("MainPanelMotionHost") as Control if center != null else null
+	if center == null or host == null:
+		return
+	_panel_viewport = Control.new()
+	_panel_viewport.name = "PanelViewport"
+	_panel_viewport.custom_minimum_size = _resolve_panel_viewport_size(_get_visible_viewport_size(), _get_active_theme_config())
+	_panel_viewport.clip_contents = true
+	_panel_viewport.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_panel_viewport.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var insertion_index := host.get_index()
+	center.add_child(_panel_viewport)
+	center.move_child(_panel_viewport, insertion_index)
+	host.reparent(_panel_viewport)
+	host.custom_minimum_size = Vector2.ZERO
+	host.set_anchors_preset(Control.PRESET_FULL_RECT)
+	host.offset_left = 0.0
+	host.offset_top = 0.0
+	host.offset_right = 0.0
+	host.offset_bottom = 0.0
+	host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	host.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+func _resolve_panel_viewport_size(viewport_size: Vector2, config: RS_UI_THEME_CONFIG) -> Vector2:
+	var margin := float(config.margin_outer) if config != null else 0.0
+	var available_width := maxf(viewport_size.x - margin * 2.0, 1.0)
+	var available_height := maxf(viewport_size.y - margin * 2.0, 1.0)
+	return Vector2(
+		minf(OVERLAY_PANEL_SIZE.x, available_width),
+		minf(OVERLAY_PANEL_SIZE.y, available_height)
+	)
+
+func _get_visible_viewport_size() -> Vector2:
+	var viewport := get_viewport()
+	if viewport == null:
+		return OVERLAY_PANEL_SIZE
+	return viewport.get_visible_rect().size
+
+func _get_active_theme_config() -> RS_UI_THEME_CONFIG:
+	var config: Resource = U_UI_THEME_BUILDER.active_config
+	var typed_config := config as RS_UI_THEME_CONFIG
+	if typed_config == null:
+		typed_config = RS_UI_THEME_CONFIG.new()
+	typed_config.ensure_runtime_defaults()
+	return typed_config
 
 func _setup_builder() -> void:
 	_builder = U_UI_MENU_BUILDER.new(self)
