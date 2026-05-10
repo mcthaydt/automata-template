@@ -29,6 +29,7 @@ Recent commits:
 - `3eef7ab8 feat: make mobile UI portrait-compatible`
 - `6ca1528e fix: harden mobile touch input flow`
 - `ed80c676 feat: add app lifecycle redux slice`
+- `6a66cc43 feat: add app lifecycle observer`
 
 Latest verified gates:
 
@@ -42,9 +43,10 @@ Latest verified gates:
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_settings_migration.gd` -> `4/4 passed`, 48 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/state/test_u_app_reducer.gd` -> `7/7 passed`, 14 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/state/test_m_state_store.gd` -> `30/30 passed`, 75 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_app_lifecycle_observer.gd` -> `6/6 passed`, 19 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd` -> `93/93 passed`, 154 asserts.
 
-Next task: Phase 4 Task 10, add lifecycle observer tests.
+Next task: Phase 4 Task 12, wire audio and autosave reactions.
 
 ---
 
@@ -384,14 +386,14 @@ git commit -m "feat: add app lifecycle redux slice"
 - Create: `tests/unit/utils/test_u_app_lifecycle_observer.gd`
 - Create later in task: `scripts/core/utils/lifecycle/u_app_lifecycle_observer.gd`
 
-- [ ] Inject a fake dispatcher into the observer; do not require real OS notifications.
-- [ ] Test `_notification(NOTIFICATION_APPLICATION_PAUSED)` dispatches `ACTION_APP_BACKGROUNDED`.
-- [ ] Test `_notification(NOTIFICATION_APPLICATION_RESUMED)` dispatches `ACTION_APP_FOREGROUNDED`.
-- [ ] Test `_notification(NOTIFICATION_WM_WINDOW_FOCUS_OUT)` dispatches `ACTION_APP_FOCUS_LOST`.
-- [ ] Test `_notification(NOTIFICATION_WM_WINDOW_FOCUS_IN)` dispatches `ACTION_APP_FOCUS_GAINED`.
-- [ ] Test `_notification(NOTIFICATION_WM_GO_BACK_REQUEST)` emits a `ui_cancel` action through the configured input dispatch.
-- [ ] Test the observer does not dispatch on unrelated notifications.
-- [ ] Run:
+- [x] Inject a fake dispatcher into the observer; do not require real OS notifications.
+- [x] Test `_notification(NOTIFICATION_APPLICATION_PAUSED)` dispatches `ACTION_APP_BACKGROUNDED`.
+- [x] Test `_notification(NOTIFICATION_APPLICATION_RESUMED)` dispatches `ACTION_APP_FOREGROUNDED`.
+- [x] Test `_notification(NOTIFICATION_WM_WINDOW_FOCUS_OUT)` dispatches `ACTION_APP_FOCUS_LOST`.
+- [x] Test `_notification(NOTIFICATION_WM_WINDOW_FOCUS_IN)` dispatches `ACTION_APP_FOCUS_GAINED`.
+- [x] Test `_notification(NOTIFICATION_WM_GO_BACK_REQUEST)` emits a `ui_cancel` action through the configured input dispatch.
+- [x] Test the observer does not dispatch on unrelated notifications.
+- [x] Run:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_app_lifecycle_observer.gd
@@ -399,28 +401,32 @@ tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_app_lifecycle_observ
 
 Expected: fail because the observer does not exist yet.
 
+Completion notes:
+- Added observer tests using injected state and input dispatch callables.
+- Initial focused run failed because `U_AppLifecycleObserver` did not exist; final focused run passed.
+
 ### Task 11: Implement Lifecycle Observer
 
 **Files:**
 - Create: `scripts/core/utils/lifecycle/u_app_lifecycle_observer.gd`
 - Modify if needed: `scripts/core/managers/m_game_manager.gd` (autoload registration / boot wiring)
 
-- [ ] Implement `_notification(what: int)` translating the five notifications listed in Task 10 into actions.
-- [ ] Keep the observer thin: no pause logic, no audio logic — just emit actions. Side effects live in subscribing managers.
-- [ ] Register as an autoload (or attach to an existing root manager) so it stays alive across scene changes.
-- [ ] Run the observer test and verify pass:
+- [x] Implement `_notification(what: int)` translating the five notifications listed in Task 10 into actions.
+- [x] Keep the observer thin: no pause logic, no audio logic — just emit actions. Side effects live in subscribing managers.
+- [x] Register as an autoload (or attach to an existing root manager) so it stays alive across scene changes.
+- [x] Run the observer test and verify pass:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_app_lifecycle_observer.gd
 ```
 
-- [ ] Run style guard:
+- [x] Run style guard:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd
 ```
 
-- [ ] Commit:
+- [x] Commit:
 
 ```bash
 git add scripts/core/utils/lifecycle/u_app_lifecycle_observer.gd scripts/core/managers/m_game_manager.gd tests/unit/utils/test_u_app_lifecycle_observer.gd
