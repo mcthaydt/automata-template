@@ -52,6 +52,8 @@ func load_resource_entries(scenes: Dictionary, register_scene_callable: Callable
 
 	var res_result: Dictionary = {"loaded": 0, "skipped": 0}
 	var test_result: Dictionary = {"loaded": 0, "skipped": 0}
+	var convention_result: Dictionary = {"loaded": 0, "skipped": 0}
+	convention_result = load_conventional_scene_entries(scenes, register_scene_callable)
 	if _should_scan_registry_dirs():
 		# Optional additive scan for dev/headless runs so newly-authored resources can
 		# register without code changes. Duplicates from the preload manifest are expected.
@@ -76,16 +78,43 @@ func load_resource_entries(scenes: Dictionary, register_scene_callable: Callable
 		int(preloaded_result.get("loaded", 0)) +
 		int(extra_result.get("loaded", 0)) +
 		int(res_result.get("loaded", 0)) +
-		int(test_result.get("loaded", 0))
+		int(test_result.get("loaded", 0)) +
+		int(convention_result.get("loaded", 0))
 	)
 	var _total_skipped: int = (
 		int(preloaded_result.get("skipped", 0)) +
 		int(extra_result.get("skipped", 0)) +
 		int(res_result.get("skipped", 0)) +
-		int(test_result.get("skipped", 0))
+		int(test_result.get("skipped", 0)) +
+		int(convention_result.get("skipped", 0))
 	)
 	_total_loaded = _total_loaded # silence unused variable warning until needed
 	_total_skipped = _total_skipped
+
+func load_conventional_scene_entries(
+	scenes: Dictionary,
+	register_scene_callable: Callable
+) -> Dictionary:
+	if register_scene_callable == Callable() or not register_scene_callable.is_valid():
+		return {"loaded": 0, "skipped": 0}
+	if not _should_scan_conventional_scene_paths():
+		return {"loaded": 0, "skipped": 0}
+
+	var paths: PackedStringArray = _collect_scene_files_recursive("res://scenes")
+	var entries: Dictionary = U_SceneConventionScanner.infer_entries(paths)
+	var loaded_count: int = 0
+	var skipped_count: int = 0
+	var scene_ids: Array = entries.keys()
+	scene_ids.sort()
+
+	for scene_id: StringName in scene_ids:
+		var entry: Dictionary = entries[scene_id] as Dictionary
+		if _register_scene_from_dict(entry, scene_id, scenes, register_scene_callable):
+			loaded_count += 1
+		else:
+			skipped_count += 1
+
+	return {"loaded": loaded_count, "skipped": skipped_count}
 
 func _load_entries_from_manifest(
 	scenes: Dictionary,
@@ -257,6 +286,34 @@ func _register_manifest_config(
 func _should_scan_registry_dirs() -> bool:
 	# Mobile/Web exports may block directory iteration in packed resources.
 	return not OS.has_feature("mobile") and not OS.has_feature("web")
+
+func _should_scan_conventional_scene_paths() -> bool:
+	if OS.has_feature("mobile") or OS.has_feature("web"):
+		return false
+	return OS.has_feature("editor") or OS.has_feature("headless") or DisplayServer.get_name() == "headless"
+
+func _collect_scene_files_recursive(root_path: String) -> PackedStringArray:
+	var result: PackedStringArray = PackedStringArray()
+	_collect_scene_files_recursive_at(root_path, result)
+	result.sort()
+	return result
+
+func _collect_scene_files_recursive_at(dir_path: String, result: PackedStringArray) -> void:
+	var dir := _open_dir(dir_path)
+	if dir == null:
+		return
+
+	dir.list_dir_begin()
+	var file_name: String = dir.get_next()
+	while file_name != "":
+		var full_path: String = _join_path(dir_path, file_name)
+		if dir.current_is_dir():
+			if not file_name.begins_with("."):
+				_collect_scene_files_recursive_at(full_path, result)
+		elif file_name.ends_with(".tscn"):
+			result.append(full_path)
+		file_name = dir.get_next()
+	dir.list_dir_end()
 
 func _collect_tres_files(dir: DirAccess, dir_path: String) -> PackedStringArray:
 	var files: PackedStringArray = PackedStringArray()
