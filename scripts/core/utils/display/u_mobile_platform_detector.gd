@@ -6,6 +6,8 @@ class_name U_MobilePlatformDetector
 ## Centralizes mobile detection so callers don't need to repeat OS.has_feature()
 ## checks. Supports test overrides for deterministic unit testing.
 
+const U_DISPLAY_SELECTORS := preload("res://scripts/core/state/selectors/u_display_selectors.gd")
+
 ## Default resolution scale factor on mobile (35% of native resolution).
 const MOBILE_SCALE_FACTOR: float = 0.35
 
@@ -58,12 +60,14 @@ static func is_mobile() -> bool:
 ## Returns the viewport resolution scale factor.
 ## 1.0 on desktop, MOBILE_SCALE_FACTOR on mobile unless a custom override is set
 ## or scaling is suppressed.
-static func get_viewport_scale_factor() -> float:
+static func get_viewport_scale_factor(state: Dictionary = {}) -> float:
 	if _scaling_suppressed:
 		return 1.0
 	if _scale_override >= 0.0:
 		return _scale_override
 	if is_mobile():
+		if not state.is_empty():
+			return U_DISPLAY_SELECTORS.get_mobile_resolution_scale(state)
 		return MOBILE_SCALE_FACTOR
 	return 1.0
 

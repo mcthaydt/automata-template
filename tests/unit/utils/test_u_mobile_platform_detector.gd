@@ -1,6 +1,7 @@
 extends GutTest
 
 const U_MOBILE_PLATFORM_DETECTOR := preload("res://scripts/core/utils/display/u_mobile_platform_detector.gd")
+const U_DISPLAY_SELECTORS := preload("res://scripts/core/state/selectors/u_display_selectors.gd")
 
 var _original_mobile_feature: bool = false
 
@@ -11,6 +12,8 @@ func after_each() -> void:
 	# Restore original state
 	U_MOBILE_PLATFORM_DETECTOR.set_testing(false)
 	U_MOBILE_PLATFORM_DETECTOR.set_mobile_override(-1)
+	U_MOBILE_PLATFORM_DETECTOR.set_scale_override(-1.0)
+	U_MOBILE_PLATFORM_DETECTOR.set_scaling_suppressed(false)
 
 func test_is_mobile_returns_os_feature_by_default() -> void:
 	# Without override, should match OS feature
@@ -52,6 +55,31 @@ func test_get_viewport_scale_factor_mobile() -> void:
 	U_MOBILE_PLATFORM_DETECTOR.set_mobile_override(1)
 	assert_eq(U_MOBILE_PLATFORM_DETECTOR.get_viewport_scale_factor(), U_MOBILE_PLATFORM_DETECTOR.MOBILE_SCALE_FACTOR,
 		"Viewport scale factor should be MOBILE_SCALE_FACTOR on mobile")
+
+func test_mobile_resolution_scale_selector_clamps_to_safe_range() -> void:
+	assert_almost_eq(
+		U_DISPLAY_SELECTORS.get_mobile_resolution_scale({"display": {"mobile_resolution_scale": 0.1}}),
+		0.25,
+		0.001,
+		"Selector should clamp mobile scale to minimum safe value"
+	)
+	assert_almost_eq(
+		U_DISPLAY_SELECTORS.get_mobile_resolution_scale({"display": {"mobile_resolution_scale": 1.5}}),
+		1.0,
+		0.001,
+		"Selector should clamp mobile scale to maximum native scale"
+	)
+
+func test_get_viewport_scale_factor_uses_display_state_on_mobile() -> void:
+	U_MOBILE_PLATFORM_DETECTOR.set_testing(true)
+	U_MOBILE_PLATFORM_DETECTOR.set_mobile_override(1)
+
+	assert_almost_eq(
+		U_MOBILE_PLATFORM_DETECTOR.get_viewport_scale_factor({"display": {"mobile_resolution_scale": 0.5}}),
+		0.5,
+		0.001,
+		"Mobile viewport scale should use display state when provided"
+	)
 
 func test_scale_viewport_size_desktop_no_change() -> void:
 	U_MOBILE_PLATFORM_DETECTOR.set_testing(true)

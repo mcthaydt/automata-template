@@ -26,6 +26,8 @@ const DEFAULT_DISPLAY_STATE := {
 	"color_blind_mode": "normal",
 	"high_contrast_enabled": false,
 	"color_blind_shader_enabled": false,
+	"mobile_window_mode": "fullscreen",
+	"mobile_resolution_scale": 0.35,
 	# Note: Intensity values are loaded from post_processing_preset in get_default_display_state()
 }
 

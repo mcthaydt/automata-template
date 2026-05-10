@@ -6,6 +6,7 @@ class_name U_DisplayWindowApplier
 const U_DISPLAY_OPTION_CATALOG := preload("res://scripts/core/utils/display/u_display_option_catalog.gd")
 const U_DISPLAY_SELECTORS := preload("res://scripts/core/state/selectors/u_display_selectors.gd")
 const U_DISPLAY_SERVER_WINDOW_OPS := preload("res://scripts/core/utils/display/u_display_server_window_ops.gd")
+const U_MOBILE_PLATFORM_DETECTOR := preload("res://scripts/core/utils/display/u_mobile_platform_detector.gd")
 
 var _owner: Node = null
 var _window_ops: I_WindowOps = null
@@ -23,10 +24,19 @@ func apply_settings(display_settings: Dictionary) -> void:
 	var window_preset := U_DISPLAY_SELECTORS.get_window_size_preset(state)
 	var window_mode := U_DISPLAY_SELECTORS.get_window_mode(state)
 	var vsync_enabled := U_DISPLAY_SELECTORS.is_vsync_enabled(state)
+	var is_mobile := U_MOBILE_PLATFORM_DETECTOR.is_mobile()
+
+	if is_mobile:
+		window_mode = U_DISPLAY_SELECTORS.get_mobile_window_mode(state)
+		U_MOBILE_PLATFORM_DETECTOR.set_scale_override(
+			U_DISPLAY_SELECTORS.get_mobile_resolution_scale(state)
+		)
+	else:
+		U_MOBILE_PLATFORM_DETECTOR.set_scale_override(-1.0)
 
 	_last_window_size_preset = window_preset
 	set_window_mode(window_mode)
-	if window_mode == "windowed":
+	if window_mode == "windowed" and not is_mobile:
 		apply_window_size_preset(window_preset)
 	set_vsync_enabled(vsync_enabled)
 

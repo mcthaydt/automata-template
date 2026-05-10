@@ -317,7 +317,9 @@ func _get_window_hash(display_settings: Dictionary) -> int:
 	var preset: Variant = display_settings.get("window_size_preset", "")
 	var mode: Variant = display_settings.get("window_mode", "")
 	var vsync: Variant = display_settings.get("vsync_enabled", true)
-	return [preset, mode, vsync].hash()
+	var mobile_mode: Variant = display_settings.get("mobile_window_mode", "")
+	var mobile_scale: Variant = display_settings.get("mobile_resolution_scale", 0.35)
+	return [preset, mode, vsync, mobile_mode, mobile_scale].hash()
 
 func _get_window_ops() -> I_WindowOps:
 	if window_ops != null:
