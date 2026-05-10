@@ -23,6 +23,7 @@ window/size/viewport_height=600
 window/size/resizable=false
 window/stretch/mode="viewport"
 window/vsync/vsync_mode=0
+window/handheld/orientation="sensor_landscape"
 
 [editor_plugins]
 
