@@ -4,6 +4,32 @@ Mobile and touchscreen-specific runtime gotchas.
 
 ---
 
+## App Lifecycle And Back Gesture
+
+- **Do not subscribe to OS notifications in individual managers**: `U_AppLifecycleObserver` is the central lifecycle bridge. It translates Godot notifications into Redux actions and synthetic input only; managers should react to state/selectors or normal input flow.
+
+  **Lifecycle actions emitted by the observer**:
+  - `ACTION_APP_BACKGROUNDED` from `NOTIFICATION_APPLICATION_PAUSED`
+  - `ACTION_APP_FOREGROUNDED` from `NOTIFICATION_APPLICATION_RESUMED`
+  - `ACTION_APP_FOCUS_LOST` from `NOTIFICATION_WM_WINDOW_FOCUS_OUT`
+  - `ACTION_APP_FOCUS_GAINED` from `NOTIFICATION_WM_WINDOW_FOCUS_IN`
+
+  **Why this matters**: Scattering OS notification handlers across audio, save, UI, and input code creates ordering bugs and duplicate side effects. Keep the observer thin, then let subscribers handle side effects through the existing Redux contracts.
+
+- **Android back gesture maps to `ui_cancel` only**: `NOTIFICATION_WM_GO_BACK_REQUEST` becomes a synthetic `ui_cancel` event. `U_AppLifecycleObserver` must not open pause menus, pop overlays, or call scene managers directly.
+
+  **Current routing contract**:
+  - Gameplay shell with overlays: `ui_cancel` closes the top overlay.
+  - Gameplay shell without overlays: `ui_cancel` is a no-op; `ui_pause` opens the pause menu.
+  - Main-menu shell: `ui_cancel` routes back toward the root panel when the current base scene is the root menu.
+  - Endgame shell: `ui_cancel` follows the screen-specific retry, credits, or return-to-menu behavior.
+
+- **Backgrounding and focus are separate**: App pause/resume controls `is_backgrounded`; window focus in/out controls `is_focused`. Do not collapse them into one flag. Audio reacts to focus changes, while suspend/autosave behavior reacts to backgrounding.
+
+- **Safe area math stays pure**: `U_SafeAreaInsets` accepts caller-provided usable/window rects. It must not call `DisplayServer` directly. Runtime callers such as `UI_MobileControls` source live rects through `U_DisplayServerWindowOps`, then pass those rects into the helper.
+
+---
+
 ## Mobile/Touchscreen Pitfalls
 
 - **Device state must persist across game resets**: When implementing game reset/restart actions (like `U_GameplayActions.reset_progress()`), DO NOT reset the entire input state to defaults. Device-specific state fields must be preserved across progress resets to maintain correct device type after restarting the run.
