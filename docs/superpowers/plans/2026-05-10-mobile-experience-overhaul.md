@@ -25,7 +25,7 @@ Completed phases:
 
 Current phase:
 
-- Implementation plan tasks are complete; final verification is in progress.
+- Implementation plan tasks and final verification are complete.
 
 Recent commits:
 
@@ -39,9 +39,14 @@ Recent commits:
 - `6a66cc43 feat: add app lifecycle observer`
 - `25f29ea2 feat: react to app lifecycle in audio and autosave`
 - `8b404340 feat: clamp mobile controls to safe-area insets`
+- `ed20a4cb docs: update mobile overhaul safe-area progress`
 - `b55df415 docs: document app lifecycle contract`
+- `980c446d docs: update mobile overhaul lifecycle docs progress`
 - `5aa5ceef build: configure mobile and web export presets`
+- `2ed74f5f docs: update mobile overhaul export progress`
 - `b0698dc9 docs: add mobile experience QA gates`
+- `7bf7f2fb docs: update mobile overhaul QA progress`
+- `80b0013c test: align touchscreen system setup with navigation shell`
 
 Latest verified gates:
 
@@ -60,8 +65,10 @@ Latest verified gates:
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_audio_manager.gd` -> `24/24 passed`, 68 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/save/test_autosave_scheduler.gd` -> `17/17 passed`, 22 asserts.
 - `tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd` -> `93/93 passed`, 154 asserts.
+- `tools/run_gut_suite.sh -gtest=res://tests/unit/ecs/systems/test_s_touchscreen_system.gd` -> `7/7 passed`, 16 asserts.
+- `tools/run_gut_suite.sh` -> `4560/4578 passing`, 18 expected pending/risky headless/runtime skips, 14267 asserts.
 
-Next task: Final verification.
+Next task: Branch integration / PR.
 
 ---
 
@@ -662,37 +669,37 @@ Completion notes:
 
 ## Final Verification
 
-- [ ] Run the targeted scene manager suite:
+- [x] Run the targeted scene manager suite:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/scene_manager/test_scene_registry.gd
 tools/run_gut_suite.sh -gtest=res://tests/unit/scene_manager/test_scene_convention_scanner.gd
 ```
 
-- [ ] Run the targeted touchscreen suite:
+- [x] Run the targeted touchscreen suite:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/integration/test_touchscreen_input_flow.gd
 tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_m_input_device_manager.gd
 ```
 
-- [ ] Run the targeted lifecycle and safe-area suite:
+- [x] Run the targeted lifecycle and safe-area suite:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/state/test_u_app_reducer.gd
 tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_app_lifecycle_observer.gd
 tools/run_gut_suite.sh -gtest=res://tests/unit/utils/test_u_safe_area_insets.gd
-tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_m_audio_manager.gd
-tools/run_gut_suite.sh -gtest=res://tests/unit/managers/helpers/test_u_autosave_scheduler.gd
+tools/run_gut_suite.sh -gtest=res://tests/unit/managers/test_audio_manager.gd
+tools/run_gut_suite.sh -gtest=res://tests/unit/save/test_autosave_scheduler.gd
 ```
 
-- [ ] Run the style guard:
+- [x] Run the style guard:
 
 ```bash
 tools/run_gut_suite.sh -gtest=res://tests/unit/style/test_style_enforcement.gd
 ```
 
-- [ ] Run the full suite before merging:
+- [x] Run the full suite before merging:
 
 ```bash
 tools/run_gut_suite.sh
