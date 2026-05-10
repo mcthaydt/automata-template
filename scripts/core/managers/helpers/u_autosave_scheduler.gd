@@ -26,6 +26,7 @@ const U_SCENE_REGISTRY := preload("res://scripts/core/scene_management/u_scene_r
 const U_NAVIGATION_SELECTORS := preload("res://scripts/core/state/selectors/u_navigation_selectors.gd")
 const U_GAMEPLAY_SELECTORS := preload("res://scripts/core/state/selectors/u_gameplay_selectors.gd")
 const U_SCENE_SELECTORS := preload("res://scripts/core/state/selectors/u_scene_selectors.gd")
+const U_APP_ACTIONS := preload("res://scripts/core/state/actions/u_app_actions.gd")
 
 enum Priority {
 	NORMAL = 0,
@@ -92,7 +93,9 @@ func _on_action_dispatched(action: Dictionary) -> void:
 		# before pause/endgame/menu UI becomes visible.
 		_flush_pending_autosave_before_menu()
 
-	if action_type == ACTION_MARK_AREA_COMPLETE:
+	if action_type == U_APP_ACTIONS.ACTION_APP_BACKGROUNDED:
+		_request_autosave_if_allowed(Priority.CRITICAL)
+	elif action_type == ACTION_MARK_AREA_COMPLETE:
 		# DON'T autosave on mark_area_complete - wait for transition_completed instead
 		# This ensures we save AFTER the scene transition, not before
 		pass
@@ -134,6 +137,10 @@ func _request_autosave_if_allowed(priority: int) -> void:
 	# Mark dirty and track highest priority
 	_is_dirty = true
 	_pending_priority = maxi(_pending_priority, priority)
+
+	if priority == Priority.CRITICAL:
+		_perform_autosave()
+		return
 
 	# Perform autosave on the next frame (coalescing within same frame).
 	call_deferred("_perform_autosave")
