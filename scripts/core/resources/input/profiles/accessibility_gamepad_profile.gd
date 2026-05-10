@@ -21,5 +21,7 @@ static func build() -> RS_InputProfile:
 	builder.bind_joypad_motion("look_down", JOY_AXIS_RIGHT_Y, 1.0)
 	builder.bind_joypad_motion("look_left", JOY_AXIS_RIGHT_X, -1.0)
 	builder.bind_joypad_motion("look_right", JOY_AXIS_RIGHT_X, 1.0)
+	builder.bind_joypad_button("ui_focus_next", JOY_BUTTON_RIGHT_SHOULDER)
+	builder.bind_joypad_button("ui_focus_prev", JOY_BUTTON_LEFT_SHOULDER)
 	builder.with_accessibility(0.2, true, 0.0)
 	return builder.build()

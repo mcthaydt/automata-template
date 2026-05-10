@@ -2,7 +2,9 @@ extends GutTest
 
 func test_defaults_match_spec() -> void:
 	var settings := RS_RebindSettings.new()
-	assert_eq(settings.reserved_actions.size(), 1)
+	assert_eq(settings.reserved_actions.size(), 3)
+	assert_true(settings.is_reserved(StringName("ui_focus_next")))
+	assert_true(settings.is_reserved(StringName("ui_focus_prev")))
 	assert_true(settings.is_reserved(StringName("pause")))
 	assert_false(settings.is_reserved(StringName("interact")))
 	assert_false(settings.allow_conflicts)

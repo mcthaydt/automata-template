@@ -22,7 +22,7 @@ func with_system_profile(value: bool) -> U_InputProfileBuilder:
 	_profile.is_system_profile = value
 	return self
 
-func bind_key(action: StringName, physical_keycode: Key = KEY_NONE, keycode: Key = KEY_NONE) -> U_InputProfileBuilder:
+func bind_key(action: StringName, physical_keycode: Key = KEY_NONE, keycode: Key = KEY_NONE, shift: bool = false, ctrl: bool = false, alt: bool = false) -> U_InputProfileBuilder:
 	var event := InputEventKey.new()
 	event.physical_keycode = physical_keycode
 
@@ -30,6 +30,10 @@ func bind_key(action: StringName, physical_keycode: Key = KEY_NONE, keycode: Key
 		event.keycode = keycode
 	elif physical_keycode != KEY_NONE:
 		event.keycode = physical_keycode
+
+	event.shift_pressed = shift
+	event.ctrl_pressed = ctrl
+	event.alt_pressed = alt
 
 	var existing: Array = _profile.action_mappings.get(action, [])
 	existing.append(event)
