@@ -6,8 +6,10 @@ const I_INPUT_PROFILE_MANAGER := preload("res://scripts/core/interfaces/i_input_
 const DEFAULT_REBIND_SETTINGS: Resource = preload("res://resources/core/input/rebind_settings/cfg_default_rebind_settings.tres")
 const U_LOCALIZATION_UTILS := preload("res://scripts/core/utils/localization/u_localization_utils.gd")
 const U_OVERLAY_CLOSE_NAVIGATION := preload("res://scripts/core/ui/helpers/u_overlay_close_navigation.gd")
+const U_OVERLAY_PANEL_SIZE_RESOLVER := preload("res://scripts/core/ui/helpers/u_overlay_panel_size_resolver.gd")
 const U_UI_MENU_BUILDER := preload("res://scripts/core/ui/helpers/u_ui_menu_builder.gd")
 const U_UI_THEME_BUILDER := preload("res://scripts/core/ui/utils/u_ui_theme_builder.gd")
+const RS_UI_THEME_CONFIG := preload("res://scripts/core/resources/ui/rs_ui_theme_config.gd")
 const W_RIGHT_STICK_SCROLLER := preload("res://scripts/core/ui/widgets/w_right_stick_scroller.gd")
 
 const TITLE_KEY := &"menu.settings.rebind"
@@ -27,6 +29,7 @@ const ERROR_RESET_RESERVED_KEY := &"overlay.input_rebinding.error.reset_reserved
 const ERROR_RESET_ACTION_UNAVAILABLE_KEY := &"overlay.input_rebinding.error.reset_action_unavailable"
 
 @onready var _title_label: Label = %TitleLabel
+@onready var _main_panel_motion_host: Control = %MainPanelMotionHost
 @onready var _main_panel: PanelContainer = %MainPanel
 @onready var _main_panel_padding: MarginContainer = %MainPanelPadding
 @onready var _main_panel_content: VBoxContainer = %MainPanelContent
@@ -38,7 +41,6 @@ const ERROR_RESET_ACTION_UNAVAILABLE_KEY := &"overlay.input_rebinding.error.rese
 @onready var _reset_button: Button = %ResetButton
 @onready var _scroll: ScrollContainer = %Scroll
 
-# Dialogs: keep as @onready — native popups need scene-tree existence
 @onready var _conflict_dialog: ConfirmationDialog = %ConflictDialog
 @onready var _reset_confirm_dialog: ConfirmationDialog = %ResetConfirmDialog
 @onready var _error_dialog: AcceptDialog = %ErrorDialog
@@ -73,6 +75,7 @@ var _right_stick_scroller: W_RIGHT_STICK_SCROLLER = null
 func _on_panel_ready() -> void:
 	_setup_builder()
 	_apply_theme_tokens()
+	_apply_panel_host_size()
 	_profile_manager = _resolve_input_profile_manager()
 	if _profile_manager != null and "store_ref" in _profile_manager:
 		var manager_store: Variant = _profile_manager.store_ref
@@ -359,7 +362,21 @@ func _localize_static_labels() -> void:
 func _apply_theme_tokens() -> void:
 	if _builder != null:
 		_builder.apply_theme_tokens(U_UI_THEME_BUILDER.active_config)
+	_apply_panel_host_size()
 
+func _apply_panel_host_size() -> void:
+	var config := _get_active_theme_config()
+	if _main_panel_motion_host != null:
+		_main_panel_motion_host.custom_minimum_size = _resolve_panel_host_size(_get_visible_viewport_size(), config)
+	if _main_panel != null:
+		_main_panel.custom_minimum_size = Vector2.ZERO
+
+func _resolve_panel_host_size(viewport_size: Vector2, config: RS_UI_THEME_CONFIG) -> Vector2:
+	return U_OVERLAY_PANEL_SIZE_RESOLVER.resolve(viewport_size, OVERLAY_PANEL_SIZE, config)
+func _get_visible_viewport_size() -> Vector2:
+	return U_OVERLAY_PANEL_SIZE_RESOLVER.get_visible_viewport_size(self, OVERLAY_PANEL_SIZE)
+func _get_active_theme_config() -> RS_UI_THEME_CONFIG:
+	return U_OVERLAY_PANEL_SIZE_RESOLVER.get_theme_config(U_UI_THEME_BUILDER.active_config)
 func _get_status_default_text() -> String:
 	return U_LOCALIZATION_UTILS.localize_with_fallback(STATUS_DEFAULT_KEY, "Select an action to rebind.")
 
@@ -429,8 +446,7 @@ func _connect_row_focus_handlers(row: Control, add_button: Button, replace_butto
 	U_RebindFocusNavigation.connect_row_focus_handlers(self, row, add_button, replace_button, reset_button)
 
 func _navigate_focus(direction: StringName) -> void:
-	# Defer to BaseMenuScreen neighbor-based navigation for analog sticks
-	# so movement feels consistent with other menus.
+	# Defer to BaseMenuScreen neighbor-based navigation for analog sticks.
 	super._navigate_focus(direction)
 
 # Public interface methods (delegate to private implementations)

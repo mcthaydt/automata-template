@@ -72,10 +72,13 @@ var _active_tab: int = -1
 var _tab_contents: Dictionary = {}
 var _last_device_type: int = -1
 var _consume_next_nav: bool = false
+var _panel_viewport: Control = null
 var _chrome: W_OverlayChrome = null
 var _current_palette: Resource = null
 var _menu_background: TextureRect = null
 var _tab_header_spacer: Control = null
+var _content_scroll_margin: MarginContainer = null
+var _content_scroll_content_margin: MarginContainer = null
 var _content_scroll: ScrollContainer = null
 var _shoulder_hint_lb: PanelContainer = null
 var _shoulder_hint_rb: PanelContainer = null
@@ -95,6 +98,7 @@ func _ready() -> void:
 	_create_shoulder_prompts()
 	_wrap_content_in_scroll()
 	_create_tab_contents()
+	_create_panel_viewport()
 	_apply_layout_tokens()
 	_update_tab_visibility()
 	_apply_context_background()
@@ -236,22 +240,79 @@ func _create_shoulder_hint(node_name: String, label_text: String) -> PanelContai
 	hint.add_child(label)
 	return hint
 
+func _create_panel_viewport() -> void:
+	var center := get_node_or_null("CenterContainer") as CenterContainer
+	var panel := center.get_node_or_null("Panel") as PanelContainer if center != null else null
+	if center == null or panel == null:
+		return
+	_panel_viewport = Control.new()
+	_panel_viewport.name = "PanelViewport"
+	_panel_viewport.custom_minimum_size = _resolve_panel_viewport_size(_get_visible_viewport_size(), _get_active_theme_config())
+	_panel_viewport.clip_contents = true
+	_panel_viewport.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_panel_viewport.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var insertion_index := panel.get_index()
+	center.add_child(_panel_viewport)
+	center.move_child(_panel_viewport, insertion_index)
+	panel.reparent(_panel_viewport)
+	panel.custom_minimum_size = Vector2.ZERO
+	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	panel.offset_left = 0.0
+	panel.offset_top = 0.0
+	panel.offset_right = 0.0
+	panel.offset_bottom = 0.0
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+func _resolve_panel_viewport_size(viewport_size: Vector2, config: RS_UI_THEME_CONFIG) -> Vector2:
+	var margin := float(config.margin_outer) if config != null else 0.0
+	var available_width := maxf(viewport_size.x - margin * 2.0, 1.0)
+	var available_height := maxf(viewport_size.y - margin * 2.0, 1.0)
+	return Vector2(
+		minf(OVERLAY_PANEL_SIZE.x, available_width),
+		minf(OVERLAY_PANEL_SIZE.y, available_height)
+	)
+
+func _get_visible_viewport_size() -> Vector2:
+	var viewport := get_viewport()
+	if viewport == null:
+		return OVERLAY_PANEL_SIZE
+	return viewport.get_visible_rect().size
+
+func _get_active_theme_config() -> RS_UI_THEME_CONFIG:
+	var config: Resource = U_UI_THEME_BUILDER.active_config
+	var typed_config := config as RS_UI_THEME_CONFIG
+	if typed_config == null:
+		typed_config = RS_UI_THEME_CONFIG.new()
+	typed_config.ensure_runtime_defaults()
+	return typed_config
+
 func _wrap_content_in_scroll() -> void:
 	if _content_container == null:
 		return
 	var vbox := _content_container.get_parent() as VBoxContainer
 	if vbox == null:
 		return
+	_content_scroll_margin = MarginContainer.new()
+	_content_scroll_margin.name = "ContentScrollMargin"
+	_content_scroll_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_content_scroll_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_content_scroll = ScrollContainer.new()
 	_content_scroll.name = "ContentScroll"
 	_content_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_content_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_content_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	_content_scroll_content_margin = MarginContainer.new()
+	_content_scroll_content_margin.name = "ContentScrollContentMargin"
+	_content_scroll_content_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_content_scroll_content_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var insertion_index := _content_container.get_index()
-	vbox.add_child(_content_scroll)
-	vbox.move_child(_content_scroll, insertion_index)
-	_content_container.reparent(_content_scroll)
+	vbox.add_child(_content_scroll_margin)
+	vbox.move_child(_content_scroll_margin, insertion_index)
+	_content_scroll_margin.add_child(_content_scroll)
+	_content_scroll.add_child(_content_scroll_content_margin)
+	_content_container.reparent(_content_scroll_content_margin)
 	_content_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
@@ -513,11 +574,7 @@ func _apply_context_background() -> void:
 		_menu_background.visible = standalone_main_menu
 
 func _apply_layout_tokens() -> void:
-	var config: Resource = U_UI_THEME_BUILDER.active_config
-	var typed_config := config as RS_UI_THEME_CONFIG
-	if typed_config == null:
-		typed_config = RS_UI_THEME_CONFIG.new()
-	typed_config.ensure_runtime_defaults()
+	var typed_config := _get_active_theme_config()
 	var center := get_node_or_null("CenterContainer") as CenterContainer
 	if center != null:
 		var outer := float(typed_config.margin_outer)
@@ -525,7 +582,9 @@ func _apply_layout_tokens() -> void:
 		center.offset_top = outer
 		center.offset_right = -outer
 		center.offset_bottom = -outer
-	var panel := get_node_or_null("CenterContainer/Panel") as PanelContainer
+	if _panel_viewport != null:
+		_panel_viewport.custom_minimum_size = _resolve_panel_viewport_size(_get_visible_viewport_size(), typed_config)
+	var panel := find_child("Panel", true, false) as PanelContainer
 	if panel != null:
 		var panel_style := typed_config.panel_section.duplicate() as StyleBoxFlat
 		panel_style.content_margin_left = float(typed_config.margin_section)
@@ -536,7 +595,7 @@ func _apply_layout_tokens() -> void:
 		panel_bg.a = maxf(panel_bg.a, 0.94)
 		panel_style.bg_color = panel_bg
 		panel.add_theme_stylebox_override("panel", panel_style)
-	var vbox := get_node_or_null("CenterContainer/Panel/VBox") as VBoxContainer
+	var vbox := panel.get_node_or_null("VBox") as VBoxContainer if panel != null else null
 	if vbox != null:
 		vbox.add_theme_constant_override("separation", typed_config.separation_default)
 	if _tab_bar != null:
@@ -549,6 +608,16 @@ func _apply_layout_tokens() -> void:
 		_shoulder_hint_row.add_theme_constant_override("separation", typed_config.separation_compact)
 	if _content_container != null:
 		_content_container.add_theme_constant_override("separation", typed_config.separation_default)
+	if _content_scroll_margin != null:
+		_content_scroll_margin.add_theme_constant_override("margin_left", 0)
+		_content_scroll_margin.add_theme_constant_override("margin_top", 0)
+		_content_scroll_margin.add_theme_constant_override("margin_right", typed_config.margin_inner)
+		_content_scroll_margin.add_theme_constant_override("margin_bottom", typed_config.margin_inner)
+	if _content_scroll_content_margin != null:
+		_content_scroll_content_margin.add_theme_constant_override("margin_left", 0)
+		_content_scroll_content_margin.add_theme_constant_override("margin_top", 0)
+		_content_scroll_content_margin.add_theme_constant_override("margin_right", typed_config.margin_inner * 2)
+		_content_scroll_content_margin.add_theme_constant_override("margin_bottom", 0)
 	_style_shoulder_hint(_shoulder_hint_lb, typed_config)
 	_style_shoulder_hint(_shoulder_hint_rb, typed_config)
 	_style_shoulder_hint_label(typed_config)
