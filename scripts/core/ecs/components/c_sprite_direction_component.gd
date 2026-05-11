@@ -17,6 +17,7 @@ enum FrameLayout { SOUTH_FIRST, NORTH_FIRST }
 
 var current_direction_index: int = 0
 var current_direction_name: String = "down"
+var last_world_facing: Vector3 = Vector3(0.0, 0.0, -1.0)
 
 func _init() -> void:
 	component_type = COMPONENT_TYPE

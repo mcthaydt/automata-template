@@ -175,16 +175,16 @@ func test_moving_right_sets_right_direction() -> void:
 	assert_eq(sprite.frame, 2)
 
 
-func test_idle_body_facing_camera_sets_up_direction() -> void:
-	## Body facing -Z (yaw = 0). Camera at identity faces +Z.
-	## facing_dir = (-sin(0), 0, -cos(0)) = (0, 0, -1).
-	## cam_fwd = -camera.basis.z = (0, 0, -1). rel_z = (-1)·(-1) = 1.
-	## angle = atan2(0, -1) = PI → index 4 = "up".
+func test_idle_body_uses_last_world_facing() -> void:
+	## When idle, uses the last_world_facing stored from prior movement.
+	## Moving +X sets last_world_facing to (1,0,0).
+	## Then stop: idle reuses that facing for camera-relative computation.
 	var context := await _setup_context()
 	autofree_context(context)
 	var direction: C_SpriteDirectionComponent = context["direction"]
 	var body: FakeBody = context["body"]
 	var manager: M_ECSManager = context["manager"]
+	var sprite: Sprite3D = context["sprite"]
 
 	var camera := Camera3D.new()
 	camera.transform = Transform3D.IDENTITY
@@ -192,14 +192,16 @@ func test_idle_body_facing_camera_sets_up_direction() -> void:
 	autofree(camera)
 	_register_camera(camera)
 
-	body.velocity = Vector3.ZERO
-	body.global_rotation = Vector3(0.0, 0.0, 0.0)
-	direction.current_direction_index = 0
-
+	body.velocity = Vector3(5.0, 0.0, 0.0)
 	manager._physics_process(0.1)
+	assert_eq(direction.current_direction_index, 2)
+	assert_eq(sprite.frame, 2)
 
-	assert_eq(direction.current_direction_index, 4)
-	assert_eq(direction.current_direction_name, "up")
+	body.velocity = Vector3.ZERO
+	direction.current_direction_index = 99
+	manager._physics_process(0.1)
+	assert_eq(direction.current_direction_index, 2)
+	assert_eq(sprite.frame, 2)
 
 
 func test_facing_override_takes_priority_over_velocity() -> void:

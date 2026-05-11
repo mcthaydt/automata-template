@@ -42,8 +42,12 @@ func _process_entity(
 		return
 
 	var facing_dir: Vector3 = _resolve_facing(component, movement)
-	if facing_dir.length_squared() < 0.0001:
-		return
+	if facing_dir.length_squared() > 0.0001:
+		component.last_world_facing = facing_dir
+	else:
+		facing_dir = component.last_world_facing
+		if facing_dir.length_squared() < 0.0001:
+			return
 	facing_dir = facing_dir.normalized()
 
 	var new_index: int = _compute_direction_index(facing_dir, camera)
@@ -95,8 +99,7 @@ func _resolve_facing(component: C_SpriteDirectionComponent, movement: C_Movement
 	if horizontal.length() > threshold:
 		return horizontal
 
-	var yaw: float = body.global_rotation.y
-	return Vector3(-sin(yaw), 0.0, -cos(yaw))
+	return Vector3.ZERO
 
 func _drive_sprite(component: C_SpriteDirectionComponent, target: Node3D) -> void:
 	var mode := component.direction_mode
