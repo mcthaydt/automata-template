@@ -12,6 +12,26 @@
 
 ---
 
+## Runnable Feature Examples
+
+M2 examples are content-pack packages that boot the client UI through the same example CLI used by M1. Each package includes `example.json`, UI fixture data, and success assertions for the visible route/state.
+
+```bash
+automata example run main-menu
+automata example run settings-panel
+automata example run hud-overlay
+```
+
+Required M2 example packages:
+
+| Example | Feature | Required proof |
+|---------|---------|----------------|
+| `main-menu` | Screen router + menu widgets | Main menu route renders and accepts focus navigation |
+| `settings-panel` | Tab strip, overlay chrome, settings state | Settings tabs open, switch, and persist state in the UI store |
+| `hud-overlay` | HUD and transport-driven UI events | HUD renders room/player state and reacts to server-authored events |
+
+Each UI feature task is complete only after its example package can run from CLI and its UI assertions pass.
+
 ## Task 1: UI Shell + Screen Router
 
 **Files:**
@@ -2017,6 +2037,7 @@ react to server-driven game state changes."
 
 **Coverage Checklist:**
 - [x] React UI shell with screen registry
+- [x] Runnable UI examples: `automata example run main-menu`, `automata example run settings-panel`, `automata example run hud-overlay`
 - [x] Zustand UI state store with screen navigation
 - [x] BackgroundImage widget (pixelated PNG, CSS)
 - [x] BackgroundShader widget (canvas vignette effect)

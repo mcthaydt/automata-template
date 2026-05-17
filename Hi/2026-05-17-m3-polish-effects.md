@@ -12,6 +12,28 @@
 
 ---
 
+## Runnable Feature Examples
+
+M3 examples prove runtime feedback systems in small, isolated scenes. Each example is a content package under `examples/<example_id>/` and runs with the unified CLI.
+
+```bash
+automata example run vfx-particles
+automata example run screen-shake
+automata example run checkpoint-respawn
+automata example run multi-room-transition
+```
+
+Required M3 example packages:
+
+| Example | Feature | Required proof |
+|---------|---------|----------------|
+| `vfx-particles` | VFX emitters and particle lifecycle | Particle event spawns, ticks, and cleans up |
+| `screen-shake` | Camera feedback | Shake event produces decaying camera offset |
+| `checkpoint-respawn` | Checkpoints, death, respawn | Death returns player to checkpoint and emits respawn feedback |
+| `multi-room-transition` | Scene director | Trigger loads target room and emits transition events |
+
+Each feedback or scene-flow feature must update one of these packages or add a new feature-level package before the task is complete.
+
 ## Task 1: VFX Particle System
 
 **Files:**
@@ -1936,6 +1958,7 @@ scene director transitions, run coordinator stats."
 
 **Coverage Checklist:**
 - [x] VFX particle system (landing dust, death poof, damage flash)
+- [x] Runnable polish examples: `automata example run vfx-particles`, `screen-shake`, `checkpoint-respawn`, `multi-room-transition`
 - [x] Audio pool with Web Audio API (play, load, volume)
 - [x] Gamepad input (left stick, face buttons, L3 sprint)
 - [x] Touch input (drag movement, tap jump, deadzone + saturation)

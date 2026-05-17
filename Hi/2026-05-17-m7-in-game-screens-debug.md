@@ -12,6 +12,28 @@
 
 ---
 
+## Runnable Feature Examples
+
+M7 examples cover in-game screens and debug tooling as modular packages. Each example can run headless for state assertions and, where UI is involved, launch the client route through the same example metadata.
+
+```bash
+automata example run inventory-basic
+automata example run quest-log-objectives
+automata example run lore-collectible
+automata example run debug-overlays
+```
+
+Required M7 example packages:
+
+| Example | Feature | Required proof |
+|---------|---------|----------------|
+| `inventory-basic` | Items, slots, stacking, use effects | Add/use item changes inventory and emits UI state |
+| `quest-log-objectives` | Quest objectives and rewards | Objective progress completes quest and grants reward |
+| `lore-collectible` | Collectibles and codex | Pickup records lore once and updates progress |
+| `debug-overlays` | Debug toggles, telemetry, overlays | Toggle state changes and debug snapshot renders overlay data |
+
+Each screen/debug feature task must package its fixture data and assertions as one of these examples or a new feature-level example.
+
 ## Task 1: Inventory System (Lua + React)
 
 **Files:**
@@ -2687,6 +2709,7 @@ prefix. Level colors: Debug=gray, Info=blue, Warning=yellow, Error=red."
 
 **Coverage Checklist:**
 - [x] Inventory system (add/remove items, stacking, slot limit, use effects)
+- [x] Runnable screen/debug examples: `automata example run inventory-basic`, `quest-log-objectives`, `lore-collectible`, `debug-overlays`
 - [x] Quest log (accept/advance/complete objectives, collect-type auto-progress, rewards)
 - [x] Collectibles/lore codex (pickup, duplicate prevention, category system, progress tracking)
 - [x] Debug manager (16 toggles, telemetry log with FIFO buffer, Bevy resource)

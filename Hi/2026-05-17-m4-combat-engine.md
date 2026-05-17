@@ -12,6 +12,26 @@
 
 ---
 
+## Runnable Feature Examples
+
+M4 converts combat sample resources into feature-level content packages. Packages are self-contained under `examples/<example_id>/` and run through the unified CLI.
+
+```bash
+automata example run combat-basic-ability
+automata example run combat-status-effect
+automata example run combat-aggro-leash
+```
+
+Required M4 example packages:
+
+| Example | Feature | Required proof |
+|---------|---------|----------------|
+| `combat-basic-ability` | Ability execution, damage, health | Ability command damages a target and emits combat events |
+| `combat-status-effect` | Status effect apply/tick/expire | Effect modifies state over ticks and expires deterministically |
+| `combat-aggro-leash` | Targeting, aggro, leash | Enemy acquires target, enters combat, and returns home after leash |
+
+Every combat feature task that adds sample JSON or Lua must package it as an example instead of leaving it as an unregistered snippet.
+
 ## Task 1: Combat Component Definitions
 
 **Files:**
@@ -3286,6 +3306,14 @@ Combat engine milestone complete."
 | S_StatusEffects | CoreMotion | 50 | Apply, tick, and expire status effects |
 | S_AbilityExecution | CoreMotion | 52 | Cooldown tracking, resource costs, payloads, projectiles |
 | S_CombatState | PostMotion | 82 | Aggro table, combat timer, leash enforcement |
+
+## Combat Examples Summary
+
+| Example | CLI |
+|---------|-----|
+| `combat-basic-ability` | `automata example run combat-basic-ability` |
+| `combat-status-effect` | `automata example run combat-status-effect` |
+| `combat-aggro-leash` | `automata example run combat-aggro-leash` |
 
 ## Combat Components Summary
 

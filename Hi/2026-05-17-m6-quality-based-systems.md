@@ -12,6 +12,28 @@
 
 ---
 
+## Runnable Feature Examples
+
+M6 examples demonstrate each quality-based consumer with small rule packs. They run through the unified CLI and keep rule JSON inside the example package unless it is shared core fixture data.
+
+```bash
+automata example run qb-character-state
+automata example run qb-storylet
+automata example run qb-dialogue
+automata example run qb-cutscene
+```
+
+Required M6 example packages:
+
+| Example | Feature | Required proof |
+|---------|---------|----------------|
+| `qb-character-state` | Rule scorer + character state | Best-scoring state wins from component/state context |
+| `qb-storylet` | Storylet selection and one-shot tracking | Eligible beat fires once and records state |
+| `qb-dialogue` | Quality-gated dialogue responses | Response availability changes with context score |
+| `qb-cutscene` | Quality-gated timeline playback | Cutscene starts, emits keyframes, and ends once |
+
+Each QB consumer task must end with a registered example package that exercises the new rule set from CLI.
+
 ## Task 1: QB Engine — Rule Scorer and Selector
 
 **Files:**
@@ -2516,6 +2538,7 @@ One-shot tracking prevents replay. Example: cave_reveal cutscene."
 
 **Coverage Checklist:**
 - [x] QB rule engine ported to Lua (scorer, selector, state tracker, path resolver)
+- [x] Runnable QB examples: `automata example run qb-character-state`, `qb-storylet`, `qb-dialogue`, `qb-cutscene`
 - [x] Rule JSON format with Loader (conditions: component_field, redux_field, entity_tag, event_name, event_payload, constant, composite)
 - [x] Character state system (quality-driven idle/combat/dead selection)
 - [x] Narrative storylet system (storylet beats with decrees, flags, one-shot gating)

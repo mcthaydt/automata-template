@@ -10,6 +10,28 @@
 
 ---
 
+## Runnable Feature Examples
+
+M1 establishes the examples system itself. Every package lives under `examples/<example_id>/`, includes `example.json`, and runs through the unified CLI:
+
+```bash
+automata example list
+automata example run movement-basic
+automata example test movement-basic
+automata example snapshot movement-basic --ticks 120
+```
+
+Required M1 example packages:
+
+| Example | Feature | Required proof |
+|---------|---------|----------------|
+| `movement-basic` | Input capture + movement | Player position changes after simulated input ticks |
+| `jump-gravity` | Jump and gravity Lua systems | Jump event fires, vertical velocity changes, entity lands |
+| `sprite-billboard-room` | Three.js snapshot rendering contract | Snapshot contains billboard sprite entities and camera metadata |
+| `headless-snapshot` | Headless server runner | Fixed tick run emits deterministic snapshot output |
+
+After each M1 feature turns green, add or update the relevant example package before the feature is considered complete.
+
 ## Phase 1: Project Scaffolding
 
 ### Task 1.1: Initialize Rust workspace
@@ -4989,6 +5011,8 @@ client, and Tauri desktop. License: proprietary."
 
 **Coverage Checklist:**
 - [x] Bevy App with MinimalPlugins, bevy_rapier3d, bevy_asset, bevy_input
+- [x] Unified example CLI contract: `automata example list/run/test/snapshot`
+- [x] M1 example packages: `movement-basic`, `jump-gravity`, `sprite-billboard-room`, `headless-snapshot`
 - [x] All 12 component structs (Bevy Components)
 - [x] All 18 event types (Bevy Events)
 - [x] mlua integration: engine API (spawn, get/set, query, emit, physics, input)

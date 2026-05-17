@@ -12,6 +12,26 @@
 
 ---
 
+## Runnable Feature Examples
+
+M5 progression examples are feature-level content packages with configurable catalogs and deterministic state assertions. They run through the unified CLI.
+
+```bash
+automata example run progression-level-up
+automata example run progression-perk-unlock
+automata example run progression-implant-loadout
+```
+
+Required M5 example packages:
+
+| Example | Feature | Required proof |
+|---------|---------|----------------|
+| `progression-level-up` | XP curve and level rewards | XP grant advances level and awards configured points |
+| `progression-perk-unlock` | Attribute gates and perk tree nodes | Perk unlock succeeds only after prerequisites are met |
+| `progression-implant-loadout` | Implant slots and capacity | Implant install updates capacity and derived effects |
+
+Every progression sample catalog must be registered through one of these packages or a new feature-level example package.
+
 ## Task 1: Progression Resource Definitions (JSON)
 
 **Files:**
@@ -2809,6 +2829,14 @@ pipeline works end-to-end. test_all_progression_systems_load: confirms
 | S_Perks | Feedback | 134 | Node unlock with prerequisites, attribute gates, multi-rank |
 | S_Implants | Feedback | 136 | Install/uninstall, capacity management, effect aggregation |
 | S_ProgressionBridge | Feedback | 138 | Kill→XP bridge, level point tracking, combat bonus routing |
+
+## Progression Examples Summary
+
+| Example | CLI |
+|---------|-----|
+| `progression-level-up` | `automata example run progression-level-up` |
+| `progression-perk-unlock` | `automata example run progression-perk-unlock` |
+| `progression-implant-loadout` | `automata example run progression-implant-loadout` |
 
 ## Progression Resource Contracts
 

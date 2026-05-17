@@ -67,6 +67,40 @@ Automata Engine is a mobile-first, browser and desktop-compatible 2.5D (sprite-i
   * Minimum spec: 30fps floor, VFX and animation auto-throttle if needed on low-end devices.
   * Local save/load support, static; cloud/game-managed save deferred for now, but engine is pluggable.
   * Engine ships with a minimal, documented example game; example tests must pass for every engine/build release.
+  * Every completed engine feature ships a raylib-style runnable example package that can be listed, run, tested, and snapshotted from the CLI.
+
+## Runnable Examples Contract
+
+Automata examples are first-class content packages, not ad hoc snippets. Each package is a self-contained folder under `examples/<example_id>/` with metadata, JSON/Lua config, optional assets, optional README, and deterministic pass/fail assertions. Examples are grouped by feature so a developer can learn the engine incrementally, similar to raylib's small runnable examples.
+
+**Package layout:**
+
+```text
+examples/<example_id>/
+  example.json
+  config/
+  lua/
+  assets/        # optional
+  README.md      # optional
+```
+
+**Required metadata in `example.json`:**
+
+- `id`, `title`, `feature`, `milestone`, and `entry_room`
+- `systems`: enabled systems required by the example
+- `expected_events`: events that prove the feature ran
+- `success_assertions`: headless checks used by `automata example test`
+
+**Unified CLI:**
+
+```bash
+automata example list
+automata example run movement-basic
+automata example test movement-basic
+automata example snapshot movement-basic --ticks 120
+```
+
+The CLI discovers packages from `examples/`, validates metadata and schemas before boot, runs examples through the same engine path used by the game, and fails fast with structured errors when a package is incomplete.
 
 ---
 
@@ -77,6 +111,7 @@ Automata Engine is a mobile-first, browser and desktop-compatible 2.5D (sprite-i
 * Users access via browser/mobile or download desktop PWA/standalone (Tauri/desktop shell).
 * Opening the engine for the first time prompts a project picker (example, new project, or import mod/content pack).
 * Fast onboarding with an interactive tutorial and guided CLI tools for build, playtest, and debug workflows.
+* Runnable examples are a separate first-run path from new projects and imported content packs.
 
 **Core Experience**
 
@@ -92,6 +127,7 @@ Automata Engine is a mobile-first, browser and desktop-compatible 2.5D (sprite-i
 **Advanced Features & Edge Cases**
 
 * Power users and AI can invoke CLI mode: load any project, run N ticks headless, verify assertions, dump logs, and auto-compare to baseline for regression.
+* Power users and AI can invoke example mode: run one feature package, all packages for a milestone, or the full example suite in CI.
 * Schema version mismatches, corrupted assets, or unreachable builder content fail-fast and emit structured error logs.
 * Multiplayer sessions exceeding player count or running in low-RAM environments degrade gracefully or signal clear errors.
 * Mod manager strictly prevents script/runtime injection—only data content is supported for mods.

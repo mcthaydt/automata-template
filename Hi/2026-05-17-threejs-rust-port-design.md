@@ -25,6 +25,7 @@ Port the Automata 2.5D game template from Godot 4.7 (GDScript) to a **Bevy ECS +
 | Rust compilation | Single native target | No WASM; same binary for Tauri and headless server |
 | Bevy footprint | bevy_app + bevy_rapier3d + bevy_asset + bevy_input (~150-200 crates) | Any Bevy plugin works: `bevy_tweening`, `bevy_mod_picking`, `bevy_inspector_egui`, etc. |
 | Config/systems format | Lua + JSON | Hot-reloadable game logic; JSON for entity/room/component definitions |
+| Examples | Feature-level content packages + unified CLI | Raylib-style runnable examples after each feature, loaded from `examples/<example_id>/` |
 
 ## 2. Tech Stack
 
@@ -716,6 +717,32 @@ Player triggers door → SceneDirector validates →
   client: transition event → loading screen → new snapshot → render room
 ```
 
+### 8.5 Runnable Example Packages
+
+Every implemented feature must produce a runnable content-pack example. These examples are the primary learning and regression surface for the engine: small, isolated, named packages that can be run from the CLI like raylib examples.
+
+```text
+examples/<example_id>/
+  example.json
+  config/
+  lua/
+  assets/
+  README.md
+```
+
+`example.json` is required and includes `id`, `title`, `feature`, `milestone`, `entry_room`, `systems`, `expected_events`, and `success_assertions`. The example loader validates this metadata before booting the engine.
+
+The unified CLI is:
+
+```bash
+automata example list
+automata example run movement-basic
+automata example test movement-basic
+automata example snapshot movement-basic --ticks 120
+```
+
+Feature plans must add the example package after the feature's tests pass. The package must be self-contained: core engine code may be shared, but example-specific rooms, entity configs, Lua scripts, and assets stay inside the example folder.
+
 ## 9. UI System
 
 ### 9.1 Framework: React + HTML/CSS
@@ -783,6 +810,7 @@ Same widget decomposition philosophy as Godot — small, single-responsibility c
 - Input capture (keyboard, gamepad, touch → bevy_input)
 - All 20 manager stubs
 - Single test room (JSON + Lua)
+- Example runner and first examples: `movement-basic`, `jump-gravity`, `sprite-billboard-room`, `headless-snapshot`
 - Tauri desktop app
 - Headless server for browser play
 
@@ -798,6 +826,7 @@ Same widget decomposition philosophy as Godot — small, single-responsibility c
 - Input rebinding
 - Cursor management
 - Screenshot cache
+- UI examples: `main-menu`, `settings-panel`, `hud-overlay`
 
 ### M3: Polish & Effects
 - VFX system
@@ -810,6 +839,7 @@ Same widget decomposition philosophy as Godot — small, single-responsibility c
 - Scene director (multi-room)
 - Run coordinator
 - Landing indicators, spawn recovery, death/victory handlers
+- Runtime examples: `vfx-particles`, `screen-shake`, `checkpoint-respawn`, `multi-room-transition`
 
 ## 11. Constraints & Compatibility
 
