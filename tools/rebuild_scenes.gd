@@ -86,6 +86,13 @@ func _rebuild_prefab_player() -> void:
 	spawn_recovery_component.settings = preload("res://resources/core/base_settings/gameplay/cfg_spawn_recovery_player_default.tres")
 	builder.add_child_to("Components", spawn_recovery_component)
 
+	var sprite_dir_component := Node.new()
+	sprite_dir_component.name = "C_SpriteDirectionComponent"
+	sprite_dir_component.set_script(preload("res://scripts/core/ecs/components/c_sprite_direction_component.gd"))
+	sprite_dir_component.settings = preload("res://resources/core/base_settings/gameplay/cfg_sprite_direction_default.tres")
+	sprite_dir_component.target_node_path = NodePath("../../Player_Body/Body_Mesh/DirectionalSprite")
+	builder.add_child_to("Components", sprite_dir_component)
+
 	builder.save("res://scenes/core/prefabs/prefab_player.tscn")
 
 func _rebuild_gameplay_demo_room() -> void:
